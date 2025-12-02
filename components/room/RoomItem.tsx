@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 import Svg, { Circle } from 'react-native-svg';
 
 interface RoomItemProps {
@@ -15,8 +16,17 @@ const RoomIcon = ({ size = 18 }: { size?: number }) => (
 );
 
 export function RoomItem({ name, userCount }: RoomItemProps) {
+  const router = useRouter();
+
+  const handlePress = () => {
+    router.push({
+      pathname: '/chatroom/[id]',
+      params: { id: name.toLowerCase().replace(/\s+/g, '-'), name },
+    });
+  };
+
   return (
-    <TouchableOpacity style={styles.container}>
+    <TouchableOpacity style={styles.container} onPress={handlePress}>
       <View style={styles.leftSection}>
         <RoomIcon size={16} />
         <Text style={styles.name}>{name}</Text>

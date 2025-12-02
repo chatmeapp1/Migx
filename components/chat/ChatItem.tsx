@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { useRouter } from 'expo-router';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 interface ChatItemProps {
@@ -36,8 +37,21 @@ const RoomIcon = ({ size = 50 }: { size?: number }) => (
 );
 
 export function ChatItem({ type, name, message, time, isOnline, avatar, tags }: ChatItemProps) {
+  const router = useRouter();
+
+  const handlePress = () => {
+    router.push({
+      pathname: '/chatroom/[id]',
+      params: { 
+        id: name.toLowerCase().replace(/\s+/g, '-'), 
+        name,
+        type,
+      },
+    });
+  };
+
   return (
-    <TouchableOpacity style={styles.container}>
+    <TouchableOpacity style={styles.container} onPress={handlePress}>
       <View style={styles.leftSection}>
         {type === 'user' ? (
           <UserAvatar avatar={avatar} isOnline={isOnline} />

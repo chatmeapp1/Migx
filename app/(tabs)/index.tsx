@@ -1,12 +1,20 @@
-import { StyleSheet } from 'react-native';
-import { ThemedText } from '@/components/ThemedText';
+
+import { StyleSheet, View, SafeAreaView } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
+import { Header } from '@/components/home/Header';
+import { StatusSection } from '@/components/home/StatusSection';
+import { EmailSection } from '@/components/home/EmailSection';
+import { ContactList } from '@/components/home/ContactList';
 
 export default function HomeScreen() {
   return (
     <ThemedView style={styles.container}>
-      <ThemedText type="title" style={styles.title}>Selamat Datang! 👋</ThemedText>
-      <ThemedText style={styles.subtitle}>Ini adalah halaman Home</ThemedText>
+      <SafeAreaView style={styles.safeArea}>
+        <Header />
+        <StatusSection />
+        <EmailSection />
+        <ContactList />
+      </SafeAreaView>
     </ThemedView>
   );
 }
@@ -14,15 +22,9 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
+    backgroundColor: '#fff',
   },
-  title: {
-    marginBottom: 20,
-  },
-  subtitle: {
-    fontSize: 16,
-    textAlign: 'center',
+  safeArea: {
+    flex: 1,
   },
 });

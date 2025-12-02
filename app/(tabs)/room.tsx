@@ -1,13 +1,16 @@
 
-import { StyleSheet } from 'react-native';
-import { ThemedText } from '@/components/ThemedText';
+import { StyleSheet, View, SafeAreaView } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
+import { RoomHeader } from '@/components/room/RoomHeader';
+import { RoomList } from '@/components/room/RoomList';
 
 export default function RoomScreen() {
   return (
     <ThemedView style={styles.container}>
-      <ThemedText type="title" style={styles.title}>Room</ThemedText>
-      <ThemedText>Ini adalah halaman Room</ThemedText>
+      <SafeAreaView style={styles.safeArea}>
+        <RoomHeader />
+        <RoomList />
+      </SafeAreaView>
     </ThemedView>
   );
 }
@@ -15,11 +18,9 @@ export default function RoomScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
+    backgroundColor: '#fff',
   },
-  title: {
-    marginBottom: 20,
+  safeArea: {
+    flex: 1,
   },
 });

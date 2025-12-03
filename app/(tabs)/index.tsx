@@ -4,19 +4,22 @@ import { Header } from '@/components/home/Header';
 import { StatusSection } from '@/components/home/StatusSection';
 import { EmailSection } from '@/components/home/EmailSection';
 import { ContactList } from '@/components/home/ContactList';
+import { SwipeableScreen } from '@/components/navigation/SwipeableScreen';
 
 export default function HomeScreen() {
   const { theme } = useThemeCustom();
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <SafeAreaView style={styles.safeArea}>
-        <Header />
-        <StatusSection />
-        <EmailSection />
-        <ContactList />
-      </SafeAreaView>
-    </View>
+    <SwipeableScreen>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <SafeAreaView style={styles.safeArea}>
+          <Header />
+          <StatusSection />
+          <EmailSection />
+          <ContactList />
+        </SafeAreaView>
+      </View>
+    </SwipeableScreen>
   );
 }
 

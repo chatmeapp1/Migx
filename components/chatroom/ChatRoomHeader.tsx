@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import { useRouter } from 'expo-router';
+import { BackIcon, MenuGridIcon } from '@/components/ui/SvgIcons';
 
 interface ChatTab {
   id: string;
@@ -16,44 +17,52 @@ interface ChatRoomHeaderProps {
   onCloseTab: (tabId: string) => void;
 }
 
-const CloseIcon = ({ size = 14 }: { size?: number }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M18 6L6 18M6 6l12 12" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
-  </Svg>
-);
-
 export function ChatRoomHeader({ tabs, activeTab, onTabChange, onCloseTab }: ChatRoomHeaderProps) {
+  const router = useRouter();
+
   return (
     <View style={styles.container}>
+      <View style={styles.topBar}>
+        <TouchableOpacity 
+          onPress={() => router.back()}
+          style={styles.iconButton}
+        >
+          <BackIcon color="#FFFFFF" size={24} />
+        </TouchableOpacity>
+        
+        <Text style={styles.title}>chatroom/[id]</Text>
+        
+        <TouchableOpacity 
+          onPress={() => {/* Handle menu grid action */}}
+          style={styles.iconButton}
+        >
+          <MenuGridIcon color="#FFFFFF" size={24} />
+        </TouchableOpacity>
+      </View>
+
       <ScrollView 
         horizontal 
         showsHorizontalScrollIndicator={false}
         style={styles.tabsContainer}
       >
         {tabs.map((tab) => (
-          <TouchableOpacity
-            key={tab.id}
-            style={[
-              styles.tab,
-              activeTab === tab.id && styles.activeTab,
-            ]}
-            onPress={() => onTabChange(tab.id)}
-          >
-            <Text style={[
-              styles.tabText,
-              activeTab === tab.id && styles.activeTabText,
-            ]}>
-              {tab.name}
-            </Text>
-            {tabs.length > 1 && (
-              <TouchableOpacity
-                onPress={() => onCloseTab(tab.id)}
-                style={styles.closeButton}
-              >
-                <CloseIcon size={12} />
-              </TouchableOpacity>
-            )}
-          </TouchableOpacity>
+          <View key={tab.id} style={styles.tabWrapper}>
+            <TouchableOpacity
+              style={[
+                styles.tab,
+                activeTab === tab.id && styles.activeTab,
+              ]}
+              onPress={() => onTabChange(tab.id)}
+            >
+              <Text style={[
+                styles.tabText,
+                activeTab === tab.id && styles.activeTabText,
+              ]}>
+                {tab.name}
+              </Text>
+            </TouchableOpacity>
+            {activeTab === tab.id && <View style={styles.activeIndicator} />}
+          </View>
         ))}
       </ScrollView>
     </View>
@@ -62,34 +71,57 @@ export function ChatRoomHeader({ tabs, activeTab, onTabChange, onCloseTab }: Cha
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#4A90E2',
+    backgroundColor: '#2C2C2C',
+  },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: '#2C2C2C',
+  },
+  iconButton: {
+    padding: 8,
+  },
+  title: {
+    flex: 1,
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginHorizontal: 16,
   },
   tabsContainer: {
     flexDirection: 'row',
+    backgroundColor: '#4A90E2',
+  },
+  tabWrapper: {
+    position: 'relative',
   },
   tab: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: '#5BA3E8',
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
-    marginRight: 2,
-    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: 'transparent',
   },
   activeTab: {
-    backgroundColor: '#fff',
+    backgroundColor: 'transparent',
   },
   tabText: {
-    fontSize: 14,
-    color: '#fff',
-    fontWeight: '600',
+    fontSize: 15,
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontWeight: '500',
   },
   activeTabText: {
-    color: '#4A90E2',
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
-  closeButton: {
-    padding: 2,
+  activeIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    backgroundColor: '#FFFFFF',
   },
 });

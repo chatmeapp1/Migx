@@ -18,7 +18,7 @@ export default function ChatRoomScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
   const roomId = params.id as string;
-  const roomName = params.name as string || 'Indonesia';
+  const roomName = params.name as string || 'Mobile fun';
 
   const [tabs, setTabs] = useState<ChatTab[]>([
     {
@@ -108,7 +108,7 @@ export default function ChatRoomScreen() {
   const currentTab = tabs.find(tab => tab.id === activeTab);
 
   return (
-    <ThemedView style={styles.container}>
+    <View style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ChatRoomHeader
           tabs={tabs}
@@ -123,16 +123,17 @@ export default function ChatRoomScreen() {
           </>
         )}
       </SafeAreaView>
-    </ThemedView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F5F5F5',
   },
   safeArea: {
     flex: 1,
+    backgroundColor: '#F5F5F5',
   },
 });

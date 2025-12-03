@@ -11,13 +11,14 @@ import {
   StatusBar
 } from 'react-native';
 import { router } from 'expo-router';
+import { useThemeCustom } from '@/theme/provider';
 import Svg, { Path } from 'react-native-svg';
 
-const BackIcon = ({ size = 24 }: { size?: number }) => (
+const BackIcon = ({ size = 24, color = '#fff' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path 
       d="M15 18l-6-6 6-6" 
-      stroke="#fff" 
+      stroke={color} 
       strokeWidth="2" 
       strokeLinecap="round" 
       strokeLinejoin="round"
@@ -62,18 +63,20 @@ const mockTransfers: TransferItem[] = [
 ];
 
 export default function TransferHistoryScreen() {
+  const { theme } = useThemeCustom();
+
   const renderItem = ({ item }: { item: TransferItem }) => (
-    <View style={styles.historyItem}>
+    <View style={[styles.historyItem, { backgroundColor: theme.card }]}>
       <View style={styles.historyLeft}>
         <View style={[
           styles.typeIndicator,
           { backgroundColor: item.type === 'sent' ? '#FF6B6B' : '#4CAF50' }
         ]} />
         <View style={styles.historyInfo}>
-          <Text style={styles.historyUsername}>
+          <Text style={[styles.historyUsername, { color: theme.text }]}>
             {item.type === 'sent' ? 'To: ' : 'From: '}{item.username}
           </Text>
-          <Text style={styles.historyDate}>{item.date} • {item.time}</Text>
+          <Text style={[styles.historyDate, { color: theme.secondary }]}>{item.date} • {item.time}</Text>
         </View>
       </View>
       <View style={styles.historyRight}>
@@ -94,18 +97,18 @@ export default function TransferHistoryScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <StatusBar barStyle={theme.mode === 'dark' ? 'light-content' : 'dark-content'} />
       
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <BackIcon size={24} />
+          <BackIcon size={24} color={theme.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Transfer History</Text>
+        <Text style={[styles.headerTitle, { color: theme.text }]}>Transfer History</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -115,7 +118,7 @@ export default function TransferHistoryScreen() {
           renderItem={renderItem}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.listContainer}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          ItemSeparatorComponent={() => <View style={[styles.separator, { backgroundColor: theme.border }]} />}
         />
       </SafeAreaView>
     </View>
@@ -125,22 +128,20 @@ export default function TransferHistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
   },
   header: {
-    backgroundColor: '#4A90E2',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
     paddingTop: 40,
+    borderBottomWidth: 1,
   },
   backButton: {
     padding: 8,
   },
   headerTitle: {
-    color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
   },
@@ -151,7 +152,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   listContainer: {
-    backgroundColor: '#fff',
     marginTop: 1,
   },
   historyItem: {
@@ -159,7 +159,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: '#fff',
   },
   historyLeft: {
     flexDirection: 'row',
@@ -178,12 +177,10 @@ const styles = StyleSheet.create({
   historyUsername: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
     marginBottom: 4,
   },
   historyDate: {
     fontSize: 12,
-    color: '#999',
   },
   historyRight: {
     alignItems: 'flex-end',
@@ -203,7 +200,6 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 1,
-    backgroundColor: '#E0E0E0',
     marginLeft: 52,
   },
 });

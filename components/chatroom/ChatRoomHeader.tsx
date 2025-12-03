@@ -23,13 +23,13 @@ export function ChatRoomHeader({ tabs, activeTab, onTabChange, onCloseTab }: Cha
   const { theme } = useThemeCustom();
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.primary }]}>
-      <View style={[styles.topBar, { backgroundColor: theme.primary }]}>
+    <View style={[styles.container, { backgroundColor: theme.card }]}>
+      <View style={[styles.topBar, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
         <TouchableOpacity 
           onPress={() => router.back()}
           style={styles.iconButton}
         >
-          <BackIcon color={theme.background} size={24} />
+          <BackIcon color={theme.text} size={24} />
         </TouchableOpacity>
         
         <View style={styles.spacer} />
@@ -38,14 +38,14 @@ export function ChatRoomHeader({ tabs, activeTab, onTabChange, onCloseTab }: Cha
           onPress={() => {/* Handle menu grid action */}}
           style={styles.iconButton}
         >
-          <MenuGridIcon color={theme.background} size={24} />
+          <MenuGridIcon color={theme.text} size={24} />
         </TouchableOpacity>
       </View>
 
       <ScrollView 
         horizontal 
         showsHorizontalScrollIndicator={false}
-        style={[styles.tabsContainer, { backgroundColor: theme.primary }]}
+        style={[styles.tabsContainer, { backgroundColor: theme.card }]}
       >
         {tabs.map((tab) => (
           <View key={tab.id} style={styles.tabWrapper}>
@@ -58,13 +58,13 @@ export function ChatRoomHeader({ tabs, activeTab, onTabChange, onCloseTab }: Cha
             >
               <Text style={[
                 styles.tabText,
-                { color: `${theme.background}B3` },
-                activeTab === tab.id && { color: theme.background },
+                { color: theme.secondary },
+                activeTab === tab.id && { color: theme.primary },
               ]}>
                 {tab.name}
               </Text>
             </TouchableOpacity>
-            {activeTab === tab.id && <View style={[styles.activeIndicator, { backgroundColor: theme.background }]} />}
+            {activeTab === tab.id && <View style={[styles.activeIndicator, { backgroundColor: theme.primary }]} />}
           </View>
         ))}
       </ScrollView>
@@ -81,6 +81,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 12,
     paddingVertical: 12,
+    borderBottomWidth: 1,
   },
   iconButton: {
     padding: 8,

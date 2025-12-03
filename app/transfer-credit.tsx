@@ -11,13 +11,14 @@ import {
   StatusBar
 } from 'react-native';
 import { router } from 'expo-router';
+import { useThemeCustom } from '@/theme/provider';
 import Svg, { Path } from 'react-native-svg';
 
-const BackIcon = ({ size = 24 }: { size?: number }) => (
+const BackIcon = ({ size = 24, color = '#fff' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path 
       d="M15 18l-6-6 6-6" 
-      stroke="#fff" 
+      stroke={color} 
       strokeWidth="2" 
       strokeLinecap="round" 
       strokeLinejoin="round"
@@ -25,11 +26,11 @@ const BackIcon = ({ size = 24 }: { size?: number }) => (
   </Svg>
 );
 
-const HistoryIcon = ({ size = 24 }: { size?: number }) => (
+const HistoryIcon = ({ size = 24, color = '#fff' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path 
       d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" 
-      stroke="#fff" 
+      stroke={color} 
       strokeWidth="2" 
       strokeLinecap="round" 
       strokeLinejoin="round"
@@ -38,6 +39,7 @@ const HistoryIcon = ({ size = 24 }: { size?: number }) => (
 );
 
 export default function TransferCreditScreen() {
+  const { theme } = useThemeCustom();
   const [username, setUsername] = useState('');
   const [amount, setAmount] = useState('');
   const [pin, setPin] = useState('');
@@ -53,48 +55,53 @@ export default function TransferCreditScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <StatusBar barStyle={theme.mode === 'dark' ? 'light-content' : 'dark-content'} />
       
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <BackIcon size={24} />
+          <BackIcon size={24} color={theme.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Transfer Credit</Text>
+        <Text style={[styles.headerTitle, { color: theme.text }]}>Transfer Credit</Text>
         <TouchableOpacity 
           style={styles.historyButton}
           onPress={handleHistory}
         >
-          <HistoryIcon size={24} />
+          <HistoryIcon size={24} color={theme.text} />
         </TouchableOpacity>
       </View>
 
       <SafeAreaView style={styles.safeArea}>
         {/* Coin Balance */}
-        <View style={styles.balanceContainer}>
-          <Text style={styles.balanceLabel}>IDR Balance</Text>
+        <View style={[styles.balanceContainer, { backgroundColor: theme.card }]}>
+          <Text style={[styles.balanceLabel, { color: theme.secondary }]}>IDR Balance</Text>
           <View style={styles.balanceRow}>
             <Image 
               source={require('@/assets/icons/ic_coin.png')} 
               style={styles.coinIcon}
             />
-            <Text style={styles.balanceAmount}>{coinBalance.toLocaleString()}</Text>
+            <Text style={[styles.balanceAmount, { color: theme.text }]}>{coinBalance.toLocaleString()}</Text>
           </View>
         </View>
 
         {/* Transfer Form */}
-        <View style={styles.formContainer}>
-          <Text style={styles.formTitle}>Transfer Coin to User</Text>
+        <View style={[styles.formContainer, { backgroundColor: theme.background }]}>
+          <Text style={[styles.formTitle, { color: theme.text }]}>Transfer Coin to User</Text>
           
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Username</Text>
+            <Text style={[styles.inputLabel, { color: theme.text }]}>Username</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { 
+                backgroundColor: theme.card, 
+                borderColor: theme.border, 
+                color: theme.text 
+              }]}
               placeholder="Enter username"
+              placeholderTextColor={theme.secondary}
               value={username}
               onChangeText={setUsername}
               autoCapitalize="none"
@@ -102,10 +109,15 @@ export default function TransferCreditScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Amount</Text>
+            <Text style={[styles.inputLabel, { color: theme.text }]}>Amount</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { 
+                backgroundColor: theme.card, 
+                borderColor: theme.border, 
+                color: theme.text 
+              }]}
               placeholder="Enter amount"
+              placeholderTextColor={theme.secondary}
               value={amount}
               onChangeText={setAmount}
               keyboardType="numeric"
@@ -113,10 +125,15 @@ export default function TransferCreditScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>PIN</Text>
+            <Text style={[styles.inputLabel, { color: theme.text }]}>PIN</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { 
+                backgroundColor: theme.card, 
+                borderColor: theme.border, 
+                color: theme.text 
+              }]}
               placeholder="Enter your PIN"
+              placeholderTextColor={theme.secondary}
               value={pin}
               onChangeText={setPin}
               keyboardType="numeric"
@@ -149,6 +166,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     paddingTop: 40,
+    borderBottomWidth: 1,
   },
   backButton: {
     padding: 8,

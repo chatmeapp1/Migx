@@ -27,20 +27,20 @@ export function Header() {
   const { theme } = useThemeCustom();
   
   return (
-    <View style={[styles.container, { backgroundColor: theme.primary }]}>
-      <View style={[styles.topBar, { backgroundColor: theme.primary }]}>
+    <View style={[styles.container, { backgroundColor: theme.card }]}>
+      <View style={[styles.topBar, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
         <View style={styles.leftSection}>
-          <UserIcon size={20} color={theme.background} />
-          <Text style={[styles.title, { color: theme.background }]}>My Friends</Text>
+          <UserIcon size={20} color={theme.primary} />
+          <Text style={[styles.title, { color: theme.text }]}>My Friends</Text>
         </View>
         <View style={styles.rightSection}>
-          <TouchableOpacity style={[styles.iconButton, { backgroundColor: theme.secondary }]}>
+          <TouchableOpacity style={[styles.iconButton, { backgroundColor: theme.primary }]}>
             <MenuIcon size={20} color={theme.background} />
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.iconButton, { backgroundColor: theme.secondary }]}>
+          <TouchableOpacity style={[styles.iconButton, { backgroundColor: theme.primary }]}>
             <ListIcon size={20} color={theme.background} />
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.iconButton, { backgroundColor: theme.secondary }]}>
+          <TouchableOpacity style={[styles.iconButton, { backgroundColor: theme.primary }]}>
             <ListIcon size={20} color={theme.background} />
           </TouchableOpacity>
         </View>
@@ -59,6 +59,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 10,
+    borderBottomWidth: 1,
   },
   leftSection: {
     flexDirection: 'row',

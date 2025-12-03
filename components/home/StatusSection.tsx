@@ -1,59 +1,68 @@
 
 import React from 'react';
-import { View, Text, TextInput, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Image, TouchableOpacity } from 'react-native';
+import { useThemeCustom } from '@/theme/provider';
 import Svg, { Path, Circle } from 'react-native-svg';
 
-const BellIcon = ({ size = 20 }: { size?: number }) => (
+const BellIcon = ({ size = 20, color = '#fff' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+    <Path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke={color} strokeWidth="2" fill="none" />
+    <Path d="M13.73 21a2 2 0 0 1-3.46 0" stroke={color} strokeWidth="2" strokeLinecap="round" />
   </Svg>
 );
 
-const MessageIcon = ({ size = 20 }: { size?: number }) => (
+const MessageIcon = ({ size = 20, color = '#fff' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="#fff" strokeWidth="2" fill="none" />
+    <Path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke={color} strokeWidth="2" fill="none" />
   </Svg>
 );
 
-const EggIcon = ({ size = 24 }: { size?: number }) => (
+const EggIcon = ({ size = 24, color = '#fff' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M12 22C16.4183 22 20 17.5228 20 12C20 6.47715 16.4183 2 12 2C7.58172 2 4 6.47715 4 12C4 17.5228 7.58172 22 12 22Z" fill="#fff" stroke="#fff" strokeWidth="2"/>
+    <Circle cx="12" cy="13" r="8" fill={color} />
+    <Path d="M12 5c-3.5 0-6 4-6 8s2.5 8 6 8 6-4 6-8-2.5-8-6-8z" stroke={color} strokeWidth="2" fill="none" />
   </Svg>
 );
 
 export function StatusSection() {
+  const { theme } = useThemeCustom();
+  
   return (
-    <View style={styles.container}>
-      <View style={styles.mainContent}>
-        {/* Avatar and Status Section */}
+    <View style={[styles.container, { backgroundColor: theme.card }]}>
+      <View style={styles.contentWrapper}>
+        {/* Left Section - Avatar and Input */}
         <View style={styles.leftSection}>
           <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>👤</Text>
-            </View>
-            <View style={styles.statusDot} />
+            <Image 
+              source={{ uri: 'https://via.placeholder.com/50' }}
+              style={styles.avatar}
+            />
+            <View style={[styles.statusDot, { backgroundColor: '#4CAF50' }]} />
           </View>
-          <View style={styles.userInfoContainer}>
-            <Text style={styles.username}>h________</Text>
+          
+          <View style={styles.inputContainer}>
+            <Text style={[styles.username, { color: theme.text }]}>h________</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { color: theme.text, backgroundColor: theme.background, borderColor: theme.border }]}
               placeholder="<Enter your status message>"
-              placeholderTextColor="rgba(255, 255, 255, 0.7)"
+              placeholderTextColor={theme.text + '80'}
             />
           </View>
         </View>
 
-        {/* Right Icons Section */}
+        {/* Right Section - Icons in horizontal row */}
         <View style={styles.rightSection}>
           <TouchableOpacity style={styles.iconButton}>
-            <BellIcon size={18} />
+            <BellIcon size={24} color={theme.text} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.iconButton}>
-            <MessageIcon size={18} />
+            <MessageIcon size={24} color={theme.text} />
           </TouchableOpacity>
           <View style={styles.badgeContainer}>
-            <EggIcon size={20} />
-            <Text style={styles.badgeNumber}>2</Text>
+            <EggIcon size={28} color={theme.text} />
+            <View style={[styles.badge, { backgroundColor: theme.primary }]}>
+              <Text style={[styles.badgeNumber, { color: theme.background }]}>2</Text>
+            </View>
           </View>
         </View>
       </View>
@@ -63,92 +72,81 @@ export function StatusSection() {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#FF6B35',
-    borderWidth: 3,
-    borderColor: '#CC5429',
-    borderRadius: 8,
-    marginHorizontal: 8,
-    marginTop: 4,
-    marginBottom: 4,
-    padding: 8,
+    marginHorizontal: 12,
+    marginVertical: 8,
+    borderRadius: 12,
+    padding: 16,
   },
-  mainContent: {
+  contentWrapper: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
   },
   leftSection: {
     flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
-    gap: 8,
+    marginRight: 12,
   },
   avatarContainer: {
     position: 'relative',
+    marginRight: 12,
   },
   avatar: {
     width: 50,
     height: 50,
-    borderRadius: 4,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#CC5429',
-  },
-  avatarText: {
-    fontSize: 30,
+    borderRadius: 8,
+    backgroundColor: '#4A90E2',
   },
   statusDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#00FF00',
-    borderWidth: 2,
-    borderColor: '#fff',
     position: 'absolute',
-    top: -2,
-    right: -2,
+    top: 2,
+    right: 2,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: 'white',
   },
-  userInfoContainer: {
+  inputContainer: {
     flex: 1,
-    justifyContent: 'center',
   },
   username: {
-    color: '#fff',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 4,
   },
   input: {
-    backgroundColor: 'rgba(255, 160, 122, 0.5)',
-    borderRadius: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    color: '#fff',
-    fontSize: 13,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 14,
   },
   rightSection: {
-    flexDirection: 'column',
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingTop: 2,
+    gap: 12,
   },
   iconButton: {
-    padding: 3,
+    padding: 4,
   },
   badgeContainer: {
+    position: 'relative',
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 2,
+    paddingHorizontal: 4,
   },
   badgeNumber: {
-    color: '#FF6B35',
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: 'bold',
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: [{ translateX: -4 }, { translateY: -7 }],
   },
 });

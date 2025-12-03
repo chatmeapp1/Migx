@@ -30,7 +30,7 @@ export function ChatRoomHeader({ tabs, activeTab, onTabChange, onCloseTab }: Cha
           <BackIcon color="#FFFFFF" size={24} />
         </TouchableOpacity>
         
-        <Text style={styles.title}>chatroom/[id]</Text>
+        <View style={styles.spacer} />
         
         <TouchableOpacity 
           onPress={() => {/* Handle menu grid action */}}
@@ -71,7 +71,7 @@ export function ChatRoomHeader({ tabs, activeTab, onTabChange, onCloseTab }: Cha
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#2C2C2C',
+    backgroundColor: '#4A90E2',
   },
   topBar: {
     flexDirection: 'row',
@@ -79,18 +79,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 12,
     paddingVertical: 12,
-    backgroundColor: '#2C2C2C',
+    backgroundColor: '#4A90E2',
   },
   iconButton: {
     padding: 8,
   },
-  title: {
+  spacer: {
     flex: 1,
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    textAlign: 'center',
-    marginHorizontal: 16,
   },
   tabsContainer: {
     flexDirection: 'row',

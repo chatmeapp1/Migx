@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useThemeCustom } from '@/theme/provider';
 
 interface ChatMessageProps {
   username: string;
@@ -12,28 +13,30 @@ interface ChatMessageProps {
 }
 
 export function ChatMessage({ username, message, timestamp, isSystem, isNotice, userType }: ChatMessageProps) {
+  const { theme } = useThemeCustom();
+  
   const getUsernameColor = () => {
     if (isSystem) return '#FF8C00';
     if (userType === 'creator') return '#FF8C00';
     if (userType === 'admin') return '#FF8C00';
-    return '#333';
+    return theme.text;
   };
 
   if (isNotice) {
     return (
-      <View style={styles.noticeContainer}>
-        <Text style={styles.noticeText}>{message}</Text>
+      <View style={[styles.noticeContainer, { backgroundColor: theme.card }]}>
+        <Text style={[styles.noticeText, { color: theme.primary }]}>{message}</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.messageContainer}>
-      <Text style={styles.timestamp}>{timestamp}</Text>
+      <Text style={[styles.timestamp, { color: theme.secondary }]}>{timestamp}</Text>
       <Text style={[styles.username, { color: getUsernameColor() }]}>
         {username}
       </Text>
-      <Text style={styles.message}>{message}</Text>
+      <Text style={[styles.message, { color: theme.text }]}>{message}</Text>
     </View>
   );
 }
@@ -47,7 +50,6 @@ const styles = StyleSheet.create({
   },
   timestamp: {
     fontSize: 13,
-    color: '#888',
     marginRight: 4,
   },
   username: {
@@ -57,18 +59,15 @@ const styles = StyleSheet.create({
   },
   message: {
     fontSize: 13,
-    color: '#333',
     flex: 1,
   },
   noticeContainer: {
     paddingVertical: 8,
     paddingHorizontal: 12,
-    backgroundColor: '#FFF5F5',
     marginVertical: 4,
   },
   noticeText: {
     fontSize: 13,
-    color: '#D32F2F',
     textAlign: 'center',
   },
 });

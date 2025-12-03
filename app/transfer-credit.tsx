@@ -141,10 +141,8 @@ export default function TransferCreditScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
   },
   header: {
-    backgroundColor: '#4A90E2',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -156,7 +154,6 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   headerTitle: {
-    color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
   },
@@ -167,14 +164,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   balanceContainer: {
-    backgroundColor: '#fff',
     padding: 20,
     marginTop: 1,
     alignItems: 'center',
   },
   balanceLabel: {
     fontSize: 14,
-    color: '#666',
     marginBottom: 8,
   },
   balanceRow: {
@@ -189,17 +184,14 @@ const styles = StyleSheet.create({
   balanceAmount: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#333',
   },
   formContainer: {
-    backgroundColor: '#fff',
     padding: 20,
     marginTop: 16,
   },
   formTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
     marginBottom: 20,
   },
   inputGroup: {
@@ -207,17 +199,14 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 14,
-    color: '#333',
     marginBottom: 8,
     fontWeight: '500',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#E0E0E0',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    backgroundColor: '#FAFAFA',
   },
   submitButton: {
     backgroundColor: '#4CAF50',

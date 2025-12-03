@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, SafeAreaView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ThemedView } from '@/components/ThemedView';
+import { useThemeCustom } from '@/theme/provider';
 import { ChatRoomHeader } from '@/components/chatroom/ChatRoomHeader';
 import { ChatRoomContent } from '@/components/chatroom/ChatRoomContent';
 import { ChatRoomInput } from '@/components/chatroom/ChatRoomInput';
@@ -17,6 +17,7 @@ interface ChatTab {
 export default function ChatRoomScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
+  const { theme } = useThemeCustom();
   const roomId = params.id as string;
   const roomName = params.name as string || 'Mobile fun';
 
@@ -108,8 +109,8 @@ export default function ChatRoomScreen() {
   const currentTab = tabs.find(tab => tab.id === activeTab);
 
   return (
-    <View style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]}>
         <ChatRoomHeader
           tabs={tabs}
           activeTab={activeTab}
@@ -130,10 +131,8 @@ export default function ChatRoomScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
   },
   safeArea: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
   },
 });

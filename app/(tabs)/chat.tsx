@@ -1,24 +1,25 @@
 
 import { StyleSheet, View, SafeAreaView } from 'react-native';
-import { ThemedView } from '@/components/ThemedView';
+import { useThemeCustom } from '@/theme/provider';
 import { ChatHeader } from '@/components/chat/ChatHeader';
 import { ChatList } from '@/components/chat/ChatList';
 
 export default function ChatScreen() {
+  const { theme } = useThemeCustom();
+  
   return (
-    <ThemedView style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <SafeAreaView style={styles.safeArea}>
         <ChatHeader />
         <ChatList />
       </SafeAreaView>
-    </ThemedView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   safeArea: {
     flex: 1,

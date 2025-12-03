@@ -1,24 +1,25 @@
 
 import { StyleSheet, View, SafeAreaView } from 'react-native';
-import { ThemedView } from '@/components/ThemedView';
+import { useThemeCustom } from '@/theme/provider';
 import { RoomHeader } from '@/components/room/RoomHeader';
 import { RoomList } from '@/components/room/RoomList';
 
 export default function RoomScreen() {
+  const { theme } = useThemeCustom();
+  
   return (
-    <ThemedView style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <SafeAreaView style={styles.safeArea}>
         <RoomHeader />
         <RoomList />
       </SafeAreaView>
-    </ThemedView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   safeArea: {
     flex: 1,

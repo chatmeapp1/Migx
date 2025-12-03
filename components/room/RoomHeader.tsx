@@ -1,44 +1,47 @@
 
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useThemeCustom } from '@/theme/provider';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 
-const HomeIcon = ({ size = 20 }: { size?: number }) => (
+const HomeIcon = ({ size = 20, color = '#4A90E2' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="#4A90E2" strokeWidth="2" fill="none" />
-    <Path d="M9 22V12h6v10" stroke="#4A90E2" strokeWidth="2" fill="none" />
+    <Path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke={color} strokeWidth="2" fill="none" />
+    <Path d="M9 22V12h6v10" stroke={color} strokeWidth="2" fill="none" />
   </Svg>
 );
 
-const ChatIcon = ({ size = 20 }: { size?: number }) => (
+const ChatIcon = ({ size = 20, color = '#fff' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="#fff" strokeWidth="2" fill="none" />
+    <Path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke={color} strokeWidth="2" fill="none" />
   </Svg>
 );
 
-const MenuIcon = ({ size = 20 }: { size?: number }) => (
+const MenuIcon = ({ size = 20, color = '#fff' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M3 6h18M3 12h18M3 18h18" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+    <Path d="M3 6h18M3 12h18M3 18h18" stroke={color} strokeWidth="2" strokeLinecap="round" />
   </Svg>
 );
 
 export function RoomHeader() {
+  const { theme } = useThemeCustom();
+  
   return (
-    <View style={styles.container}>
-      <View style={styles.topBar}>
+    <View style={[styles.container, { backgroundColor: theme.primary }]}>
+      <View style={[styles.topBar, { backgroundColor: theme.primary }]}>
         <View style={styles.leftSection}>
-          <HomeIcon size={20} />
-          <Text style={styles.title}>Chat Rooms</Text>
+          <HomeIcon size={20} color={theme.background} />
+          <Text style={[styles.title, { color: theme.background }]}>Chat Rooms</Text>
         </View>
         <View style={styles.rightSection}>
-          <TouchableOpacity style={styles.iconButton}>
-            <ChatIcon size={18} />
+          <TouchableOpacity style={[styles.iconButton, { backgroundColor: theme.secondary }]}>
+            <ChatIcon size={18} color={theme.background} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
-            <MenuIcon size={18} />
+          <TouchableOpacity style={[styles.iconButton, { backgroundColor: theme.secondary }]}>
+            <MenuIcon size={18} color={theme.background} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
-            <MenuIcon size={18} />
+          <TouchableOpacity style={[styles.iconButton, { backgroundColor: theme.secondary }]}>
+            <MenuIcon size={18} color={theme.background} />
           </TouchableOpacity>
         </View>
       </View>
@@ -48,7 +51,6 @@ export function RoomHeader() {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#4A90E2',
     paddingTop: 8,
   },
   topBar: {
@@ -57,7 +59,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: '#4A90E2',
   },
   leftSection: {
     flexDirection: 'row',
@@ -65,7 +66,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   title: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -75,7 +75,6 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     padding: 4,
-    backgroundColor: '#5BA3E8',
     borderRadius: 4,
   },
 });

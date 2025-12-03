@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { useThemeCustom } from '@/theme/provider';
 import { ContactItem } from './ContactItem';
 
 const onlineFriends = [
@@ -31,6 +32,8 @@ const mig33Contacts = [
 ];
 
 export function ContactList() {
+  const { theme } = useThemeCustom();
+  
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.section}>
@@ -44,8 +47,8 @@ export function ContactList() {
         ))}
       </View>
 
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>migx Contacts (0/33)</Text>
+      <View style={[styles.sectionHeader, { backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 }]}>
+        <Text style={[styles.sectionTitle, { color: theme.secondary }]}>migx Contacts (0/33)</Text>
       </View>
 
       <View style={styles.section}>
@@ -70,7 +73,6 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   sectionHeader: {
-    backgroundColor: '#B8E6F7',
     padding: 8,
     marginHorizontal: 8,
     marginVertical: 4,
@@ -78,7 +80,6 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 14,
-    color: '#2C5F7F',
     fontWeight: '600',
   },
 });

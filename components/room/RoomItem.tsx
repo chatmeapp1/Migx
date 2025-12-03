@@ -2,6 +2,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useThemeCustom } from '@/theme/provider';
 import Svg, { Circle } from 'react-native-svg';
 
 interface RoomItemProps {
@@ -9,14 +10,15 @@ interface RoomItemProps {
   userCount: string;
 }
 
-const RoomIcon = ({ size = 18 }: { size?: number }) => (
+const RoomIcon = ({ size = 18, color = '#4A90E2' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Circle cx="12" cy="12" r="10" fill="#4A90E2" />
+    <Circle cx="12" cy="12" r="10" fill={color} />
   </Svg>
 );
 
 export function RoomItem({ name, userCount }: RoomItemProps) {
   const router = useRouter();
+  const { theme } = useThemeCustom();
 
   const handlePress = () => {
     router.push({
@@ -26,12 +28,12 @@ export function RoomItem({ name, userCount }: RoomItemProps) {
   };
 
   return (
-    <TouchableOpacity style={styles.container} onPress={handlePress}>
+    <TouchableOpacity style={[styles.container, { backgroundColor: theme.card }]} onPress={handlePress}>
       <View style={styles.leftSection}>
-        <RoomIcon size={16} />
-        <Text style={styles.name}>{name}</Text>
+        <RoomIcon size={16} color={theme.primary} />
+        <Text style={[styles.name, { color: theme.text }]}>{name}</Text>
       </View>
-      <Text style={styles.userCount}>{userCount}</Text>
+      <Text style={[styles.userCount, { color: theme.secondary }]}>{userCount}</Text>
     </TouchableOpacity>
   );
 }
@@ -43,7 +45,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     paddingHorizontal: 12,
-    backgroundColor: '#E8F4FD',
     marginHorizontal: 8,
     marginBottom: 2,
     borderRadius: 2,
@@ -56,11 +57,9 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 14,
-    color: '#333',
     fontWeight: '500',
   },
   userCount: {
     fontSize: 13,
-    color: '#999',
   },
 });

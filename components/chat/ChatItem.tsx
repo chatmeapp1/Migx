@@ -2,6 +2,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useThemeCustom } from '@/theme/provider';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 interface ChatItemProps {
@@ -14,30 +15,31 @@ interface ChatItemProps {
   tags?: string[];
 }
 
-const UserAvatar = ({ avatar, isOnline }: { avatar?: string; isOnline?: boolean }) => {
+const UserAvatar = ({ avatar, isOnline, theme }: { avatar?: string; isOnline?: boolean; theme: any }) => {
   if (avatar) {
     return (
       <View style={styles.avatarContainer}>
-        <View style={styles.avatarPlaceholder}>
+        <View style={[styles.avatarPlaceholder, { backgroundColor: theme.card }]}>
           <Text style={styles.avatarText}>👤</Text>
         </View>
-        {isOnline && <View style={styles.onlineIndicator} />}
+        {isOnline && <View style={[styles.onlineIndicator, { borderColor: theme.background }]} />}
       </View>
     );
   }
   return null;
 };
 
-const RoomIcon = ({ size = 50 }: { size?: number }) => (
-  <View style={[styles.roomIconContainer, { width: size, height: size }]}>
+const RoomIcon = ({ size = 50, theme }: { size?: number; theme: any }) => (
+  <View style={[styles.roomIconContainer, { width: size, height: size, backgroundColor: theme.primary }]}>
     <Svg width={30} height={30} viewBox="0 0 24 24" fill="none">
-      <Path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="#333" stroke="#333" strokeWidth="2" />
+      <Path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill={theme.background} stroke={theme.background} strokeWidth="2" />
     </Svg>
   </View>
 );
 
 export function ChatItem({ type, name, message, time, isOnline, avatar, tags }: ChatItemProps) {
   const router = useRouter();
+  const { theme } = useThemeCustom();
 
   const handlePress = () => {
     router.push({
@@ -51,30 +53,30 @@ export function ChatItem({ type, name, message, time, isOnline, avatar, tags }: 
   };
 
   return (
-    <TouchableOpacity style={styles.container} onPress={handlePress}>
+    <TouchableOpacity style={[styles.container, { backgroundColor: theme.background, borderBottomColor: theme.border }]} onPress={handlePress}>
       <View style={styles.leftSection}>
         {type === 'user' ? (
-          <UserAvatar avatar={avatar} isOnline={isOnline} />
+          <UserAvatar avatar={avatar} isOnline={isOnline} theme={theme} />
         ) : (
-          <RoomIcon />
+          <RoomIcon theme={theme} />
         )}
         <View style={styles.contentSection}>
           <View style={styles.nameRow}>
-            <Text style={styles.name}>{name}</Text>
+            <Text style={[styles.name, { color: theme.primary }]}>{name}</Text>
             {tags && tags.length > 0 && (
               <View style={styles.tagsContainer}>
                 {tags.map((tag, index) => (
                   <View key={index} style={styles.tag}>
-                    <Text style={styles.tagText}>{tag}</Text>
+                    <Text style={[styles.tagText, { color: theme.background }]}>{tag}</Text>
                   </View>
                 ))}
               </View>
             )}
           </View>
-          {message && <Text style={styles.message} numberOfLines={1}>{message}</Text>}
+          {message && <Text style={[styles.message, { color: theme.secondary }]} numberOfLines={1}>{message}</Text>}
         </View>
       </View>
-      {time && <Text style={styles.time}>{time}</Text>}
+      {time && <Text style={[styles.time, { color: theme.secondary }]}>{time}</Text>}
     </TouchableOpacity>
   );
 }
@@ -86,9 +88,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 16,
-    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#E8E8E8',
   },
   leftSection: {
     flexDirection: 'row',
@@ -103,7 +103,6 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#FFE0E0',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -119,11 +118,9 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     backgroundColor: '#7ED321',
     borderWidth: 2,
-    borderColor: '#fff',
   },
   roomIconContainer: {
     borderRadius: 4,
-    backgroundColor: '#FF3B30',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -139,7 +136,6 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#4A90E2',
   },
   tagsContainer: {
     flexDirection: 'row',
@@ -154,14 +150,11 @@ const styles = StyleSheet.create({
   tagText: {
     fontSize: 11,
     fontWeight: 'bold',
-    color: '#fff',
   },
   message: {
     fontSize: 14,
-    color: '#666',
   },
   time: {
     fontSize: 12,
-    color: '#999',
   },
 });

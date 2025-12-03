@@ -2,6 +2,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useThemeCustom } from '@/theme/provider';
 import { BackIcon, MenuGridIcon } from '@/components/ui/SvgIcons';
 
 interface ChatTab {
@@ -19,15 +20,16 @@ interface ChatRoomHeaderProps {
 
 export function ChatRoomHeader({ tabs, activeTab, onTabChange, onCloseTab }: ChatRoomHeaderProps) {
   const router = useRouter();
+  const { theme } = useThemeCustom();
 
   return (
-    <View style={styles.container}>
-      <View style={styles.topBar}>
+    <View style={[styles.container, { backgroundColor: theme.primary }]}>
+      <View style={[styles.topBar, { backgroundColor: theme.primary }]}>
         <TouchableOpacity 
           onPress={() => router.back()}
           style={styles.iconButton}
         >
-          <BackIcon color="#FFFFFF" size={24} />
+          <BackIcon color={theme.background} size={24} />
         </TouchableOpacity>
         
         <View style={styles.spacer} />
@@ -36,14 +38,14 @@ export function ChatRoomHeader({ tabs, activeTab, onTabChange, onCloseTab }: Cha
           onPress={() => {/* Handle menu grid action */}}
           style={styles.iconButton}
         >
-          <MenuGridIcon color="#FFFFFF" size={24} />
+          <MenuGridIcon color={theme.background} size={24} />
         </TouchableOpacity>
       </View>
 
       <ScrollView 
         horizontal 
         showsHorizontalScrollIndicator={false}
-        style={styles.tabsContainer}
+        style={[styles.tabsContainer, { backgroundColor: theme.primary }]}
       >
         {tabs.map((tab) => (
           <View key={tab.id} style={styles.tabWrapper}>
@@ -56,12 +58,13 @@ export function ChatRoomHeader({ tabs, activeTab, onTabChange, onCloseTab }: Cha
             >
               <Text style={[
                 styles.tabText,
-                activeTab === tab.id && styles.activeTabText,
+                { color: `${theme.background}B3` },
+                activeTab === tab.id && { color: theme.background },
               ]}>
                 {tab.name}
               </Text>
             </TouchableOpacity>
-            {activeTab === tab.id && <View style={styles.activeIndicator} />}
+            {activeTab === tab.id && <View style={[styles.activeIndicator, { backgroundColor: theme.background }]} />}
           </View>
         ))}
       </ScrollView>
@@ -71,7 +74,6 @@ export function ChatRoomHeader({ tabs, activeTab, onTabChange, onCloseTab }: Cha
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#4A90E2',
   },
   topBar: {
     flexDirection: 'row',
@@ -79,7 +81,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 12,
     paddingVertical: 12,
-    backgroundColor: '#4A90E2',
   },
   iconButton: {
     padding: 8,
@@ -89,7 +90,6 @@ const styles = StyleSheet.create({
   },
   tabsContainer: {
     flexDirection: 'row',
-    backgroundColor: '#4A90E2',
   },
   tabWrapper: {
     position: 'relative',
@@ -104,12 +104,7 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: 15,
-    color: 'rgba(255, 255, 255, 0.7)',
     fontWeight: '500',
-  },
-  activeTabText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
   },
   activeIndicator: {
     position: 'absolute',
@@ -117,6 +112,5 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 3,
-    backgroundColor: '#FFFFFF',
   },
 });

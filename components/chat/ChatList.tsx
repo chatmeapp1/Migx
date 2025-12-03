@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
+import { useThemeCustom } from '@/theme/provider';
 import { ChatItem } from './ChatItem';
 
 const chatData = [
@@ -48,8 +49,10 @@ const chatData = [
 ];
 
 export function ChatList() {
+  const { theme } = useThemeCustom();
+  
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {chatData.map((chat, index) => (
           <ChatItem key={index} {...chat} />
@@ -63,7 +66,6 @@ export function ChatList() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   scrollView: {
     flex: 1,

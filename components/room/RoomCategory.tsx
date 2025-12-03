@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useThemeCustom } from '@/theme/provider';
 import Svg, { Path } from 'react-native-svg';
 import { RoomItem } from './RoomItem';
 
@@ -16,38 +17,39 @@ interface RoomCategoryProps {
   isSpecial?: boolean;
 }
 
-const MinusIcon = ({ size = 16 }: { size?: number }) => (
+const MinusIcon = ({ size = 16, color = '#2C5F7F' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M5 12h14" stroke="#2C5F7F" strokeWidth="2" strokeLinecap="round" />
+    <Path d="M5 12h14" stroke={color} strokeWidth="2" strokeLinecap="round" />
   </Svg>
 );
 
-const PlusIcon = ({ size = 16 }: { size?: number }) => (
+const PlusIcon = ({ size = 16, color = '#2C5F7F' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M12 5v14M5 12h14" stroke="#2C5F7F" strokeWidth="2" strokeLinecap="round" />
+    <Path d="M12 5v14M5 12h14" stroke={color} strokeWidth="2" strokeLinecap="round" />
   </Svg>
 );
 
-const ActionIcon = ({ size = 16 }: { size?: number }) => (
+const ActionIcon = ({ size = 16, color = '#00AA00' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M12 5v14M5 12h14" stroke="#00AA00" strokeWidth="2" strokeLinecap="round" />
+    <Path d="M12 5v14M5 12h14" stroke={color} strokeWidth="2" strokeLinecap="round" />
   </Svg>
 );
 
 export function RoomCategory({ title, rooms, backgroundColor = '#B8E6F7', isSpecial = false }: RoomCategoryProps) {
   const [isExpanded, setIsExpanded] = useState(true);
+  const { theme } = useThemeCustom();
 
   return (
     <View style={styles.container}>
       <TouchableOpacity 
-        style={[styles.header, { backgroundColor }]}
+        style={[styles.header, { backgroundColor: backgroundColor === '#B8E6F7' ? theme.card : backgroundColor }]}
         onPress={() => setIsExpanded(!isExpanded)}
       >
         <View style={styles.headerContent}>
-          {isExpanded ? <MinusIcon /> : <PlusIcon />}
-          <Text style={[styles.title, isSpecial && styles.titleSpecial]}>{title}</Text>
+          {isExpanded ? <MinusIcon color={theme.secondary} /> : <PlusIcon color={theme.secondary} />}
+          <Text style={[styles.title, { color: isSpecial ? theme.primary : theme.secondary }]}>{title}</Text>
         </View>
-        {isSpecial && <ActionIcon />}
+        {isSpecial && <ActionIcon color={theme.primary} />}
       </TouchableOpacity>
       
       {isExpanded && (
@@ -84,12 +86,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 14,
-    color: '#2C5F7F',
     fontWeight: '600',
-  },
-  titleSpecial: {
-    color: '#00AA00',
-    fontWeight: 'bold',
   },
   roomList: {
     paddingTop: 2,

@@ -35,6 +35,10 @@ export function ContactList() {
         initialStatus=""
         presenceStatus="online"
       />
+
+      <View style={[styles.sectionHeader, { backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 }]}>
+        <Text style={[styles.sectionTitle, { color: theme.secondary }]}>Email (0)</Text>
+      </View>
       
       <View style={styles.section}>
         {onlineFriends.map((friend, index) => (

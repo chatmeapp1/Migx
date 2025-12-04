@@ -1,7 +1,12 @@
-
 import React, { useState } from 'react';
-import { View, TextInput, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import {
+  View,
+  TextInput,
+  StyleSheet,
+  TouchableOpacity,
+} from 'react-native';
 import { useThemeCustom } from '@/theme/provider';
+
 import Svg, { Path, Circle } from 'react-native-svg';
 import { ChatRoomMenu } from './ChatRoomMenu';
 import { EmojiPicker } from './EmojiPicker';
@@ -10,29 +15,35 @@ interface ChatRoomInputProps {
   onSend: (message: string) => void;
 }
 
-const MenuIcon = ({ size = 20, color = '#666' }: { size?: number; color?: string }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+const MenuIcon = ({ size = 20, color = '#666' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
     <Path d="M3 12h18M3 6h18M3 18h18" stroke={color} strokeWidth="2" strokeLinecap="round" />
   </Svg>
 );
 
-const EmojiIcon = ({ size = 20, color = '#666' }: { size?: number; color?: string }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+const EmojiIcon = ({ size = 20, color = '#666' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
     <Path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" stroke={color} strokeWidth="2" />
     <Path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01" stroke={color} strokeWidth="2" strokeLinecap="round" />
   </Svg>
 );
 
-const CoinIcon = ({ size = 20, color = '#FFD700' }: { size?: number; color?: string }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+const CoinIcon = ({ size = 20, color = '#FFD700' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
     <Circle cx="12" cy="12" r="9" fill={color} stroke="#DAA520" strokeWidth="1.5" />
     <Path d="M12 8v8M9 10h6M9 14h6" stroke="#DAA520" strokeWidth="1.5" strokeLinecap="round" />
   </Svg>
 );
 
-const SendIcon = ({ size = 20, color = '#8B5CF6' }: { size?: number; color?: string }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+const SendIcon = ({ size = 20, color = '#8B5CF6' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Path
+      d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </Svg>
 );
 
@@ -43,55 +54,45 @@ export function ChatRoomInput({ onSend }: ChatRoomInputProps) {
   const { theme } = useThemeCustom();
 
   const handleSend = () => {
-    if (message.trim()) {
-      onSend(message.trim());
-      setMessage('');
-    }
-  };
-
-  const handleMenuItemPress = (action: string) => {
-    console.log('Menu action:', action);
-    // Handle menu actions here
-  };
-
-  const handleEmojiSelect = (emojiCode: string) => {
-    setMessage((prev) => prev + emojiCode + ' ');
-    setEmojiPickerVisible(false);
+    if (!message.trim()) return;
+    onSend(message.trim());
+    setMessage('');
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background, borderTopColor: theme.border }]}>
-      <TouchableOpacity 
-        style={styles.iconButton}
-        onPress={() => setMenuVisible(true)}
-      >
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: theme.background,
+          borderTopColor: theme.border,
+        },
+      ]}
+    >
+      <TouchableOpacity style={styles.iconButton} onPress={() => setMenuVisible(true)}>
         <MenuIcon color={theme.secondary} />
       </TouchableOpacity>
-      
+
       <View style={[styles.inputContainer, { backgroundColor: theme.card }]}>
         <TextInput
           style={[styles.input, { color: theme.text }]}
           placeholder="Type a message..."
           placeholderTextColor={theme.secondary}
+          multiline
           value={message}
           onChangeText={setMessage}
-          multiline
-          maxLength={500}
         />
       </View>
 
       <TouchableOpacity style={styles.iconButton}>
-        <CoinIcon color="#FFD700" />
+        <CoinIcon />
       </TouchableOpacity>
 
-      <TouchableOpacity 
-        style={styles.iconButton}
-        onPress={() => setEmojiPickerVisible(true)}
-      >
+      <TouchableOpacity style={styles.iconButton} onPress={() => setEmojiPickerVisible(true)}>
         <EmojiIcon color={theme.secondary} />
       </TouchableOpacity>
 
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[styles.sendButton, { backgroundColor: theme.card }, !message.trim() && styles.sendButtonDisabled]}
         onPress={handleSend}
         disabled={!message.trim()}
@@ -99,16 +100,16 @@ export function ChatRoomInput({ onSend }: ChatRoomInputProps) {
         <SendIcon color={theme.primary} />
       </TouchableOpacity>
 
-      <ChatRoomMenu
-        visible={menuVisible}
-        onClose={() => setMenuVisible(false)}
-        onMenuItemPress={handleMenuItemPress}
+      <ChatRoomMenu 
+        visible={menuVisible} 
+        onClose={() => setMenuVisible(false)} 
+        onMenuItemPress={(action) => console.log('Menu action:', action)}
       />
 
       <EmojiPicker
         visible={emojiPickerVisible}
         onClose={() => setEmojiPickerVisible(false)}
-        onEmojiSelect={handleEmojiSelect}
+        onEmojiSelect={(emoji) => setMessage(prev => prev + emoji)}
       />
     </View>
   );
@@ -117,7 +118,7 @@ export function ChatRoomInput({ onSend }: ChatRoomInputProps) {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     paddingHorizontal: 8,
     paddingVertical: 8,
     borderTopWidth: 1,
@@ -131,7 +132,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 8,
-    maxHeight: 100,
+    maxHeight: 120,
   },
   input: {
     fontSize: 14,
@@ -141,6 +142,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   sendButtonDisabled: {
-    opacity: 0.5,
+    opacity: 0.4,
   },
 });

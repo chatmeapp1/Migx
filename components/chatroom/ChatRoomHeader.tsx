@@ -23,8 +23,8 @@ export function ChatRoomHeader({ tabs, activeTab, onTabChange, onCloseTab }: Cha
   const { theme } = useThemeCustom();
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.card }]}>
-      <View style={[styles.topBar, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+    <View style={[styles.container, { backgroundColor: '#0a5229' }]}>
+      <View style={[styles.topBar, { backgroundColor: '#0a5229', borderBottomColor: theme.border }]}>
         <TouchableOpacity 
           onPress={() => router.back()}
           style={styles.iconButton}
@@ -45,7 +45,7 @@ export function ChatRoomHeader({ tabs, activeTab, onTabChange, onCloseTab }: Cha
       <ScrollView 
         horizontal 
         showsHorizontalScrollIndicator={false}
-        style={[styles.tabsContainer, { backgroundColor: theme.card }]}
+        style={[styles.tabsContainer, { backgroundColor: '#0a5229' }]}
       >
         {tabs.map((tab) => (
           <View key={tab.id} style={styles.tabWrapper}>

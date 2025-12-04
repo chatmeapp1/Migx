@@ -1,9 +1,10 @@
 
 import React, { useState } from 'react';
-import { View, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, TextInput, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useThemeCustom } from '@/theme/provider';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Path, Circle } from 'react-native-svg';
 import { ChatRoomMenu } from './ChatRoomMenu';
+import { EmojiPicker } from './EmojiPicker';
 
 interface ChatRoomInputProps {
   onSend: (message: string) => void;
@@ -22,6 +23,13 @@ const EmojiIcon = ({ size = 20, color = '#666' }: { size?: number; color?: strin
   </Svg>
 );
 
+const CoinIcon = ({ size = 20, color = '#FFD700' }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="9" fill={color} stroke="#DAA520" strokeWidth="1.5" />
+    <Path d="M12 8v8M9 10h6M9 14h6" stroke="#DAA520" strokeWidth="1.5" strokeLinecap="round" />
+  </Svg>
+);
+
 const SendIcon = ({ size = 20, color = '#8B5CF6' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -31,6 +39,7 @@ const SendIcon = ({ size = 20, color = '#8B5CF6' }: { size?: number; color?: str
 export function ChatRoomInput({ onSend }: ChatRoomInputProps) {
   const [message, setMessage] = useState('');
   const [menuVisible, setMenuVisible] = useState(false);
+  const [emojiPickerVisible, setEmojiPickerVisible] = useState(false);
   const { theme } = useThemeCustom();
 
   const handleSend = () => {
@@ -43,6 +52,11 @@ export function ChatRoomInput({ onSend }: ChatRoomInputProps) {
   const handleMenuItemPress = (action: string) => {
     console.log('Menu action:', action);
     // Handle menu actions here
+  };
+
+  const handleEmojiSelect = (emojiCode: string) => {
+    setMessage((prev) => prev + emojiCode + ' ');
+    setEmojiPickerVisible(false);
   };
 
   return (
@@ -67,6 +81,13 @@ export function ChatRoomInput({ onSend }: ChatRoomInputProps) {
       </View>
 
       <TouchableOpacity style={styles.iconButton}>
+        <CoinIcon color="#FFD700" />
+      </TouchableOpacity>
+
+      <TouchableOpacity 
+        style={styles.iconButton}
+        onPress={() => setEmojiPickerVisible(true)}
+      >
         <EmojiIcon color={theme.secondary} />
       </TouchableOpacity>
 
@@ -82,6 +103,12 @@ export function ChatRoomInput({ onSend }: ChatRoomInputProps) {
         visible={menuVisible}
         onClose={() => setMenuVisible(false)}
         onMenuItemPress={handleMenuItemPress}
+      />
+
+      <EmojiPicker
+        visible={emojiPickerVisible}
+        onClose={() => setEmojiPickerVisible(false)}
+        onEmojiSelect={handleEmojiSelect}
       />
     </View>
   );

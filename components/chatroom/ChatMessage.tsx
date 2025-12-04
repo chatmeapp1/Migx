@@ -1,7 +1,8 @@
 
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
 import { useThemeCustom } from '@/theme/provider';
+import { parseEmojiMessage } from '@/utils/emojiParser';
 
 interface ChatMessageProps {
   username: string;
@@ -30,13 +31,33 @@ export function ChatMessage({ username, message, timestamp, isSystem, isNotice, 
     );
   }
 
+  const parsedMessage = parseEmojiMessage(message);
+
   return (
     <View style={styles.messageContainer}>
       <Text style={[styles.timestamp, { color: theme.secondary }]}>{timestamp}</Text>
       <Text style={[styles.username, { color: getUsernameColor() }]}>
         {username}
       </Text>
-      <Text style={[styles.message, { color: theme.text }]}>{message}</Text>
+      <View style={styles.messageContent}>
+        {parsedMessage.map((item) => {
+          if (item.type === 'emoji') {
+            return (
+              <Image
+                key={item.key}
+                source={item.src}
+                style={styles.emojiImage}
+                resizeMode="contain"
+              />
+            );
+          }
+          return (
+            <Text key={item.key} style={[styles.message, { color: theme.text }]}>
+              {item.content}
+            </Text>
+          );
+        })}
+      </View>
     </View>
   );
 }
@@ -57,9 +78,19 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginRight: 4,
   },
+  messageContent: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    flex: 1,
+  },
   message: {
     fontSize: 13,
-    flex: 1,
+  },
+  emojiImage: {
+    width: 18,
+    height: 18,
+    marginHorizontal: 2,
   },
   noticeContainer: {
     paddingVertical: 8,

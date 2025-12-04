@@ -161,47 +161,47 @@ const CATEGORIES: LeaderboardCategory[] = [
   {
     id: 'top_level',
     title: 'TOP LEVEL',
-    icon: <TrophyIcon size={22} color="#F59E0B" />,
-    backgroundColor: '#FEF3C7',
-    textColor: '#D97706',
+    icon: <TrophyIcon size={22} color="#0D9488" />,
+    backgroundColor: '#CCFBF1',
+    textColor: '#0D9488',
     count: 10,
   },
   {
     id: 'top_gift_sender',
     title: 'TOP GIFT SENDER',
-    icon: <GiftIcon size={22} color="#EC4899" />,
-    backgroundColor: '#FCE7F3',
-    textColor: '#DB2777',
+    icon: <GiftIcon size={22} color="#0D9488" />,
+    backgroundColor: '#CCFBF1',
+    textColor: '#0D9488',
     count: 10,
   },
   {
     id: 'top_gift_receiver',
     title: 'TOP GIFT RECEIVER',
-    icon: <GiftIcon size={22} color="#F43F5E" />,
-    backgroundColor: '#FFE4E6',
-    textColor: '#E11D48',
+    icon: <GiftIcon size={22} color="#0D9488" />,
+    backgroundColor: '#CCFBF1',
+    textColor: '#0D9488',
     count: 10,
   },
   {
     id: 'top_footprint',
     title: 'TOP FOOTPRINT',
-    icon: <FootprintIcon size={22} color="#3B82F6" />,
-    backgroundColor: '#DBEAFE',
-    textColor: '#2563EB',
+    icon: <FootprintIcon size={22} color="#0D9488" />,
+    backgroundColor: '#CCFBF1',
+    textColor: '#0D9488',
     count: 10,
   },
   {
     id: 'top_gamer',
     title: 'TOP GAMER (WEEKLY)',
-    icon: <GamepadIcon size={22} color="#A855F7" />,
-    backgroundColor: '#F3E8FF',
-    textColor: '#9333EA',
+    icon: <GamepadIcon size={22} color="#0D9488" />,
+    backgroundColor: '#CCFBF1',
+    textColor: '#0D9488',
     count: 10,
   },
   {
     id: 'top_get',
     title: 'TOP GET (WEEKLY)',
-    icon: <DiamondIcon size={22} color="#14B8A6" />,
+    icon: <DiamondIcon size={22} color="#0D9488" />,
     backgroundColor: '#CCFBF1',
     textColor: '#0D9488',
     count: 10,
@@ -274,7 +274,7 @@ export default function LeaderboardPage() {
         
         <View style={[styles.modalContainer, { height: SCREEN_HEIGHT * 0.75, backgroundColor: theme.background }]}>
           {/* Header */}
-          <View style={[styles.header, { backgroundColor: '#4A90E2' }]}>
+          <View style={[styles.header, { backgroundColor: '#0a5229' }]}>
             <TouchableOpacity
               style={styles.closeButton}
               onPress={() => router.back()}

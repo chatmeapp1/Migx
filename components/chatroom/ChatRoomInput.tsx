@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { View, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import { useThemeCustom } from '@/theme/provider';
 import Svg, { Path } from 'react-native-svg';
+import { ChatRoomMenu } from './ChatRoomMenu';
 
 interface ChatRoomInputProps {
   onSend: (message: string) => void;
@@ -29,6 +30,7 @@ const SendIcon = ({ size = 20, color = '#8B5CF6' }: { size?: number; color?: str
 
 export function ChatRoomInput({ onSend }: ChatRoomInputProps) {
   const [message, setMessage] = useState('');
+  const [menuVisible, setMenuVisible] = useState(false);
   const { theme } = useThemeCustom();
 
   const handleSend = () => {
@@ -38,9 +40,17 @@ export function ChatRoomInput({ onSend }: ChatRoomInputProps) {
     }
   };
 
+  const handleMenuItemPress = (action: string) => {
+    console.log('Menu action:', action);
+    // Handle menu actions here
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background, borderTopColor: theme.border }]}>
-      <TouchableOpacity style={styles.iconButton}>
+      <TouchableOpacity 
+        style={styles.iconButton}
+        onPress={() => setMenuVisible(true)}
+      >
         <MenuIcon color={theme.secondary} />
       </TouchableOpacity>
       
@@ -67,6 +77,12 @@ export function ChatRoomInput({ onSend }: ChatRoomInputProps) {
       >
         <SendIcon color={theme.primary} />
       </TouchableOpacity>
+
+      <ChatRoomMenu
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        onMenuItemPress={handleMenuItemPress}
+      />
     </View>
   );
 }

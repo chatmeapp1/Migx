@@ -51,8 +51,8 @@ export default function EditProfileScreen() {
           <EditProfileHeader
             username="migX"
             level={1}
-            websiteUrl="@www.migers.net"
-            userId="07071989"
+            websiteUrl="migx"
+            userId="0"
             onBackPress={handleBackPress}
             onBackgroundPress={handleBackgroundPress}
             onAvatarPress={handleAvatarPress}

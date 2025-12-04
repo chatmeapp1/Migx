@@ -26,7 +26,7 @@ export function ChatHeader() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 8,
+    paddingTop: 48,
   },
   statsBar: {
     flexDirection: 'row',

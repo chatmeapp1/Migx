@@ -30,7 +30,7 @@ export function EmojiPicker({ visible, onClose, onEmojiSelect }: EmojiPickerProp
         onPress={onClose}
       >
         <TouchableOpacity 
-          style={[styles.container, { backgroundColor: theme.card }]}
+          style={[styles.container, { backgroundColor: theme.card + 'E6' }]}
           activeOpacity={1}
         >
           <View style={[styles.header, { borderBottomColor: theme.border }]}>
@@ -69,52 +69,52 @@ export function EmojiPicker({ visible, onClose, onEmojiSelect }: EmojiPickerProp
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
     justifyContent: 'flex-end',
   },
   container: {
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: '70%',
-    paddingBottom: 20,
+    maxHeight: '40%',
+    paddingBottom: 16,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
   },
   title: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
   },
   closeButton: {
     padding: 4,
   },
   closeText: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
   },
   scrollView: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
   },
   emojiGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingVertical: 12,
-    gap: 8,
+    paddingVertical: 8,
+    gap: 4,
   },
   emojiButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 8,
+    width: 32,
+    height: 32,
+    borderRadius: 4,
     justifyContent: 'center',
     alignItems: 'center',
   },
   emojiImage: {
-    width: 40,
-    height: 40,
+    width: 18,
+    height: 18,
   },
 });

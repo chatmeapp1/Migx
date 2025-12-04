@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import Svg, { Path, Circle, Rect, G } from 'react-native-svg';
+import Svg, { Path, Circle, Rect } from 'react-native-svg';
 
 interface IconProps {
   size?: number;
@@ -8,13 +8,13 @@ interface IconProps {
   bgColor?: string;
 }
 
-const IconWrapper = ({ size = 40, bgColor = '#fff', children }: { size?: number; bgColor?: string; children: React.ReactNode }) => (
+const IconWrapper = ({ size = 32, bgColor = '#e8e8e8', children }: { size?: number; bgColor?: string; children: React.ReactNode }) => (
   <View style={[styles.iconWrapper, { width: size, height: size, borderRadius: size / 2, backgroundColor: bgColor }]}>
     {children}
   </View>
 );
 
-export const CmdIcon = ({ size = 40, color = '#555', bgColor = '#fff' }: IconProps) => (
+export const CmdIcon = ({ size = 32, color = '#555', bgColor = '#e8e8e8' }: IconProps) => (
   <IconWrapper size={size} bgColor={bgColor}>
     <Svg width={size * 0.5} height={size * 0.5} viewBox="0 0 24 24" fill="none">
       <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2" />
@@ -24,7 +24,7 @@ export const CmdIcon = ({ size = 40, color = '#555', bgColor = '#fff' }: IconPro
   </IconWrapper>
 );
 
-export const SendGiftIcon = ({ size = 40, color = '#555', bgColor = '#fff' }: IconProps) => (
+export const SendGiftIcon = ({ size = 32, color = '#555', bgColor = '#e8e8e8' }: IconProps) => (
   <IconWrapper size={size} bgColor={bgColor}>
     <Svg width={size * 0.5} height={size * 0.5} viewBox="0 0 24 24" fill="none">
       <Rect x="3" y="8" width="18" height="13" rx="2" stroke={color} strokeWidth="2" />
@@ -35,31 +35,26 @@ export const SendGiftIcon = ({ size = 40, color = '#555', bgColor = '#fff' }: Ic
   </IconWrapper>
 );
 
-export const KickIcon = ({ size = 40, color = '#555', bgColor = '#fff' }: IconProps) => (
+export const KickIcon = ({ size = 32, color = '#555', bgColor = '#e8e8e8' }: IconProps) => (
   <IconWrapper size={size} bgColor={bgColor}>
     <Svg width={size * 0.5} height={size * 0.5} viewBox="0 0 24 24" fill="none">
       <Path d="M12 2L9 9l-7 1 5 5-1 7 6-3 6 3-1-7 5-5-7-1-3-7z" stroke={color} strokeWidth="2" strokeLinejoin="round" />
-      <Path d="M12 8v4M10 10h4" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
     </Svg>
   </IconWrapper>
 );
 
-export const ParticipantsIcon = ({ size = 40, color = '#555', bgColor = '#fff' }: IconProps) => (
+export const ParticipantsIcon = ({ size = 32, color = '#555', bgColor = '#e8e8e8' }: IconProps) => (
   <IconWrapper size={size} bgColor={bgColor}>
     <Svg width={size * 0.5} height={size * 0.5} viewBox="0 0 24 24" fill="none">
       <Rect x="3" y="3" width="8" height="8" rx="2" stroke={color} strokeWidth="2" />
       <Rect x="13" y="3" width="8" height="8" rx="2" stroke={color} strokeWidth="2" />
       <Rect x="3" y="13" width="8" height="8" rx="2" stroke={color} strokeWidth="2" />
       <Rect x="13" y="13" width="8" height="8" rx="2" stroke={color} strokeWidth="2" />
-      <Circle cx="7" cy="7" r="1.5" fill={color} />
-      <Circle cx="17" cy="7" r="1.5" fill={color} />
-      <Circle cx="7" cy="17" r="1.5" fill={color} />
-      <Circle cx="17" cy="17" r="1.5" fill={color} />
     </Svg>
   </IconWrapper>
 );
 
-export const RoomInfoIcon = ({ size = 40, color = '#555', bgColor = '#fff' }: IconProps) => (
+export const RoomInfoIcon = ({ size = 32, color = '#555', bgColor = '#e8e8e8' }: IconProps) => (
   <IconWrapper size={size} bgColor={bgColor}>
     <Svg width={size * 0.5} height={size * 0.5} viewBox="0 0 24 24" fill="none">
       <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2" />
@@ -69,7 +64,7 @@ export const RoomInfoIcon = ({ size = 40, color = '#555', bgColor = '#fff' }: Ic
   </IconWrapper>
 );
 
-export const FavoriteIcon = ({ size = 40, color = '#555', bgColor = '#fff' }: IconProps) => (
+export const FavoriteIcon = ({ size = 32, color = '#555', bgColor = '#e8e8e8' }: IconProps) => (
   <IconWrapper size={size} bgColor={bgColor}>
     <Svg width={size * 0.5} height={size * 0.5} viewBox="0 0 24 24" fill="none">
       <Path 
@@ -79,12 +74,11 @@ export const FavoriteIcon = ({ size = 40, color = '#555', bgColor = '#fff' }: Ic
         strokeLinecap="round" 
         strokeLinejoin="round" 
       />
-      <Path d="M12 8v6M9 11h6" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
     </Svg>
   </IconWrapper>
 );
 
-export const GroupsIcon = ({ size = 40, color = '#555', bgColor = '#fff' }: IconProps) => (
+export const GroupsIcon = ({ size = 32, color = '#555', bgColor = '#e8e8e8' }: IconProps) => (
   <IconWrapper size={size} bgColor={bgColor}>
     <Svg width={size * 0.5} height={size * 0.5} viewBox="0 0 24 24" fill="none">
       <Circle cx="9" cy="7" r="3" stroke={color} strokeWidth="2" />
@@ -96,7 +90,7 @@ export const GroupsIcon = ({ size = 40, color = '#555', bgColor = '#fff' }: Icon
   </IconWrapper>
 );
 
-export const ReportIcon = ({ size = 40, color = '#555', bgColor = '#fff' }: IconProps) => (
+export const ReportIcon = ({ size = 32, color = '#555', bgColor = '#e8e8e8' }: IconProps) => (
   <IconWrapper size={size} bgColor={bgColor}>
     <Svg width={size * 0.5} height={size * 0.5} viewBox="0 0 24 24" fill="none">
       <Path 
@@ -112,7 +106,7 @@ export const ReportIcon = ({ size = 40, color = '#555', bgColor = '#fff' }: Icon
   </IconWrapper>
 );
 
-export const LeaveRoomIcon = ({ size = 40, color = '#EF4444', bgColor = '#fff' }: IconProps) => (
+export const LeaveRoomIcon = ({ size = 32, color = '#EF4444', bgColor = '#e8e8e8' }: IconProps) => (
   <IconWrapper size={size} bgColor={bgColor}>
     <Svg width={size * 0.5} height={size * 0.5} viewBox="0 0 24 24" fill="none">
       <Path

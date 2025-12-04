@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
 import { useThemeCustom } from '@/theme/provider';
 import { parseEmojiMessage } from '@/utils/emojiParser';
+import { roleColors } from '@/utils/roleColors';
 
 interface ChatMessageProps {
   username: string;
@@ -9,7 +10,7 @@ interface ChatMessageProps {
   timestamp: string;
   isSystem?: boolean;
   isNotice?: boolean;
-  userType?: 'creator' | 'admin' | 'normal';
+  userType?: 'creator' | 'admin' | 'normal' | 'mentor' | 'merchant';
   isOwnMessage?: boolean;
 }
 
@@ -26,11 +27,13 @@ export function ChatMessage({
   const { theme } = useThemeCustom();
 
   const getUsernameColor = () => {
-    if (isSystem) return '#FF8C00';
-    if (userType === 'creator') return '#FF8C00';
-    if (userType === 'admin') return '#FF8C00';
-    if (isOwnMessage) return '#2d7a4f';
-    return '#2d7a4f';
+    if (isOwnMessage) return roleColors.own;
+    if (isSystem) return roleColors.system;
+    if (userType === 'creator') return roleColors.creator;
+    if (userType === 'admin') return roleColors.admin;
+    if (userType === 'mentor') return roleColors.mentor;
+    if (userType === 'merchant') return roleColors.merchant;
+    return roleColors.normal;
   };
 
   const getMessageColor = () => '#000000';

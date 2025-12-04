@@ -31,21 +31,21 @@ export default function ChatRoomScreen() {
           id: '1',
           username: 'Indonesia',
           message: 'Welcome to Indonesia...',
-          timestamp: '[02:05]:',
+          timestamp: '',
           isSystem: true,
         },
         {
           id: '2',
           username: 'Indonesia',
           message: 'Currently users in the room: migx, mad',
-          timestamp: '[02:05]:',
+          timestamp: '',
           isSystem: true,
         },
         {
           id: '3',
           username: 'Indonesia',
           message: 'This room created by migx',
-          timestamp: '[02:05]:',
+          timestamp: '',
           isSystem: true,
         },
         {
@@ -75,7 +75,7 @@ export default function ChatRoomScreen() {
         id: Date.now().toString(),
         username: 'You',
         message,
-        timestamp: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
+        timestamp: '',
         userType: 'normal' as const,
       };
 

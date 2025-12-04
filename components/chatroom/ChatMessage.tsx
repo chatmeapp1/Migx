@@ -35,7 +35,6 @@ export function ChatMessage({ username, message, timestamp, isSystem, isNotice, 
 
   return (
     <View style={styles.messageContainer}>
-      <Text style={[styles.timestamp, { color: theme.secondary }]}>{timestamp}</Text>
       <Text style={[styles.username, { color: getUsernameColor() }]}>
         {username}
       </Text>
@@ -68,10 +67,6 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 12,
     flexWrap: 'wrap',
-  },
-  timestamp: {
-    fontSize: 13,
-    marginRight: 4,
   },
   username: {
     fontSize: 13,

@@ -35,7 +35,7 @@ const CoinIcon = ({ size = 20, color = '#FFD700' }) => (
   </Svg>
 );
 
-const SendIcon = ({ size = 20, color = '#8B5CF6' }) => (
+const SendIcon = ({ size = 22, color = '#8B5CF6' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24">
     <Path
       d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"
@@ -60,15 +60,7 @@ export function ChatRoomInput({ onSend }: ChatRoomInputProps) {
   };
 
   return (
-    <View
-      style={[
-        styles.container,
-        {
-          backgroundColor: theme.background,
-          borderTopColor: theme.border,
-        },
-      ]}
-    >
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <TouchableOpacity style={styles.iconButton} onPress={() => setMenuVisible(true)}>
         <MenuIcon color={theme.secondary} />
       </TouchableOpacity>
@@ -78,7 +70,6 @@ export function ChatRoomInput({ onSend }: ChatRoomInputProps) {
           style={[styles.input, { color: theme.text }]}
           placeholder="Type a message..."
           placeholderTextColor={theme.secondary}
-          multiline
           value={message}
           onChangeText={setMessage}
         />
@@ -93,11 +84,11 @@ export function ChatRoomInput({ onSend }: ChatRoomInputProps) {
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={[styles.sendButton, { backgroundColor: theme.card }, !message.trim() && styles.sendButtonDisabled]}
+        style={styles.sendButton}
         onPress={handleSend}
         disabled={!message.trim()}
       >
-        <SendIcon color={theme.primary} />
+        <SendIcon color={message.trim() ? theme.primary : theme.secondary} />
       </TouchableOpacity>
 
       <ChatRoomMenu 
@@ -118,30 +109,25 @@ export function ChatRoomInput({ onSend }: ChatRoomInputProps) {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     paddingHorizontal: 8,
-    paddingVertical: 8,
-    borderTopWidth: 1,
-    gap: 8,
+    paddingVertical: 6,
+    gap: 6,
   },
   iconButton: {
-    padding: 8,
+    padding: 6,
   },
   inputContainer: {
     flex: 1,
     borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    maxHeight: 120,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
   },
   input: {
     fontSize: 14,
+    minHeight: 24,
   },
   sendButton: {
-    padding: 8,
-    borderRadius: 20,
-  },
-  sendButtonDisabled: {
-    opacity: 0.4,
+    padding: 6,
   },
 });

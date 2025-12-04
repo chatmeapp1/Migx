@@ -1,17 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   StyleSheet,
+  StatusBar,
   Platform,
   Keyboard,
-  StatusBar,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withTiming,
-} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeCustom } from '@/theme/provider';
 
@@ -36,35 +31,21 @@ export default function ChatRoomScreen() {
 
   const roomId = params.id as string;
   const roomName = (params.name as string) || 'Mobile fun';
-
-  const keyboardHeight = useSharedValue(0);
-  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
-    const showSubscription = Keyboard.addListener(showEvent, (e) => {
-      setIsKeyboardVisible(true);
-      keyboardHeight.value = withTiming(e.endCoordinates.height, { duration: 250 });
-    });
-
-    const hideSubscription = Keyboard.addListener(hideEvent, () => {
-      setIsKeyboardVisible(false);
-      keyboardHeight.value = withTiming(0, { duration: 250 });
-    });
+    const showSub = Keyboard.addListener(showEvent, () => setKeyboardVisible(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardVisible(false));
 
     return () => {
-      showSubscription.remove();
-      hideSubscription.remove();
+      showSub.remove();
+      hideSub.remove();
     };
   }, []);
-
-  const inputAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ translateY: -keyboardHeight.value }],
-    };
-  });
 
   const [tabs, setTabs] = useState<ChatTab[]>([
     {
@@ -122,18 +103,17 @@ export default function ChatRoomScreen() {
         )}
       </View>
 
-      <Animated.View 
+      <View 
         style={[
-          styles.inputWrapper,
+          styles.inputWrapper, 
           { 
             backgroundColor: HEADER_COLOR,
-            paddingBottom: isKeyboardVisible ? 0 : insets.bottom,
-          },
-          inputAnimatedStyle,
+            paddingBottom: keyboardVisible ? 0 : insets.bottom,
+          }
         ]}
       >
         <ChatRoomInput onSend={handleSendMessage} />
-      </Animated.View>
+      </View>
     </View>
   );
 }
@@ -146,9 +126,5 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   inputWrapper: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
   },
 });

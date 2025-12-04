@@ -15,6 +15,7 @@ import { GiftModal } from './GiftModal';
 
 interface ChatRoomInputProps {
   onSend: (message: string) => void;
+  onMenuItemPress?: (action: string) => void;
 }
 
 const MenuIcon = ({ size = 20, color = '#666' }) => (
@@ -49,7 +50,7 @@ const SendIcon = ({ size = 22, color = '#8B5CF6' }) => (
   </Svg>
 );
 
-export function ChatRoomInput({ onSend }: ChatRoomInputProps) {
+export function ChatRoomInput({ onSend, onMenuItemPress: externalMenuItemPress }: ChatRoomInputProps) {
   const [message, setMessage] = useState('');
   const [menuVisible, setMenuVisible] = useState(false);
   const [emojiVisible, setEmojiVisible] = useState(false);
@@ -77,6 +78,8 @@ export function ChatRoomInput({ onSend }: ChatRoomInputProps) {
       setCmdListVisible(true);
     } else if (action === 'send-gift') {
       setGiftModalVisible(true);
+    } else if (externalMenuItemPress) {
+      externalMenuItemPress(action);
     }
   };
 

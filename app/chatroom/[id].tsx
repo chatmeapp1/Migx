@@ -5,14 +5,18 @@ import {
   StatusBar,
   Platform,
   Keyboard,
+  Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeCustom } from '@/theme/provider';
+import { io, Socket } from 'socket.io-client';
 
 import { ChatRoomHeader } from '@/components/chatroom/ChatRoomHeader';
 import { ChatRoomContent } from '@/components/chatroom/ChatRoomContent';
 import { ChatRoomInput } from '@/components/chatroom/ChatRoomInput';
+import { MenuKickModal } from '@/components/chatroom/MenuKickModal';
+import { VoteKickButton } from '@/components/chatroom/VoteKickButton';
 
 interface ChatTab {
   id: string;
@@ -33,6 +37,69 @@ export default function ChatRoomScreen() {
   const roomName = (params.name as string) || 'Mobile fun';
   
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [currentUsername, setCurrentUsername] = useState('migx'); // Replace with actual username
+  const [isAdmin, setIsAdmin] = useState(false); // Replace with actual admin status
+  const [roomUsers, setRoomUsers] = useState<string[]>(['migx', 'mad', 'user1', 'user2']);
+  const [kickModalVisible, setKickModalVisible] = useState(false);
+  const [activeVote, setActiveVote] = useState<{
+    target: string;
+    remainingVotes: number;
+    remainingSeconds: number;
+  } | null>(null);
+  const [hasVoted, setHasVoted] = useState(false);
+
+  // Initialize socket connection
+  useEffect(() => {
+    const newSocket = io('YOUR_SOCKET_SERVER_URL', {
+      transports: ['websocket'],
+    });
+
+    newSocket.on('connect', () => {
+      console.log('Socket connected');
+      newSocket.emit('join-room', { roomId, username: currentUsername });
+    });
+
+    newSocket.on('system-message', (data: { message: string }) => {
+      addSystemMessage(data.message);
+    });
+
+    newSocket.on('vote-started', (data: { target: string; remainingVotes: number; remainingSeconds: number }) => {
+      setActiveVote(data);
+      setHasVoted(false);
+    });
+
+    newSocket.on('vote-updated', (data: { remainingVotes: number; remainingSeconds: number }) => {
+      setActiveVote(prev => prev ? { ...prev, ...data } : null);
+    });
+
+    newSocket.on('vote-ended', () => {
+      setActiveVote(null);
+      setHasVoted(false);
+    });
+
+    newSocket.on('force-kick', (data: { target: string }) => {
+      if (data.target === currentUsername) {
+        Alert.alert('Kicked', 'You have been kicked from the room', [
+          {
+            text: 'OK',
+            onPress: () => router.back(),
+          },
+        ]);
+      }
+    });
+
+    newSocket.on('room-users', (data: { users: string[] }) => {
+      setRoomUsers(data.users);
+    });
+
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.emit('leave-room', { roomId, username: currentUsername });
+      newSocket.close();
+    };
+  }, [roomId, currentUsername]);
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
@@ -64,6 +131,21 @@ export default function ChatRoomScreen() {
 
   const [activeTab, setActiveTab] = useState(roomId);
 
+  const addSystemMessage = (message: string) => {
+    const index = tabs.findIndex(t => t.id === activeTab);
+    if (index === -1) return;
+
+    const copy = [...tabs];
+    copy[index].messages.push({
+      id: Date.now().toString(),
+      username: 'Indonesia',
+      message,
+      isSystem: true,
+    });
+
+    setTabs(copy);
+  };
+
   const handleSendMessage = (message: string) => {
     const index = tabs.findIndex(t => t.id === activeTab);
     if (index === -1) return;
@@ -77,6 +159,78 @@ export default function ChatRoomScreen() {
     });
 
     setTabs(copy);
+  };
+
+  const handleKickMenuPress = () => {
+    setKickModalVisible(true);
+  };
+
+  const handleSelectUserToKick = (target: string) => {
+    if (isAdmin) {
+      // Admin kick directly
+      Alert.alert(
+        'Admin Kick',
+        `Kick ${target} from the room?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Kick',
+            style: 'destructive',
+            onPress: () => handleAdminKick(target),
+          },
+        ]
+      );
+    } else {
+      // Regular user needs to pay for vote
+      Alert.alert(
+        'Start Vote Kick',
+        `Kick ${target} for 500 IDR?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Start Vote',
+            onPress: () => handleStartKick(target),
+          },
+        ]
+      );
+    }
+  };
+
+  const handleStartKick = (target: string) => {
+    if (!socket) return;
+    
+    socket.emit('kick-start', {
+      roomId,
+      startedBy: currentUsername,
+      target,
+    });
+  };
+
+  const handleAdminKick = (target: string) => {
+    if (!socket) return;
+    
+    socket.emit('admin-kick', {
+      roomId,
+      target,
+    });
+  };
+
+  const handleVoteKick = () => {
+    if (!socket || !activeVote || hasVoted) return;
+    
+    socket.emit('kick-vote', {
+      roomId,
+      username: currentUsername,
+      target: activeVote.target,
+    });
+    
+    setHasVoted(true);
+  };
+
+  const handleMenuItemPress = (action: string) => {
+    if (action === 'kick') {
+      handleKickMenuPress();
+    }
   };
 
   const currentTab = tabs.find(t => t.id === activeTab);
@@ -98,6 +252,15 @@ export default function ChatRoomScreen() {
       />
 
       <View style={[styles.contentContainer, { backgroundColor: theme.background }]}>
+        {activeVote && (
+          <VoteKickButton
+            target={activeVote.target}
+            remainingVotes={activeVote.remainingVotes}
+            remainingSeconds={activeVote.remainingSeconds}
+            hasVoted={hasVoted}
+            onVote={handleVoteKick}
+          />
+        )}
         {currentTab && (
           <ChatRoomContent messages={currentTab.messages} />
         )}
@@ -112,8 +275,19 @@ export default function ChatRoomScreen() {
           }
         ]}
       >
-        <ChatRoomInput onSend={handleSendMessage} />
+        <ChatRoomInput 
+          onSend={handleSendMessage} 
+          onMenuItemPress={handleMenuItemPress}
+        />
       </View>
+
+      <MenuKickModal
+        visible={kickModalVisible}
+        onClose={() => setKickModalVisible(false)}
+        users={roomUsers}
+        currentUsername={currentUsername}
+        onSelectUser={handleSelectUserToKick}
+      />
     </View>
   );
 }

@@ -1,12 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, View, KeyboardAvoidingView, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useThemeCustom } from '@/theme/provider';
 import { ChatRoomHeader } from '@/components/chatroom/ChatRoomHeader';
 import { ChatRoomContent } from '@/components/chatroom/ChatRoomContent';
 import { ChatRoomInput } from '@/components/chatroom/ChatRoomInput';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 
 interface ChatTab {
   id: string;
@@ -21,34 +20,6 @@ export default function ChatRoomScreen() {
   const { theme } = useThemeCustom();
   const roomId = params.id as string;
   const roomName = params.name as string || 'Mobile fun';
-  
-  const keyboardHeight = useSharedValue(0);
-
-  useEffect(() => {
-    const showSubscription = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      (e) => {
-        keyboardHeight.value = withTiming(e.endCoordinates.height, { duration: 250 });
-      }
-    );
-    const hideSubscription = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-      () => {
-        keyboardHeight.value = withTiming(0, { duration: 250 });
-      }
-    );
-
-    return () => {
-      showSubscription.remove();
-      hideSubscription.remove();
-    };
-  }, []);
-
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      paddingBottom: keyboardHeight.value,
-    };
-  });
 
   const [tabs, setTabs] = useState<ChatTab[]>([
     {
@@ -139,7 +110,11 @@ export default function ChatRoomScreen() {
   const currentTab = tabs.find(tab => tab.id === activeTab);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <KeyboardAvoidingView 
+      style={[styles.container, { backgroundColor: theme.background }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={0}
+    >
       <ChatRoomHeader
         tabs={tabs}
         activeTab={activeTab}
@@ -149,12 +124,10 @@ export default function ChatRoomScreen() {
       {currentTab && (
         <>
           <ChatRoomContent messages={currentTab.messages} />
-          <Animated.View style={animatedStyle}>
-            <ChatRoomInput onSend={handleSendMessage} />
-          </Animated.View>
+          <ChatRoomInput onSend={handleSendMessage} />
         </>
       )}
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

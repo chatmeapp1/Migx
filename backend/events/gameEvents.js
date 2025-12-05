@@ -1,6 +1,6 @@
-const gameService = require('./services/gameService');
-const creditService = require('./services/creditService');
-const merchantService = require('./services/merchantService');
+const gameService = require('../services/gameService');
+const creditService = require('../services/creditService');
+const merchantService = require('../services/merchantService');
 
 module.exports = (io, socket) => {
   const playGame = async (data) => {

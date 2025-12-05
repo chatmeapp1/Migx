@@ -1,9 +1,9 @@
-const { query, getClient } = require('./db/db');
-const { generateGameId } = require('./utils/idGenerator');
-const { checkGameLimit } = require('./utils/floodControl');
+const { query, getClient } = require('../db/db');
+const { generateGameId } = require('../utils/idGenerator');
+const { checkGameLimit } = require('../utils/floodControl');
 const creditService = require('./creditService');
 const merchantService = require('./merchantService');
-const { addXp, XP_REWARDS } = require('./utils/xpLeveling');
+const { addXp, XP_REWARDS } = require('../utils/xpLeveling');
 
 const GAME_TYPES = {
   COIN_FLIP: 'coin_flip',

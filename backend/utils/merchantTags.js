@@ -1,4 +1,4 @@
-const { client } = require('./redis');
+const { client } = require('../redis');
 
 const MERCHANT_INCOME_KEY = (merchantId) => `merchant:${merchantId}:income`;
 const MERCHANT_DAILY_KEY = (merchantId, date) => `merchant:${merchantId}:daily:${date}`;

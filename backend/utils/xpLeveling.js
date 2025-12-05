@@ -1,5 +1,5 @@
-const { query } = require('./db/db');
-const { client } = require('./redis');
+const { query } = require('../db/db');
+const { client } = require('../redis');
 
 const XP_REWARDS = {
   SEND_MESSAGE: 1,

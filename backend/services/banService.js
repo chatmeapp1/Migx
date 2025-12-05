@@ -1,5 +1,5 @@
-const { query } = require('./db/db');
-const presence = require('./utils/presence');
+const { query } = require('../db/db');
+const presence = require('../utils/presence');
 
 const banUserFromRoom = async (roomId, userId, username, bannedBy, reason = null, duration = null) => {
   try {

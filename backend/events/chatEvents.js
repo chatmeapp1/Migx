@@ -1,7 +1,7 @@
-const messageService = require('./services/messageService');
-const { checkFlood, checkGlobalRateLimit } = require('./utils/floodControl');
-const { generateMessageId } = require('./utils/idGenerator');
-const { addXp, XP_REWARDS } = require('./utils/xpLeveling');
+const messageService = require('../services/messageService');
+const { checkFlood, checkGlobalRateLimit } = require('../utils/floodControl');
+const { generateMessageId } = require('../utils/idGenerator');
+const { addXp, XP_REWARDS } = require('../utils/xpLeveling');
 
 module.exports = (io, socket) => {
   const sendMessage = async (data) => {

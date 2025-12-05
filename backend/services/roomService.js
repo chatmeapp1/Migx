@@ -1,5 +1,5 @@
-const { query } = require('../db/db');
-const presence = require('../utils/presence');
+const { query } = require('./db/db');
+const presence = require('./utils/presence');
 
 const createRoom = async (name, ownerId, description = '', maxUsers = 50, isPrivate = false, password = null) => {
   try {

@@ -1,8 +1,8 @@
-const messageService = require('../services/messageService');
-const userService = require('../services/userService');
-const { getUserSocket } = require('../utils/presence');
-const { generateMessageId } = require('../utils/idGenerator');
-const { checkGlobalRateLimit } = require('../utils/floodControl');
+const messageService = require('./services/messageService');
+const userService = require('./services/userService');
+const { getUserSocket } = require('./utils/presence');
+const { generateMessageId } = require('./utils/idGenerator');
+const { checkGlobalRateLimit } = require('./utils/floodControl');
 
 module.exports = (io, socket) => {
   const sendPrivateMessage = async (data) => {

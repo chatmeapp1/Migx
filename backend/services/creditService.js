@@ -1,6 +1,6 @@
-const { query, getClient } = require('../db/db');
-const { generateTransactionId } = require('../utils/idGenerator');
-const { checkTransferLimit } = require('../utils/floodControl');
+const { query, getClient } = require('./db/db');
+const { generateTransactionId } = require('./utils/idGenerator');
+const { checkTransferLimit } = require('./utils/floodControl');
 
 const transferCredits = async (fromUserId, toUserId, amount, description = null) => {
   const client = await getClient();

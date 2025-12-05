@@ -1,5 +1,5 @@
-const { query } = require('../db/db');
-const { generateMessageId } = require('../utils/idGenerator');
+const { query } = require('./db/db');
+const { generateMessageId } = require('./utils/idGenerator');
 
 const saveMessage = async (roomId, userId, username, message, messageType = 'chat') => {
   try {

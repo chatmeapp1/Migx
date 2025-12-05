@@ -1,4 +1,4 @@
-const { client } = require('../redis');
+const { client } = require('./redis');
 
 const ROOM_USERS_KEY = (roomId) => `room:${roomId}:users`;
 const ROOM_BANNED_KEY = (roomId) => `room:${roomId}:banned`;

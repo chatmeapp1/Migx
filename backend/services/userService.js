@@ -1,5 +1,5 @@
-const { query } = require('../db/db');
-const { setUserStatus, getUserStatus, setUserSocket, removeUserSocket } = require('../utils/presence');
+const { query } = require('./db/db');
+const { setUserStatus, getUserStatus, setUserSocket, removeUserSocket } = require('./utils/presence');
 
 const createUser = async (username, password = null, email = null) => {
   try {

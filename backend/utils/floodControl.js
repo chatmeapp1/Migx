@@ -1,4 +1,4 @@
-const { client } = require('../redis');
+const { client } = require('./redis');
 
 const FLOOD_KEY = (userId, roomId) => `flood:${userId}:${roomId}`;
 const FLOOD_TTL_MS = 700;

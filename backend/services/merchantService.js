@@ -1,6 +1,6 @@
-const { query, getClient } = require('../db/db');
-const { client } = require('../redis');
-const { calculateCommission, addMerchantIncome, getMerchantIncome, getMerchantStats, getMerchantTag } = require('../utils/merchantTags');
+const { query, getClient } = require('./db/db');
+const { client } = require('./redis');
+const { calculateCommission, addMerchantIncome, getMerchantIncome, getMerchantStats, getMerchantTag } = require('./utils/merchantTags');
 
 const createMerchant = async (userId, mentorId, commissionRate = 30) => {
   try {

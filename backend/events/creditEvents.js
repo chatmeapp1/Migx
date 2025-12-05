@@ -1,8 +1,8 @@
-const creditService = require('../services/creditService');
-const messageService = require('../services/messageService');
-const userService = require('../services/userService');
-const { getUserSocket } = require('../utils/presence');
-const { addXp, XP_REWARDS } = require('../utils/xpLeveling');
+const creditService = require('./services/creditService');
+const messageService = require('./services/messageService');
+const userService = require('./services/userService');
+const { getUserSocket } = require('./utils/presence');
+const { addXp, XP_REWARDS } = require('./utils/xpLeveling');
 
 module.exports = (io, socket) => {
   const transferCredits = async (data) => {

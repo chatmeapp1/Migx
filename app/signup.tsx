@@ -16,6 +16,18 @@ import {
 import { router } from 'expo-router';
 import { Picker } from '@react-native-picker/picker';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { API_ENDPOINTS } from '@/utils/api';
+
+interface Country {
+  code: string;
+  name: string;
+}
+
+interface Gender {
+  value: string;
+  label: string;
+}
 
 export default function SignupScreen() {
   const [username, setUsername] = useState('');
@@ -23,9 +35,10 @@ export default function SignupScreen() {
   const [email, setEmail] = useState('');
   const [country, setCountry] = useState('');
   const [gender, setGender] = useState('');
-  const [countries, setCountries] = useState([]);
-  const [genders, setGenders] = useState([]);
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [genders, setGenders] = useState<Gender[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const fadeAnim = new Animated.Value(0);
   const slideAnim = new Animated.Value(50);
@@ -51,8 +64,8 @@ export default function SignupScreen() {
   const loadFormData = async () => {
     try {
       const [countriesRes, gendersRes] = await Promise.all([
-        fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/auth/countries`),
-        fetch(`${process.env.EXPO_PUBLIC_API_URL}/api/auth/genders`)
+        fetch(API_ENDPOINTS.AUTH.COUNTRIES),
+        fetch(API_ENDPOINTS.AUTH.GENDERS)
       ]);
 
       const countriesData = await countriesRes.json();
@@ -65,7 +78,7 @@ export default function SignupScreen() {
     }
   };
 
-  const validateEmail = (email) => {
+  const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return { valid: false, message: 'Invalid email format' };
@@ -81,10 +94,10 @@ export default function SignupScreen() {
       };
     }
 
-    return { valid: true };
+    return { valid: true, message: '' };
   };
 
-  const validateUsername = (username) => {
+  const validateUsername = (username: string) => {
     const usernameRegex = /^[a-z][a-z0-9._]{5,31}$/;
     
     if (!usernameRegex.test(username)) {
@@ -94,37 +107,32 @@ export default function SignupScreen() {
       };
     }
 
-    return { valid: true };
+    return { valid: true, message: '' };
   };
 
   const handleSignup = async () => {
-    // Validate username
     const usernameValidation = validateUsername(username);
     if (!usernameValidation.valid) {
       Alert.alert('Invalid Username', usernameValidation.message);
       return;
     }
 
-    // Validate email
     const emailValidation = validateEmail(email);
     if (!emailValidation.valid) {
       Alert.alert('Invalid Email', emailValidation.message);
       return;
     }
 
-    // Validate password
     if (password.length < 6) {
       Alert.alert('Invalid Password', 'Password must be at least 6 characters');
       return;
     }
 
-    // Validate country
     if (!country) {
       Alert.alert('Required Field', 'Please select your country');
       return;
     }
 
-    // Validate gender
     if (!gender) {
       Alert.alert('Required Field', 'Please select your gender');
       return;
@@ -132,7 +140,7 @@ export default function SignupScreen() {
 
     setLoading(true);
     try {
-      const response = await fetch(`https://019dc04a-520c-426e-ab86-33121a2a32a7-00-2x89umyicsh55.pike.replit.dev/api/auth/register`, {
+      const response = await fetch(API_ENDPOINTS.AUTH.REGISTER, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -170,8 +178,10 @@ export default function SignupScreen() {
 
   return (
     <LinearGradient
-      colors={['#1a4d2e', '#2d5f3f', '#1a4d2e']}
+      colors={['#7FB3C2', '#A8C9D4', '#7FB3C2']}
       style={styles.gradient}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -187,7 +197,6 @@ export default function SignupScreen() {
               }
             ]}
           >
-            {/* Logo */}
             <Image
               source={require('@/assets/logo/logo_migx.png')}
               style={styles.logo}
@@ -196,31 +205,42 @@ export default function SignupScreen() {
 
             <Text style={styles.title}>Create Account</Text>
 
-            {/* Signup Form */}
             <View style={styles.form}>
               <TextInput
                 style={styles.input}
                 placeholder="Username (min 6 chars, lowercase)"
-                placeholderTextColor="#a0a0a0"
+                placeholderTextColor="#666"
                 value={username}
                 onChangeText={(text) => setUsername(text.toLowerCase())}
                 autoCapitalize="none"
                 autoCorrect={false}
               />
 
-              <TextInput
-                style={styles.input}
-                placeholder="Password (min 6 chars)"
-                placeholderTextColor="#a0a0a0"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-              />
+              <View style={styles.passwordContainer}>
+                <TextInput
+                  style={styles.passwordInput}
+                  placeholder="Password (min 6 chars)"
+                  placeholderTextColor="#666"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity
+                  style={styles.eyeButton}
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  <Ionicons
+                    name={showPassword ? 'eye-off' : 'eye'}
+                    size={22}
+                    color="#666"
+                  />
+                </TouchableOpacity>
+              </View>
 
               <TextInput
                 style={styles.input}
                 placeholder="Email (Gmail, Yahoo, or Zoho)"
-                placeholderTextColor="#a0a0a0"
+                placeholderTextColor="#666"
                 value={email}
                 onChangeText={(text) => setEmail(text.toLowerCase())}
                 keyboardType="email-address"
@@ -233,7 +253,7 @@ export default function SignupScreen() {
                   selectedValue={country}
                   onValueChange={(value) => setCountry(value)}
                   style={styles.picker}
-                  dropdownIconColor="#1a4d2e"
+                  dropdownIconColor="#2C5F6E"
                 >
                   <Picker.Item label="Select Country" value="" />
                   {countries.map((c) => (
@@ -247,7 +267,7 @@ export default function SignupScreen() {
                   selectedValue={gender}
                   onValueChange={(value) => setGender(value)}
                   style={styles.picker}
-                  dropdownIconColor="#1a4d2e"
+                  dropdownIconColor="#2C5F6E"
                 >
                   <Picker.Item label="Select Gender" value="" />
                   {genders.map((g) => (
@@ -256,7 +276,6 @@ export default function SignupScreen() {
                 </Picker>
               </View>
 
-              {/* Sign Up Button */}
               <TouchableOpacity
                 style={[styles.signupButton, loading && styles.buttonDisabled]}
                 onPress={handleSignup}
@@ -267,7 +286,6 @@ export default function SignupScreen() {
                 </Text>
               </TouchableOpacity>
 
-              {/* Login Link */}
               <TouchableOpacity
                 style={styles.loginLink}
                 onPress={() => router.back()}
@@ -276,7 +294,6 @@ export default function SignupScreen() {
                 <Text style={styles.loginTextBold}>Login</Text>
               </TouchableOpacity>
 
-              {/* Privacy Policy */}
               <TouchableOpacity
                 style={styles.privacyLink}
                 onPress={() => router.push('/privacy-policy')}
@@ -307,47 +324,82 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logo: {
-    width: 150,
-    height: 150,
-    marginBottom: 20,
+    width: 100,
+    height: 100,
+    marginBottom: 15,
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 30,
+    fontStyle: 'italic',
+    color: '#2C5F6E',
+    marginBottom: 25,
   },
   form: {
     width: '100%',
-    maxWidth: 400,
+    maxWidth: 350,
   },
   input: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 10,
-    padding: 15,
+    borderRadius: 25,
+    padding: 16,
+    paddingHorizontal: 20,
     marginBottom: 15,
     fontSize: 16,
-    color: '#1a4d2e',
+    color: '#333',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 25,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  passwordInput: {
+    flex: 1,
+    padding: 16,
+    paddingHorizontal: 20,
+    fontSize: 16,
+    color: '#333',
+  },
+  eyeButton: {
+    padding: 16,
+    paddingRight: 20,
   },
   pickerContainer: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 10,
+    borderRadius: 25,
     marginBottom: 15,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   picker: {
-    color: '#1a4d2e',
+    color: '#333',
   },
   signupButton: {
-    backgroundColor: '#0d3320',
-    borderRadius: 10,
+    backgroundColor: '#4BA3C3',
+    borderRadius: 25,
     padding: 16,
     alignItems: 'center',
     marginTop: 10,
     marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 5,
   },
@@ -365,11 +417,11 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   loginText: {
-    color: '#fff',
+    color: '#2C5F6E',
     fontSize: 14,
   },
   loginTextBold: {
-    color: '#fff',
+    color: '#2C5F6E',
     fontSize: 14,
     fontWeight: 'bold',
     textDecorationLine: 'underline',
@@ -378,8 +430,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   privacyText: {
-    color: '#fff',
+    color: '#2C5F6E',
     fontSize: 12,
-    textDecorationLine: 'underline',
+    fontWeight: '600',
   },
 });

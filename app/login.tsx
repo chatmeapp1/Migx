@@ -16,12 +16,15 @@ import {
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { API_ENDPOINTS } from '@/utils/api';
 
 export default function LoginScreen() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [invisible, setInvisible] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const fadeAnim = new Animated.Value(0);
@@ -69,7 +72,7 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      const response = await fetch(`https://019dc04a-520c-426e-ab86-33121a2a32a7-00-2x89umyicsh55.pike.replit.dev/api/auth/login`, {
+      const response = await fetch(API_ENDPOINTS.AUTH.LOGIN, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -83,7 +86,6 @@ export default function LoginScreen() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // Save credentials if remember me is checked
         if (rememberMe) {
           await AsyncStorage.setItem('saved_username', username);
           await AsyncStorage.setItem('saved_password', password);
@@ -94,7 +96,6 @@ export default function LoginScreen() {
           await AsyncStorage.removeItem('remember_me');
         }
 
-        // Save user data
         await AsyncStorage.setItem('user_data', JSON.stringify(data.user));
         
         router.replace('/(tabs)');
@@ -109,10 +110,16 @@ export default function LoginScreen() {
     }
   };
 
+  const handleForgotPassword = () => {
+    Alert.alert('Forgot Password', 'Please contact support to reset your password.');
+  };
+
   return (
     <LinearGradient
-      colors={['#1a4d2e', '#2d5f3f', '#1a4d2e']}
+      colors={['#7FB3C2', '#A8C9D4', '#7FB3C2']}
       style={styles.gradient}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -128,78 +135,91 @@ export default function LoginScreen() {
               }
             ]}
           >
-            {/* Logo */}
             <Image
               source={require('@/assets/logo/logo_migx.png')}
               style={styles.logo}
               resizeMode="contain"
             />
 
-            {/* Login Form */}
+            <Text style={styles.title}>Login</Text>
+
             <View style={styles.form}>
               <TextInput
                 style={styles.input}
                 placeholder="Username"
-                placeholderTextColor="#a0a0a0"
+                placeholderTextColor="#666"
                 value={username}
                 onChangeText={(text) => setUsername(text.toLowerCase())}
                 autoCapitalize="none"
                 autoCorrect={false}
               />
 
-              <TextInput
-                style={styles.input}
-                placeholder="Password"
-                placeholderTextColor="#a0a0a0"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-              />
+              <View style={styles.passwordContainer}>
+                <TextInput
+                  style={styles.passwordInput}
+                  placeholder="Password"
+                  placeholderTextColor="#666"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity
+                  style={styles.eyeButton}
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  <Ionicons
+                    name={showPassword ? 'eye-off' : 'eye'}
+                    size={22}
+                    color="#666"
+                  />
+                </TouchableOpacity>
+              </View>
 
-              {/* Checkboxes */}
-              <View style={styles.checkboxContainer}>
+              <View style={styles.optionsRow}>
                 <TouchableOpacity
                   style={styles.checkbox}
                   onPress={() => setRememberMe(!rememberMe)}
                 >
                   <View style={[styles.checkboxBox, rememberMe && styles.checkboxChecked]}>
-                    {rememberMe && <Text style={styles.checkmark}>✓</Text>}
+                    {rememberMe && <Ionicons name="checkmark" size={16} color="#fff" />}
                   </View>
-                  <Text style={styles.checkboxLabel}>Remember Me</Text>
+                  <Text style={styles.checkboxLabel}>Remember me</Text>
                 </TouchableOpacity>
 
+                <TouchableOpacity onPress={handleForgotPassword}>
+                  <Text style={styles.forgotPassword}>Forgot password?</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.invisibleRow}>
                 <TouchableOpacity
                   style={styles.checkbox}
                   onPress={() => setInvisible(!invisible)}
                 >
                   <View style={[styles.checkboxBox, invisible && styles.checkboxChecked]}>
-                    {invisible && <Text style={styles.checkmark}>✓</Text>}
+                    {invisible && <Ionicons name="checkmark" size={16} color="#fff" />}
                   </View>
                   <Text style={styles.checkboxLabel}>Invisible</Text>
                 </TouchableOpacity>
               </View>
 
-              {/* Login Button */}
               <TouchableOpacity
                 style={[styles.loginButton, loading && styles.buttonDisabled]}
                 onPress={handleLogin}
                 disabled={loading}
               >
                 <Text style={styles.loginButtonText}>
-                  {loading ? 'Logging in...' : 'Login'}
+                  {loading ? 'Logging in...' : 'Log in'}
                 </Text>
               </TouchableOpacity>
 
-              {/* Sign Up Link */}
               <TouchableOpacity
                 style={styles.signupLink}
                 onPress={() => router.push('/signup')}
               >
-                <Text style={styles.signupText}>Don't have an account? </Text>
-                <Text style={styles.signupTextBold}>Sign Up</Text>
+                <Text style={styles.signupText}>Sign up</Text>
               </TouchableOpacity>
 
-              {/* Privacy Policy */}
               <TouchableOpacity
                 style={styles.privacyLink}
                 onPress={() => router.push('/privacy-policy')}
@@ -230,25 +250,65 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logo: {
-    width: 200,
-    height: 200,
-    marginBottom: 40,
+    width: 120,
+    height: 120,
+    marginBottom: 20,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    fontStyle: 'italic',
+    color: '#2C5F6E',
+    marginBottom: 30,
   },
   form: {
     width: '100%',
-    maxWidth: 400,
+    maxWidth: 350,
   },
   input: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 10,
-    padding: 15,
+    borderRadius: 25,
+    padding: 16,
+    paddingHorizontal: 20,
     marginBottom: 15,
     fontSize: 16,
-    color: '#1a4d2e',
+    color: '#333',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  checkboxContainer: {
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 25,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  passwordInput: {
+    flex: 1,
+    padding: 16,
+    paddingHorizontal: 20,
+    fontSize: 16,
+    color: '#333',
+  },
+  eyeButton: {
+    padding: 16,
+    paddingRight: 20,
+  },
+  optionsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  invisibleRow: {
     marginBottom: 20,
   },
   checkbox: {
@@ -256,36 +316,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   checkboxBox: {
-    width: 24,
-    height: 24,
+    width: 22,
+    height: 22,
     borderRadius: 4,
     borderWidth: 2,
-    borderColor: '#fff',
+    borderColor: '#3B98B8',
     marginRight: 8,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'transparent',
   },
   checkboxChecked: {
-    backgroundColor: '#fff',
-  },
-  checkmark: {
-    color: '#1a4d2e',
-    fontSize: 16,
-    fontWeight: 'bold',
+    backgroundColor: '#3B98B8',
+    borderColor: '#3B98B8',
   },
   checkboxLabel: {
-    color: '#fff',
+    color: '#2C5F6E',
     fontSize: 14,
+    fontWeight: '500',
+  },
+  forgotPassword: {
+    color: '#3B98B8',
+    fontSize: 14,
+    fontWeight: '500',
   },
   loginButton: {
-    backgroundColor: '#0d3320',
-    borderRadius: 10,
+    backgroundColor: '#4BA3C3',
+    borderRadius: 25,
     padding: 16,
     alignItems: 'center',
     marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 5,
   },
@@ -298,26 +361,20 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   signupLink: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 15,
   },
   signupText: {
-    color: '#fff',
-    fontSize: 14,
-  },
-  signupTextBold: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold',
-    textDecorationLine: 'underline',
+    color: '#2C5F6E',
+    fontSize: 16,
+    fontWeight: '600',
   },
   privacyLink: {
     alignItems: 'center',
   },
   privacyText: {
-    color: '#fff',
-    fontSize: 12,
-    textDecorationLine: 'underline',
+    color: '#2C5F6E',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

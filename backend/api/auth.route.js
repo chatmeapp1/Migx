@@ -280,4 +280,134 @@ router.get('/genders', (req, res) => {
   }
 });
 
+// Change password
+router.post('/change-password', async (req, res) => {
+  try {
+    const { userId, oldPassword, newPassword } = req.body;
+    
+    if (!userId || !oldPassword || !newPassword) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+
+    const user = await userService.getUserById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Verify old password
+    const isValidPassword = await bcrypt.compare(oldPassword, user.password_hash);
+    if (!isValidPassword) {
+      return res.status(400).json({ error: 'Old password is incorrect' });
+    }
+
+    // Hash new password
+    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+    
+    const result = await userService.updatePassword(userId, newPasswordHash);
+    
+    if (result) {
+      res.json({ success: true, message: 'Password changed successfully' });
+    } else {
+      res.status(500).json({ error: 'Failed to change password' });
+    }
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({ error: 'Failed to change password' });
+  }
+});
+
+// Send email OTP
+router.post('/send-email-otp', async (req, res) => {
+  try {
+    const { userId, oldEmail, newEmail } = req.body;
+    
+    if (!userId || !oldEmail || !newEmail) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    const user = await userService.getUserById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (user.email !== oldEmail) {
+      return res.status(400).json({ error: 'Old email does not match' });
+    }
+
+    // Check if new email already exists
+    const existingEmail = await userService.getUserByEmail(newEmail);
+    if (existingEmail && existingEmail.id !== userId) {
+      return res.status(400).json({ error: 'New email already in use' });
+    }
+
+    // Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Store OTP in database temporarily
+    await userService.storeEmailOtp(userId, otp, newEmail);
+
+    // Send OTP email
+    const mailOptions = {
+      from: process.env.SMTP_USER,
+      to: oldEmail,
+      subject: 'Email Change OTP',
+      html: `
+        <h2>Email Change Request</h2>
+        <p>Your OTP code is: <strong>${otp}</strong></p>
+        <p>This code will expire in 10 minutes.</p>
+        <p>New email will be: ${newEmail}</p>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+    
+    res.json({ success: true, message: 'OTP sent to your old email' });
+  } catch (error) {
+    console.error('Send email OTP error:', error);
+    res.status(500).json({ error: 'Failed to send OTP' });
+  }
+});
+
+// Change email
+router.post('/change-email', async (req, res) => {
+  try {
+    const { userId, oldEmail, newEmail, otp } = req.body;
+    
+    if (!userId || !oldEmail || !newEmail || !otp) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    const user = await userService.getUserById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (user.email !== oldEmail) {
+      return res.status(400).json({ error: 'Old email does not match' });
+    }
+
+    // Verify OTP
+    const isValidOtp = await userService.verifyEmailOtp(userId, otp, newEmail);
+    if (!isValidOtp) {
+      return res.status(400).json({ error: 'Invalid or expired OTP' });
+    }
+
+    // Update email
+    const result = await userService.updateEmail(userId, newEmail);
+    
+    if (result) {
+      res.json({ success: true, message: 'Email changed successfully' });
+    } else {
+      res.status(500).json({ error: 'Failed to change email' });
+    }
+  } catch (error) {
+    console.error('Change email error:', error);
+    res.status(500).json({ error: 'Failed to change email' });
+  }
+});
+
 module.exports = router;

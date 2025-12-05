@@ -134,6 +134,26 @@ CREATE TABLE IF NOT EXISTS game_history (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Game Results Table
+CREATE TABLE IF NOT EXISTS game_results (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+  game_type VARCHAR(20) NOT NULL,
+  result VARCHAR(10) NOT NULL,
+  coins_won INTEGER DEFAULT 0,
+  coins_lost INTEGER DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Email OTP Table for email change verification
+CREATE TABLE IF NOT EXISTS email_otp (
+  user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  otp VARCHAR(6) NOT NULL,
+  new_email VARCHAR(255) NOT NULL,
+  expires_at TIMESTAMP NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_messages_room_id ON messages(room_id);
 CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);

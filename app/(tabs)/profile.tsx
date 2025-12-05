@@ -9,7 +9,8 @@ import {
   GiftIcon, 
   PeopleIcon, 
   LeaderboardIcon, 
-  DashboardIcon 
+  DashboardIcon,
+  SettingsIcon 
 } from '@/components/profile/ProfileIcons';
 import { useThemeCustom } from '@/theme/provider';
 import { SwipeableScreen } from '@/components/navigation/SwipeableScreen';
@@ -51,6 +52,11 @@ export default function ProfileScreen() {
 
   const handleMerchantDashboard = () => {
     console.log('Merchant Dashboard pressed');
+  };
+
+  const handleSettings = () => {
+    console.log('Settings pressed');
+    router.push('/settings');
   };
 
   return (
@@ -95,6 +101,13 @@ export default function ProfileScreen() {
                 icon={<LeaderboardIcon size={24} />}
                 title="Leaderboard"
                 onPress={handleLeaderboard}
+                showDivider={true}
+              />
+              
+              <ProfileMenuItem 
+                icon={<SettingsIcon size={24} />}
+                title="Settings"
+                onPress={handleSettings}
                 showDivider={isMerchant}
               />
               

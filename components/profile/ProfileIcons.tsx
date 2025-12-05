@@ -80,3 +80,21 @@ export const DashboardIcon = ({ size = 24 }: { size?: number }) => (
     <Rect x="14" y="14" width="7" height="7" fill="#4A90E2" />
   </Svg>
 );
+
+export const SettingsIcon = ({ size = 24 }: { size?: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="3" stroke="#4A90E2" strokeWidth="2" fill="none" />
+    <Path 
+      d="M12 1v6m0 6v10M1 12h6m6 0h10" 
+      stroke="#4A90E2" 
+      strokeWidth="2" 
+      strokeLinecap="round"
+    />
+    <Path 
+      d="M5.636 5.636l4.243 4.243m4.242 4.242l4.243 4.243M5.636 18.364l4.243-4.243m4.242-4.242l4.243-4.243" 
+      stroke="#4A90E2" 
+      strokeWidth="2" 
+      strokeLinecap="round"
+    />
+  </Svg>
+);

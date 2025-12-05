@@ -294,6 +294,73 @@ const getOnlineUsers = async (limit = 50) => {
   }
 };
 
+const updatePassword = async (userId, passwordHash) => {
+  try {
+    const result = await query(
+      `UPDATE users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $2
+       RETURNING id, username`,
+      [passwordHash, userId]
+    );
+    return result.rows[0];
+  } catch (error) {
+    console.error('Error updating password:', error);
+    return null;
+  }
+};
+
+const storeEmailOtp = async (userId, otp, newEmail) => {
+  try {
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    await query(
+      `INSERT INTO email_otp (user_id, otp, new_email, expires_at)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (user_id) 
+       DO UPDATE SET otp = $2, new_email = $3, expires_at = $4, created_at = CURRENT_TIMESTAMP`,
+      [userId, otp, newEmail, expiresAt]
+    );
+    return true;
+  } catch (error) {
+    console.error('Error storing email OTP:', error);
+    return false;
+  }
+};
+
+const verifyEmailOtp = async (userId, otp, newEmail) => {
+  try {
+    const result = await query(
+      `SELECT * FROM email_otp 
+       WHERE user_id = $1 AND otp = $2 AND new_email = $3 AND expires_at > CURRENT_TIMESTAMP`,
+      [userId, otp, newEmail]
+    );
+    
+    if (result.rows.length > 0) {
+      // Delete OTP after verification
+      await query('DELETE FROM email_otp WHERE user_id = $1', [userId]);
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('Error verifying email OTP:', error);
+    return false;
+  }
+};
+
+const updateEmail = async (userId, newEmail) => {
+  try {
+    const result = await query(
+      `UPDATE users SET email = $1, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $2
+       RETURNING id, username, email`,
+      [newEmail, userId]
+    );
+    return result.rows[0];
+  } catch (error) {
+    console.error('Error updating email:', error);
+    return null;
+  }
+};
+
 module.exports = {
   createUser,
   createUserWithRegistration,
@@ -314,5 +381,9 @@ module.exports = {
   connectUser,
   disconnectUser,
   searchUsers,
-  getOnlineUsers
+  getOnlineUsers,
+  updatePassword,
+  storeEmailOtp,
+  verifyEmailOtp,
+  updateEmail
 };

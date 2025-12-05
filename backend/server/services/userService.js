@@ -4,8 +4,8 @@ const { setUserStatus, getUserStatus, setUserSocket, removeUserSocket } = requir
 const createUser = async (username, password = null, email = null) => {
   try {
     const result = await query(
-      `INSERT INTO users (username, password, email)
-       VALUES ($1, $2, $3)
+      `INSERT INTO users (username, password_hash, email, is_active)
+       VALUES ($1, $2, $3, true)
        RETURNING id, username, credits, role, status, created_at`,
       [username, password, email]
     );
@@ -21,6 +21,82 @@ const createUser = async (username, password = null, email = null) => {
       return { error: 'Username already exists' };
     }
     console.error('Error creating user:', error);
+    return null;
+  }
+};
+
+const createUserWithRegistration = async ({ username, passwordHash, email, country, gender, activationToken }) => {
+  try {
+    const result = await query(
+      `INSERT INTO users (username, password_hash, email, country, gender, activation_token, is_active)
+       VALUES ($1, $2, $3, $4, $5, $6, false)
+       RETURNING id, username, email, country, gender, created_at`,
+      [username, passwordHash, email, country, gender, activationToken]
+    );
+    
+    await query(
+      'INSERT INTO user_levels (user_id, xp, level) VALUES ($1, 0, 1)',
+      [result.rows[0].id]
+    );
+    
+    return result.rows[0];
+  } catch (error) {
+    if (error.code === '23505') {
+      return { error: 'Username or email already exists' };
+    }
+    console.error('Error creating user:', error);
+    return null;
+  }
+};
+
+const activateUser = async (token) => {
+  try {
+    const result = await query(
+      `UPDATE users 
+       SET is_active = true, activation_token = null, updated_at = CURRENT_TIMESTAMP
+       WHERE activation_token = $1 AND is_active = false
+       RETURNING id, username, email`,
+      [token]
+    );
+    
+    if (result.rows.length === 0) {
+      return { success: false, error: 'Invalid or expired activation token' };
+    }
+    
+    return { success: true, user: result.rows[0] };
+  } catch (error) {
+    console.error('Error activating user:', error);
+    return { success: false, error: 'Activation failed' };
+  }
+};
+
+const getUserByEmail = async (email) => {
+  try {
+    const result = await query(
+      `SELECT u.*, ul.xp, ul.level 
+       FROM users u
+       LEFT JOIN user_levels ul ON u.id = ul.user_id
+       WHERE u.email = $1`,
+      [email]
+    );
+    return result.rows[0] || null;
+  } catch (error) {
+    console.error('Error getting user by email:', error);
+    return null;
+  }
+};
+
+const updateUserInvisible = async (userId, invisible) => {
+  try {
+    const result = await query(
+      `UPDATE users SET is_invisible = $1, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $2
+       RETURNING id, is_invisible`,
+      [invisible, userId]
+    );
+    return result.rows[0];
+  } catch (error) {
+    console.error('Error updating invisible status:', error);
     return null;
   }
 };
@@ -220,7 +296,10 @@ const getOnlineUsers = async (limit = 50) => {
 
 module.exports = {
   createUser,
+  createUserWithRegistration,
+  activateUser,
   getUserByUsername,
+  getUserByEmail,
   getUserById,
   updateUserCredits,
   setCredits,
@@ -231,6 +310,7 @@ module.exports = {
   isMentor,
   isMerchant,
   updateUserStatus,
+  updateUserInvisible,
   connectUser,
   disconnectUser,
   searchUsers,

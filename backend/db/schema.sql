@@ -3,13 +3,18 @@
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
   id BIGSERIAL PRIMARY KEY,
-  username VARCHAR(50) UNIQUE NOT NULL,
-  password VARCHAR(255),
-  email VARCHAR(100),
+  username VARCHAR(32) UNIQUE NOT NULL,
+  password_hash TEXT,
+  email VARCHAR(255) UNIQUE,
   avatar VARCHAR(255),
   credits BIGINT DEFAULT 0,
   role VARCHAR(20) DEFAULT 'user' CHECK (role IN ('user', 'mentor', 'merchant', 'admin')),
   status VARCHAR(20) DEFAULT 'online' CHECK (status IN ('online', 'away', 'offline')),
+  country VARCHAR(4),
+  gender VARCHAR(6) CHECK (gender IN ('male', 'female')),
+  is_active BOOLEAN DEFAULT FALSE,
+  activation_token VARCHAR(128),
+  is_invisible BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

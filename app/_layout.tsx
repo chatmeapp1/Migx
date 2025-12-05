@@ -5,9 +5,20 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useFonts } from "expo-font";
 import { ThemeProviderCustom, useThemeCustom } from "@/theme/provider";
 import "react-native-reanimated";
+import { useEffect, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 function RootLayoutNav() {
   const { isDark } = useThemeCustom();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      const token = await AsyncStorage.getItem('authToken');
+      setIsLoggedIn(!!token);
+    };
+    checkLoginStatus();
+  }, []);
 
   return (
     <ThemeProvider value={isDark ? NavigationDarkTheme : NavigationDefaultTheme}>
@@ -17,12 +28,22 @@ function RootLayoutNav() {
           animation: "none",
         }}
       >
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="chatroom/[id]" />
-        <Stack.Screen name="transfer-credit" />
-        <Stack.Screen name="transfer-history" />
-        <Stack.Screen name="official-comment" />
-        <Stack.Screen name="+not-found" />
+        {!isLoggedIn ? (
+          <>
+            <Stack.Screen name="login" />
+            <Stack.Screen name="signup" />
+            <Stack.Screen name="privacy-policy" />
+          </>
+        ) : (
+          <>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="chatroom/[id]" />
+            <Stack.Screen name="transfer-credit" />
+            <Stack.Screen name="transfer-history" />
+            <Stack.Screen name="official-comment" />
+            <Stack.Screen name="+not-found" />
+          </>
+        )}
       </Stack>
       <StatusBar style={isDark ? "light" : "dark"} />
     </ThemeProvider>

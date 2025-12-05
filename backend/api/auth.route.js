@@ -1,11 +1,63 @@
+
 const express = require('express');
 const router = express.Router();
 const userService = require('../server/services/userService');
 const { getUserLevel } = require('../server/utils/xpLeveling');
+const bcrypt = require('bcrypt');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
+
+// Email transporter configuration
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: process.env.SMTP_PORT || 587,
+  secure: false,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS
+  }
+});
+
+// Username validation regex (MIG33 rules)
+const usernameRegex = /^[a-z][a-z0-9._]{5,31}$/;
+
+// Email validation
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const allowedEmailDomains = ['gmail.com', 'yahoo.com', 'zoho.com'];
+
+// Generate activation token
+function generateActivationToken() {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+// Send activation email
+async function sendActivationEmail(email, username, token) {
+  const activationUrl = `${process.env.APP_URL || 'http://localhost:5000'}/api/auth/activate/${token}`;
+  
+  const mailOptions = {
+    from: process.env.SMTP_USER,
+    to: email,
+    subject: 'Activate Your Account',
+    html: `
+      <h2>Welcome to MIG33 Clone, ${username}!</h2>
+      <p>Please click the link below to activate your account:</p>
+      <a href="${activationUrl}">${activationUrl}</a>
+      <p>This link will expire in 24 hours.</p>
+    `
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    return true;
+  } catch (error) {
+    console.error('Error sending email:', error);
+    return false;
+  }
+}
 
 router.post('/login', async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { username, password, rememberMe, invisible } = req.body;
     
     if (!username) {
       return res.status(400).json({ error: 'Username is required' });
@@ -14,10 +66,26 @@ router.post('/login', async (req, res) => {
     let user = await userService.getUserByUsername(username);
     
     if (!user) {
-      user = await userService.createUser(username, password);
-      if (!user || user.error) {
-        return res.status(400).json({ error: user?.error || 'Failed to create user' });
+      return res.status(400).json({ error: 'Invalid username or password' });
+    }
+
+    // Check if account is activated
+    if (!user.is_active) {
+      return res.status(403).json({ error: 'Account not activated. Please check your email.' });
+    }
+
+    // Verify password if provided
+    if (password && user.password_hash) {
+      const isValidPassword = await bcrypt.compare(password, user.password_hash);
+      if (!isValidPassword) {
+        return res.status(400).json({ error: 'Invalid username or password' });
       }
+    }
+
+    // Update invisible status if requested
+    if (invisible !== undefined) {
+      await userService.updateUserInvisible(user.id, invisible);
+      user.is_invisible = invisible;
     }
     
     const levelData = await getUserLevel(user.id);
@@ -27,14 +95,19 @@ router.post('/login', async (req, res) => {
       user: {
         id: user.id,
         username: user.username,
+        email: user.email,
         credits: user.credits,
         role: user.role,
-        status: user.status,
+        status: invisible ? 'offline' : user.status,
         avatar: user.avatar,
         level: levelData.level,
         xp: levelData.xp,
+        country: user.country,
+        gender: user.gender,
+        isInvisible: user.is_invisible,
         createdAt: user.created_at
-      }
+      },
+      rememberMe: rememberMe || false
     });
     
   } catch (error) {
@@ -45,37 +118,128 @@ router.post('/login', async (req, res) => {
 
 router.post('/register', async (req, res) => {
   try {
-    const { username, password, email } = req.body;
+    const { username, password, email, country, gender } = req.body;
     
-    if (!username) {
-      return res.status(400).json({ error: 'Username is required' });
+    // Validate username
+    if (!username || !usernameRegex.test(username)) {
+      return res.status(400).json({ 
+        error: 'Username must be 6-32 characters, start with a letter, and contain only lowercase letters, numbers, dots, and underscores' 
+      });
     }
     
-    const existing = await userService.getUserByUsername(username);
-    if (existing) {
+    // Validate email format
+    if (!email || !emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+
+    // Validate email domain
+    const emailDomain = email.split('@')[1]?.toLowerCase();
+    if (!allowedEmailDomains.includes(emailDomain)) {
+      return res.status(400).json({ 
+        error: `Email must be from Gmail, Yahoo, or Zoho. You used: ${emailDomain}` 
+      });
+    }
+    
+    // Validate password
+    if (!password || password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+
+    // Validate country
+    if (!country) {
+      return res.status(400).json({ error: 'Country is required' });
+    }
+
+    // Validate gender
+    if (!gender || !['male', 'female'].includes(gender)) {
+      return res.status(400).json({ error: 'Gender must be male or female' });
+    }
+    
+    // Check if username exists
+    const existingUser = await userService.getUserByUsername(username);
+    if (existingUser) {
       return res.status(400).json({ error: 'Username already exists' });
     }
+
+    // Check if email exists
+    const existingEmail = await userService.getUserByEmail(email);
+    if (existingEmail) {
+      return res.status(400).json({ error: 'Email already registered' });
+    }
     
-    const user = await userService.createUser(username, password, email);
+    // Hash password
+    const passwordHash = await bcrypt.hash(password, 10);
+    
+    // Generate activation token
+    const activationToken = generateActivationToken();
+    
+    // Create user
+    const user = await userService.createUserWithRegistration({
+      username,
+      passwordHash,
+      email,
+      country,
+      gender,
+      activationToken
+    });
     
     if (!user || user.error) {
       return res.status(400).json({ error: user?.error || 'Registration failed' });
     }
+
+    // Send activation email
+    const emailSent = await sendActivationEmail(email, username, activationToken);
+    
+    if (!emailSent) {
+      console.warn('Failed to send activation email, but user created');
+    }
     
     res.json({
       success: true,
+      message: 'Registration successful! Please check your email to activate your account.',
       user: {
         id: user.id,
         username: user.username,
-        credits: user.credits,
-        role: user.role,
-        createdAt: user.created_at
+        email: user.email
       }
     });
     
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({ error: 'Registration failed' });
+  }
+});
+
+router.get('/activate/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    
+    const result = await userService.activateUser(token);
+    
+    if (!result.success) {
+      return res.status(400).send(`
+        <html>
+          <body style="font-family: Arial; text-align: center; padding: 50px;">
+            <h2>❌ Activation Failed</h2>
+            <p>${result.error}</p>
+          </body>
+        </html>
+      `);
+    }
+    
+    res.send(`
+      <html>
+        <body style="font-family: Arial; text-align: center; padding: 50px;">
+          <h2>✅ Account Activated!</h2>
+          <p>Your account has been successfully activated.</p>
+          <p>You can now log in to the app.</p>
+        </body>
+      </html>
+    `);
+    
+  } catch (error) {
+    console.error('Activation error:', error);
+    res.status(500).send('Activation failed');
   }
 });
 
@@ -91,6 +255,28 @@ router.get('/check/:username', async (req, res) => {
   } catch (error) {
     console.error('Check username error:', error);
     res.status(500).json({ error: 'Check failed' });
+  }
+});
+
+// Get countries
+router.get('/countries', (req, res) => {
+  try {
+    const countries = require('../data/countries.json');
+    res.json(countries);
+  } catch (error) {
+    console.error('Error loading countries:', error);
+    res.status(500).json({ error: 'Failed to load countries' });
+  }
+});
+
+// Get genders
+router.get('/genders', (req, res) => {
+  try {
+    const genders = require('../data/genders.json');
+    res.json(genders);
+  } catch (error) {
+    console.error('Error loading genders:', error);
+    res.status(500).json({ error: 'Failed to load genders' });
   }
 });
 

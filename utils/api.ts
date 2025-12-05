@@ -4,8 +4,8 @@ import { Platform } from 'react-native';
 let socket: any = null;
 
 const API_BASE_URL = Platform.OS === 'web'
-  ? 'http://localhost:3000'
-  : 'http://10.0.2.2:3000'; // Android emulator
+  ? 'https://workspace-chatmelive.replit.app'
+  : 'https://workspace-chatmelive.replit.app';
 
 console.log('🌐 API_BASE_URL configured as:', API_BASE_URL);
 

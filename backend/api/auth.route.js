@@ -19,30 +19,36 @@ function generateActivationToken() {
   return crypto.randomBytes(32).toString('hex');
 }
 
-router.post('/login', async (req, res) => {
+router.post('/login', async (req, res, next) => {
   try {
+    console.log('LOGIN REQUEST RECEIVED:', { username: req.body.username });
+    
     const { username, password, rememberMe, invisible } = req.body;
     
     if (!username) {
-      return res.status(400).json({ error: 'Username is required' });
+      console.log('LOGIN FAILED: Username missing');
+      return res.status(400).json({ success: false, error: 'Username is required' });
     }
     
     let user = await userService.getUserByUsername(username);
     
     if (!user) {
-      return res.status(400).json({ error: 'Invalid username or password' });
+      console.log('LOGIN FAILED: User not found');
+      return res.status(400).json({ success: false, error: 'Invalid username or password' });
     }
 
     // Check if account is activated
     if (!user.is_active) {
-      return res.status(403).json({ error: 'Account not activated. Please check your email.' });
+      console.log('LOGIN FAILED: Account not activated');
+      return res.status(403).json({ success: false, error: 'Account not activated. Please check your email.' });
     }
 
     // Verify password if provided
     if (password && user.password_hash) {
       const isValidPassword = await bcrypt.compare(password, user.password_hash);
       if (!isValidPassword) {
-        return res.status(400).json({ error: 'Invalid username or password' });
+        console.log('LOGIN FAILED: Invalid password');
+        return res.status(400).json({ success: false, error: 'Invalid username or password' });
       }
     }
 
@@ -54,7 +60,8 @@ router.post('/login', async (req, res) => {
     
     const levelData = await getUserLevel(user.id);
     
-    res.json({
+    console.log('LOGIN SUCCESS:', username);
+    res.status(200).json({
       success: true,
       user: {
         id: user.id,
@@ -75,60 +82,79 @@ router.post('/login', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ error: 'Login failed' });
+    console.error('LOGIN ERROR:', error);
+    console.error('ERROR STACK:', error.stack);
+    return res.status(500).json({ 
+      success: false, 
+      error: 'Login failed',
+      message: error.message
+    });
   }
 });
 
-router.post('/register', async (req, res) => {
+router.post('/register', async (req, res, next) => {
   try {
+    console.log('REGISTER REQUEST RECEIVED:', { 
+      body: { ...req.body, password: '[HIDDEN]' } 
+    });
+    
     const { username, password, email, country, gender } = req.body;
     
     // Validate username
     if (!username || !usernameRegex.test(username)) {
+      console.log('REGISTER FAILED: Invalid username');
       return res.status(400).json({ 
+        success: false,
         error: 'Username must be 6-32 characters, start with a letter, and contain only lowercase letters, numbers, dots, and underscores' 
       });
     }
     
     // Validate email format
     if (!email || !emailRegex.test(email)) {
-      return res.status(400).json({ error: 'Invalid email format' });
+      console.log('REGISTER FAILED: Invalid email format');
+      return res.status(400).json({ success: false, error: 'Invalid email format' });
     }
 
     // Validate email domain
     const emailDomain = email.split('@')[1]?.toLowerCase();
     if (!allowedEmailDomains.includes(emailDomain)) {
+      console.log('REGISTER FAILED: Invalid email domain:', emailDomain);
       return res.status(400).json({ 
+        success: false,
         error: `Email must be from Gmail, Yahoo, or Zoho. You used: ${emailDomain}` 
       });
     }
     
     // Validate password
     if (!password || password.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+      console.log('REGISTER FAILED: Password too short');
+      return res.status(400).json({ success: false, error: 'Password must be at least 6 characters' });
     }
 
     // Validate country
     if (!country) {
-      return res.status(400).json({ error: 'Country is required' });
+      console.log('REGISTER FAILED: Country missing');
+      return res.status(400).json({ success: false, error: 'Country is required' });
     }
 
     // Validate gender
     if (!gender || !['male', 'female'].includes(gender)) {
-      return res.status(400).json({ error: 'Gender must be male or female' });
+      console.log('REGISTER FAILED: Invalid gender');
+      return res.status(400).json({ success: false, error: 'Gender must be male or female' });
     }
     
     // Check if username exists
     const existingUser = await userService.getUserByUsername(username);
     if (existingUser) {
-      return res.status(400).json({ error: 'Username already exists' });
+      console.log('REGISTER FAILED: Username exists');
+      return res.status(400).json({ success: false, error: 'Username already exists' });
     }
 
     // Check if email exists
     const existingEmail = await userService.getUserByEmail(email);
     if (existingEmail) {
-      return res.status(400).json({ error: 'Email already registered' });
+      console.log('REGISTER FAILED: Email exists');
+      return res.status(400).json({ success: false, error: 'Email already registered' });
     }
     
     // Hash password
@@ -148,27 +174,35 @@ router.post('/register', async (req, res) => {
     });
     
     if (!user || user.error) {
-      return res.status(400).json({ error: user?.error || 'Registration failed' });
+      console.log('REGISTER FAILED: User creation failed');
+      return res.status(400).json({ success: false, error: user?.error || 'Registration failed' });
     }
 
     // Generate OTP for registration
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     
     // Send OTP email
-    const emailResult = await sendOtpEmail(email, otp, username);
-    
-    if (!emailResult.success) {
-      console.warn('Failed to send OTP email, but user created');
+    try {
+      const emailResult = await sendOtpEmail(email, otp, username);
+      if (!emailResult.success) {
+        console.warn('Failed to send OTP email, but user created');
+      }
+    } catch (emailError) {
+      console.error('Email sending error:', emailError);
     }
     
     // Send activation email as well
-    const activationResult = await sendActivationEmail(email, username, activationToken);
-    
-    if (!activationResult.success) {
-      console.warn('Failed to send activation email');
+    try {
+      const activationResult = await sendActivationEmail(email, username, activationToken);
+      if (!activationResult.success) {
+        console.warn('Failed to send activation email');
+      }
+    } catch (activationError) {
+      console.error('Activation email error:', activationError);
     }
     
-    res.json({
+    console.log('REGISTER SUCCESS:', username);
+    res.status(200).json({
       success: true,
       message: 'Registration successful! Please check your email for verification code and activation link.',
       user: {
@@ -179,8 +213,13 @@ router.post('/register', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({ error: 'Registration failed' });
+    console.error('REGISTER ERROR:', error);
+    console.error('ERROR STACK:', error.stack);
+    return res.status(500).json({ 
+      success: false, 
+      error: 'Registration failed',
+      message: error.message
+    });
   }
 });
 

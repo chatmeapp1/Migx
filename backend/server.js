@@ -41,10 +41,17 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Request logger middleware
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
+
 app.use((req, res, next) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
+  res.setHeader('Content-Type', 'application/json');
   next();
 });
 
@@ -167,9 +174,29 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/credits', creditRoutes);
 app.use('/api/merchants', merchantRoutes);
 
+// 404 handler - must be after all routes
+app.use((req, res, next) => {
+  console.log(`404 - Route not found: ${req.method} ${req.url}`);
+  res.status(404).json({ 
+    success: false,
+    error: 'Route not found',
+    path: req.url 
+  });
+});
+
+// Global error handler
 app.use((err, req, res, next) => {
-  console.error('Express error:', err);
-  res.status(500).json({ error: 'Internal server error' });
+  console.error('GLOBAL ERROR:', err);
+  console.error('Stack:', err.stack);
+  
+  // Ensure we always send JSON
+  if (!res.headersSent) {
+    res.status(err.status || 500).json({ 
+      success: false,
+      error: err.message || 'Internal server error',
+      ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    });
+  }
 });
 
 const chatNamespace = io.of('/chat');

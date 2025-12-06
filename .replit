@@ -37,7 +37,7 @@ localPort = 40811
 externalPort = 3001
 
 [workflows]
-runButton = "Project"
+runButton = "Development Server Sequential"
 
 [[workflows.workflow]]
 name = "Dev Server"
@@ -99,6 +99,15 @@ waitForPort = 5000
 
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow]]
+name = "Development Server Sequential"
+author = 50803945
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "node backend/server.js"
 
 [agent]
 expertMode = true

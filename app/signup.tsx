@@ -29,14 +29,43 @@ interface Gender {
   label: string;
 }
 
+// Static data - no API dependency
+const STATIC_GENDERS: Gender[] = [
+  { value: 'male', label: 'Male' },
+  { value: 'female', label: 'Female' }
+];
+
+const STATIC_COUNTRIES: Country[] = [
+  { code: 'ID', name: 'Indonesia' },
+  { code: 'MY', name: 'Malaysia' },
+  { code: 'SG', name: 'Singapore' },
+  { code: 'PH', name: 'Philippines' },
+  { code: 'TH', name: 'Thailand' },
+  { code: 'VN', name: 'Vietnam' },
+  { code: 'US', name: 'United States' },
+  { code: 'GB', name: 'United Kingdom' },
+  { code: 'AU', name: 'Australia' },
+  { code: 'IN', name: 'India' },
+  { code: 'JP', name: 'Japan' },
+  { code: 'KR', name: 'South Korea' },
+  { code: 'CN', name: 'China' },
+  { code: 'BR', name: 'Brazil' },
+  { code: 'DE', name: 'Germany' },
+  { code: 'FR', name: 'France' },
+  { code: 'IT', name: 'Italy' },
+  { code: 'ES', name: 'Spain' },
+  { code: 'NL', name: 'Netherlands' },
+  { code: 'CA', name: 'Canada' }
+];
+
 export default function SignupScreen() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
   const [country, setCountry] = useState('');
   const [gender, setGender] = useState('');
-  const [countries, setCountries] = useState<Country[]>([]);
-  const [genders, setGenders] = useState<Gender[]>([]);
+  const [countries, setCountries] = useState<Country[]>(STATIC_COUNTRIES);
+  const [genders, setGenders] = useState<Gender[]>(STATIC_GENDERS);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -44,8 +73,7 @@ export default function SignupScreen() {
   const slideAnim = new Animated.Value(50);
 
   useEffect(() => {
-    loadFormData();
-    
+    // Use static data, no API fetch needed
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -60,23 +88,6 @@ export default function SignupScreen() {
       })
     ]).start();
   }, []);
-
-  const loadFormData = async () => {
-    try {
-      const [countriesRes, gendersRes] = await Promise.all([
-        fetch(API_ENDPOINTS.AUTH.COUNTRIES),
-        fetch(API_ENDPOINTS.AUTH.GENDERS)
-      ]);
-
-      const countriesData = await countriesRes.json();
-      const gendersData = await gendersRes.json();
-
-      setCountries(countriesData);
-      setGenders(gendersData);
-    } catch (error) {
-      console.error('Error loading form data:', error);
-    }
-  };
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

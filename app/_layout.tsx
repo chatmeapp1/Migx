@@ -17,8 +17,11 @@ function RootLayoutNav() {
 
   useEffect(() => {
     const initializeApp = async () => {
-      const token = await AsyncStorage.getItem('authToken');
-      setIsLoggedIn(!!token);
+      // Auto-login disabled - always start at login screen
+      // Clear any saved tokens to ensure fresh login
+      await AsyncStorage.removeItem('authToken');
+      await AsyncStorage.removeItem('user_data');
+      setIsLoggedIn(false);
       setIsLoading(false);
       
       setTimeout(() => {

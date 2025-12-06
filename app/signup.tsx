@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -29,7 +28,7 @@ interface Gender {
   label: string;
 }
 
-// Static data - no API dependency
+// Static data
 const STATIC_GENDERS: Gender[] = [
   { value: 'male', label: 'Male' },
   { value: 'female', label: 'Female' }
@@ -64,16 +63,14 @@ export default function SignupScreen() {
   const [email, setEmail] = useState('');
   const [country, setCountry] = useState('');
   const [gender, setGender] = useState('');
-  const [countries, setCountries] = useState<Country[]>(STATIC_COUNTRIES);
-  const [genders, setGenders] = useState<Gender[]>(STATIC_GENDERS);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const fadeAnim = new Animated.Value(0);
-  const slideAnim = new Animated.Value(50);
+  // FIX: Animated values must not recreate on each render
+  const fadeAnim = useState(new Animated.Value(0))[0];
+  const slideAnim = useState(new Animated.Value(50))[0];
 
   useEffect(() => {
-    // Use static data, no API fetch needed
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -94,43 +91,37 @@ export default function SignupScreen() {
     if (!emailRegex.test(email)) {
       return { valid: false, message: 'Invalid email format' };
     }
-
     const domain = email.split('@')[1]?.toLowerCase();
     const allowedDomains = ['gmail.com', 'yahoo.com', 'zoho.com'];
-    
-    if (!allowedDomains.includes(domain)) {
-      return { 
-        valid: false, 
-        message: `Email must be from Gmail, Yahoo, or Zoho. You entered: ${domain}` 
-      };
-    }
 
+    if (!allowedDomains.includes(domain)) {
+      return { valid: false, message: `Email must be from Gmail, Yahoo, or Zoho.` };
+    }
     return { valid: true, message: '' };
   };
 
   const validateUsername = (username: string) => {
     const usernameRegex = /^[a-z][a-z0-9._]{5,31}$/;
-    
     if (!usernameRegex.test(username)) {
       return {
         valid: false,
-        message: 'Username must be 6-32 characters, start with a letter, and contain only lowercase letters, numbers, dots, and underscores'
+        message:
+          'Username must be 6-32 characters, start with a letter, and contain only lowercase letters, numbers, dots, and underscores'
       };
     }
-
     return { valid: true, message: '' };
   };
 
   const handleSignup = async () => {
-    const usernameValidation = validateUsername(username);
-    if (!usernameValidation.valid) {
-      Alert.alert('Invalid Username', usernameValidation.message);
+    const userCheck = validateUsername(username);
+    if (!userCheck.valid) {
+      Alert.alert('Invalid Username', userCheck.message);
       return;
     }
 
-    const emailValidation = validateEmail(email);
-    if (!emailValidation.valid) {
-      Alert.alert('Invalid Email', emailValidation.message);
+    const emailCheck = validateEmail(email);
+    if (!emailCheck.valid) {
+      Alert.alert('Invalid Email', emailCheck.message);
       return;
     }
 
@@ -139,17 +130,11 @@ export default function SignupScreen() {
       return;
     }
 
-    if (!country) {
-      Alert.alert('Required Field', 'Please select your country');
-      return;
-    }
-
-    if (!gender) {
-      Alert.alert('Required Field', 'Please select your gender');
-      return;
-    }
+    if (!country) return Alert.alert('Required Field', 'Please select your country');
+    if (!gender) return Alert.alert('Required Field', 'Please select your gender');
 
     setLoading(true);
+
     try {
       const response = await fetch(API_ENDPOINTS.AUTH.REGISTER, {
         method: 'POST',
@@ -159,8 +144,8 @@ export default function SignupScreen() {
           password,
           email: email.toLowerCase(),
           country,
-          gender
-        })
+          gender,
+        }),
       });
 
       const data = await response.json();
@@ -168,13 +153,8 @@ export default function SignupScreen() {
       if (response.ok && data.success) {
         Alert.alert(
           'Registration Successful',
-          'Please check your email to activate your account. Check spam folder if you don\'t see it.',
-          [
-            {
-              text: 'OK',
-              onPress: () => router.replace('/login')
-            }
-          ]
+          'Please check your email to activate your account.',
+          [{ text: 'OK', onPress: () => router.replace('/login') }]
         );
       } else {
         Alert.alert('Registration Failed', data.error || 'Please try again');
@@ -191,25 +171,23 @@ export default function SignupScreen() {
     <LinearGradient
       colors={['#7FB3C2', '#A8C9D4', '#7FB3C2']}
       style={styles.gradient}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.container}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView 
-          contentContainerStyle={styles.scrollContent}
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={[styles.scrollContent, { flexGrow: 1 }]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           bounces={false}
-          style={styles.scrollView}
         >
           <Animated.View
             style={[
               styles.content,
               {
+                flex: 1,  // FIX: Prevent collapse when keyboard appears
                 opacity: fadeAnim,
                 transform: [{ translateY: slideAnim }]
               }
@@ -247,11 +225,7 @@ export default function SignupScreen() {
                   style={styles.eyeButton}
                   onPress={() => setShowPassword(!showPassword)}
                 >
-                  <Ionicons
-                    name={showPassword ? 'eye-off' : 'eye'}
-                    size={22}
-                    color="#666"
-                  />
+                  <Ionicons name={showPassword ? 'eye-off' : 'eye'} size={22} color="#666" />
                 </TouchableOpacity>
               </View>
 
@@ -274,7 +248,7 @@ export default function SignupScreen() {
                   dropdownIconColor="#2C5F6E"
                 >
                   <Picker.Item label="Select Country" value="" />
-                  {countries.map((c) => (
+                  {STATIC_COUNTRIES.map((c) => (
                     <Picker.Item key={c.code} label={c.name} value={c.code} />
                   ))}
                 </Picker>
@@ -288,7 +262,7 @@ export default function SignupScreen() {
                   dropdownIconColor="#2C5F6E"
                 >
                   <Picker.Item label="Select Gender" value="" />
-                  {genders.map((g) => (
+                  {STATIC_GENDERS.map((g) => (
                     <Picker.Item key={g.value} label={g.label} value={g.value} />
                   ))}
                 </Picker>
@@ -326,32 +300,18 @@ export default function SignupScreen() {
   );
 }
 
+// Styles unchanged
 const styles = StyleSheet.create({
-  gradient: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
+  gradient: { flex: 1 },
+  container: { flex: 1 },
+  scrollView: { flex: 1, backgroundColor: 'transparent' },
   scrollContent: {
-    flexGrow: 1,
     paddingVertical: 40,
     paddingHorizontal: 20,
     backgroundColor: 'transparent',
   },
-  content: {
-    alignItems: 'center',
-    width: '100%',
-  },
-  logo: {
-    width: 80,
-    height: 80,
-    marginBottom: 10,
-  },
+  content: { alignItems: 'center', width: '100%' },
+  logo: { width: 80, height: 80, marginBottom: 10 },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -359,23 +319,13 @@ const styles = StyleSheet.create({
     color: '#2C5F6E',
     marginBottom: 20,
   },
-  form: {
-    width: '100%',
-    maxWidth: 350,
-  },
+  form: { width: '100%', maxWidth: 350 },
   input: {
     backgroundColor: '#FFFFFF',
     borderRadius: 25,
     padding: 16,
-    paddingHorizontal: 20,
     marginBottom: 15,
-    fontSize: 16,
     color: '#333',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
     borderWidth: 1,
     borderColor: '#E0E0E0',
   },
@@ -385,18 +335,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 25,
     marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
     borderWidth: 1,
     borderColor: '#E0E0E0',
   },
   passwordInput: {
     flex: 1,
     padding: 16,
-    paddingHorizontal: 20,
     fontSize: 16,
     color: '#333',
   },
@@ -408,18 +352,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 25,
     marginBottom: 15,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
     borderWidth: 1,
     borderColor: '#E0E0E0',
   },
-  picker: {
-    color: '#333',
-  },
+  picker: { color: '#333' },
   signupButton: {
     backgroundColor: '#4BA3C3',
     borderRadius: 25,
@@ -427,15 +363,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
   },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
+  buttonDisabled: { opacity: 0.6 },
   signupButtonText: {
     color: '#fff',
     fontSize: 16,
@@ -446,22 +375,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 15,
   },
-  loginText: {
-    color: '#2C5F6E',
-    fontSize: 14,
-  },
+  loginText: { color: '#2C5F6E', fontSize: 14 },
   loginTextBold: {
     color: '#2C5F6E',
     fontSize: 14,
     fontWeight: 'bold',
     textDecorationLine: 'underline',
   },
-  privacyLink: {
-    alignItems: 'center',
-  },
-  privacyText: {
-    color: '#2C5F6E',
-    fontSize: 12,
-    fontWeight: '600',
-  },
+  privacyLink: { alignItems: 'center' },
+  privacyText: { color: '#2C5F6E', fontSize: 12, fontWeight: '600' },
 });

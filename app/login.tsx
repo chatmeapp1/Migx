@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -20,6 +19,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { API_ENDPOINTS } from '@/utils/api';
 
 export default function LoginScreen() {
+  const fadeAnim = useState(new Animated.Value(0))[0];
+  const slideAnim = useState(new Animated.Value(50))[0];
+
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -27,12 +29,9 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const fadeAnim = new Animated.Value(0);
-  const slideAnim = new Animated.Value(50);
-
   useEffect(() => {
     loadSavedCredentials();
-    
+
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -53,7 +52,7 @@ export default function LoginScreen() {
       const savedUsername = await AsyncStorage.getItem('saved_username');
       const savedPassword = await AsyncStorage.getItem('saved_password');
       const savedRememberMe = await AsyncStorage.getItem('remember_me');
-      
+
       if (savedRememberMe === 'true' && savedUsername) {
         setUsername(savedUsername);
         setPassword(savedPassword || '');
@@ -97,7 +96,6 @@ export default function LoginScreen() {
         }
 
         await AsyncStorage.setItem('user_data', JSON.stringify(data.user));
-        
         router.replace('/(tabs)');
       } else {
         Alert.alert('Login Failed', data.error || 'Invalid credentials');
@@ -110,26 +108,26 @@ export default function LoginScreen() {
     }
   };
 
-  const handleForgotPassword = () => {
-    Alert.alert('Forgot Password', 'Please contact support to reset your password.');
-  };
-
   return (
     <LinearGradient
       colors={['#7FB3C2', '#A8C9D4', '#7FB3C2']}
       style={styles.gradient}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.container}
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={0}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={[styles.scrollContent, { flexGrow: 1 }]}
+          keyboardShouldPersistTaps="handled"
+        >
           <Animated.View
             style={[
               styles.content,
               {
+                flex: 1,
                 opacity: fadeAnim,
                 transform: [{ translateY: slideAnim }]
               }
@@ -186,7 +184,7 @@ export default function LoginScreen() {
                   <Text style={styles.checkboxLabel}>Remember me</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity onPress={handleForgotPassword}>
+                <TouchableOpacity onPress={() => Alert.alert('Forgot Password', 'Please contact support.')}>
                   <Text style={styles.forgotPassword}>Forgot password?</Text>
                 </TouchableOpacity>
               </View>
@@ -235,16 +233,11 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  gradient: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-  },
+  gradient: { flex: 1 },
   scrollContent: {
-    flexGrow: 1,
     justifyContent: 'center',
     padding: 20,
+    paddingBottom: 40,
   },
   content: {
     alignItems: 'center',
@@ -269,14 +262,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 25,
     padding: 16,
-    paddingHorizontal: 20,
     marginBottom: 15,
     fontSize: 16,
     color: '#333',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
     elevation: 3,
   },
   passwordContainer: {
@@ -285,36 +273,24 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 25,
     marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
     elevation: 3,
   },
   passwordInput: {
     flex: 1,
     padding: 16,
-    paddingHorizontal: 20,
     fontSize: 16,
     color: '#333',
   },
-  eyeButton: {
-    padding: 16,
-    paddingRight: 20,
-  },
+  eyeButton: { padding: 16 },
   optionsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
     marginBottom: 10,
   },
   invisibleRow: {
     marginBottom: 20,
   },
-  checkbox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+  checkbox: { flexDirection: 'row', alignItems: 'center' },
   checkboxBox: {
     width: 22,
     height: 22,
@@ -324,7 +300,6 @@ const styles = StyleSheet.create({
     marginRight: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'transparent',
   },
   checkboxChecked: {
     backgroundColor: '#3B98B8',
@@ -333,12 +308,10 @@ const styles = StyleSheet.create({
   checkboxLabel: {
     color: '#2C5F6E',
     fontSize: 14,
-    fontWeight: '500',
   },
   forgotPassword: {
     color: '#3B98B8',
     fontSize: 14,
-    fontWeight: '500',
   },
   loginButton: {
     backgroundColor: '#4BA3C3',
@@ -346,32 +319,21 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
     elevation: 5,
   },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
+  buttonDisabled: { opacity: 0.6 },
   loginButtonText: {
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
   },
-  signupLink: {
-    alignItems: 'center',
-    marginBottom: 15,
-  },
+  signupLink: { alignItems: 'center', marginBottom: 15 },
   signupText: {
     color: '#2C5F6E',
     fontSize: 16,
     fontWeight: '600',
   },
-  privacyLink: {
-    alignItems: 'center',
-  },
+  privacyLink: { alignItems: 'center' },
   privacyText: {
     color: '#2C5F6E',
     fontSize: 14,

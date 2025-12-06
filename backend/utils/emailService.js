@@ -1,18 +1,37 @@
 
 const nodemailer = require('nodemailer');
 
-// Create Gmail transporter
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD
-  }
-});
+// Gmail configuration
+const GMAIL_USER = process.env.GMAIL_USER || 'wanwankwl@gmail.com';
+const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD;
 
-const FROM_ADDRESS = process.env.GMAIL_USER || 'noreply@migx.app';
+// Create Gmail transporter with error checking
+const createTransporter = () => {
+  if (!GMAIL_APP_PASSWORD) {
+    console.error('⚠️  GMAIL_APP_PASSWORD not set in Secrets!');
+    console.error('Please add GMAIL_APP_PASSWORD to your Replit Secrets');
+    return null;
+  }
+
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: GMAIL_USER,
+      pass: GMAIL_APP_PASSWORD
+    }
+  });
+};
+
+const FROM_ADDRESS = GMAIL_USER;
 
 async function sendOtpEmail(email, otp, username) {
+  const transporter = createTransporter();
+  
+  if (!transporter) {
+    console.error('Failed to create email transporter - missing GMAIL_APP_PASSWORD');
+    return { success: false, error: 'Email service not configured' };
+  }
+
   try {
     console.log('Sending OTP email to:', email);
     console.log('Using Gmail:', FROM_ADDRESS);
@@ -50,6 +69,13 @@ async function sendOtpEmail(email, otp, username) {
 }
 
 async function sendActivationEmail(email, username, token) {
+  const transporter = createTransporter();
+  
+  if (!transporter) {
+    console.error('Failed to create email transporter - missing GMAIL_APP_PASSWORD');
+    return { success: false, error: 'Email service not configured' };
+  }
+
   const baseUrl = process.env.APP_URL || process.env.REPLIT_DEV_DOMAIN 
     ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
     : 'http://localhost:5000';
@@ -93,6 +119,13 @@ async function sendActivationEmail(email, username, token) {
 }
 
 async function sendPasswordChangeOtp(email, username, otp) {
+  const transporter = createTransporter();
+  
+  if (!transporter) {
+    console.error('Failed to create email transporter - missing GMAIL_APP_PASSWORD');
+    return { success: false, error: 'Email service not configured' };
+  }
+
   try {
     console.log('Sending password change OTP to:', email);
     

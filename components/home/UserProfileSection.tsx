@@ -143,7 +143,8 @@ export function UserProfileSection({
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 12,
+    paddingTop: 8,
+    paddingBottom: 12,
     paddingHorizontal: 16,
   },
   profileRow: {

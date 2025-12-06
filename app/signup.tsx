@@ -195,14 +195,16 @@ export default function SignupScreen() {
       end={{ x: 1, y: 1 }}
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.container}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
         <ScrollView 
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          bounces={false}
+          style={styles.scrollView}
         >
           <Animated.View
             style={[
@@ -331,10 +333,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  scrollView: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
   scrollContent: {
     flexGrow: 1,
     paddingVertical: 40,
     paddingHorizontal: 20,
+    backgroundColor: 'transparent',
   },
   content: {
     alignItems: 'center',
@@ -357,7 +364,7 @@ const styles = StyleSheet.create({
     maxWidth: 350,
   },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 25,
     padding: 16,
     paddingHorizontal: 20,
@@ -369,11 +376,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
   },
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 25,
     marginBottom: 15,
     shadowColor: '#000',
@@ -381,6 +390,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
   },
   passwordInput: {
     flex: 1,
@@ -394,7 +405,7 @@ const styles = StyleSheet.create({
     paddingRight: 20,
   },
   pickerContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 25,
     marginBottom: 15,
     overflow: 'hidden',
@@ -403,6 +414,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
   },
   picker: {
     color: '#333',

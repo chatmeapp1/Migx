@@ -43,22 +43,21 @@ function RootLayoutNav() {
           animation: "none",
         }}
       >
-        {!isLoggedIn ? (
-          <>
-            <Stack.Screen name="login" />
-            <Stack.Screen name="signup" />
-            <Stack.Screen name="privacy-policy" />
-          </>
-        ) : (
-          <>
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="chatroom/[id]" />
-            <Stack.Screen name="transfer-credit" />
-            <Stack.Screen name="transfer-history" />
-            <Stack.Screen name="official-comment" />
-            <Stack.Screen name="+not-found" />
-          </>
-        )}
+        <Stack.Screen name="index" />
+        <Stack.Screen name="login" />
+        <Stack.Screen name="signup" />
+        <Stack.Screen name="privacy-policy" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="chatroom/[id]" />
+        <Stack.Screen name="transfer-credit" />
+        <Stack.Screen name="transfer-history" />
+        <Stack.Screen name="official-comment" />
+        <Stack.Screen name="edit-profile" />
+        <Stack.Screen name="settings" />
+        <Stack.Screen name="gift-store" />
+        <Stack.Screen name="leaderboard" />
+        <Stack.Screen name="people" />
+        <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style={isDark ? "light" : "dark"} />
     </ThemeProvider>

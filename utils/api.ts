@@ -22,6 +22,8 @@ export const API_ENDPOINTS = {
     CHANGE_PASSWORD: `${API_BASE_URL}/api/auth/change-password`,
     SEND_EMAIL_OTP: `${API_BASE_URL}/api/auth/send-email-otp`,
     CHANGE_EMAIL: `${API_BASE_URL}/api/auth/change-email`,
+    VERIFY_OTP: `${API_BASE_URL}/api/auth/verify-otp`,
+    RESEND_OTP: `${API_BASE_URL}/api/auth/resend-otp`,
   },
   USER: {
     PROFILE: `${API_BASE_URL}/api/user/profile`,

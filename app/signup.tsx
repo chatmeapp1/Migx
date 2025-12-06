@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,8 @@ import {
   Platform,
   ScrollView,
   Animated,
-  Alert
+  Alert,
+  Modal
 } from 'react-native';
 import { router } from 'expo-router';
 import { Picker } from '@react-native-picker/picker';
@@ -28,7 +29,6 @@ interface Gender {
   label: string;
 }
 
-// Static data
 const STATIC_GENDERS: Gender[] = [
   { value: 'male', label: 'Male' },
   { value: 'female', label: 'Female' }
@@ -66,7 +66,15 @@ export default function SignupScreen() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // FIX: Animated values must not recreate on each render
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [registeredUserId, setRegisteredUserId] = useState<number | null>(null);
+  const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
+  const [verifying, setVerifying] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  const otpInputRefs = useRef<(TextInput | null)[]>([]);
+
   const fadeAnim = useState(new Animated.Value(0))[0];
   const slideAnim = useState(new Animated.Value(50))[0];
 
@@ -85,6 +93,13 @@ export default function SignupScreen() {
       })
     ]).start();
   }, []);
+
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -151,11 +166,9 @@ export default function SignupScreen() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        Alert.alert(
-          'Registration Successful',
-          'Please check your email to activate your account.',
-          [{ text: 'OK', onPress: () => router.replace('/login') }]
-        );
+        setRegisteredUserId(data.user?.id || data.userId);
+        setShowOtpModal(true);
+        setResendCooldown(60);
       } else {
         Alert.alert('Registration Failed', data.error || 'Please try again');
       }
@@ -166,6 +179,176 @@ export default function SignupScreen() {
       setLoading(false);
     }
   };
+
+  const handleOtpChange = (index: number, value: string) => {
+    if (value.length > 1) {
+      value = value.slice(-1);
+    }
+    if (!/^\d*$/.test(value)) return;
+
+    const newDigits = [...otpDigits];
+    newDigits[index] = value;
+    setOtpDigits(newDigits);
+
+    if (value && index < 5) {
+      otpInputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyPress = (index: number, key: string) => {
+    if (key === 'Backspace' && !otpDigits[index] && index > 0) {
+      otpInputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    const otp = otpDigits.join('');
+    if (otp.length !== 6) {
+      Alert.alert('Invalid Code', 'Please enter all 6 digits');
+      return;
+    }
+
+    setVerifying(true);
+
+    try {
+      const response = await fetch(API_ENDPOINTS.AUTH.VERIFY_OTP, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: registeredUserId,
+          otp: otp
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setShowOtpModal(false);
+        Alert.alert(
+          'Account Activated!',
+          'Your account has been verified successfully. You can now log in.',
+          [{ text: 'Login', onPress: () => router.replace('/login') }]
+        );
+      } else {
+        Alert.alert('Verification Failed', data.error || 'Invalid or expired code');
+        setOtpDigits(['', '', '', '', '', '']);
+        otpInputRefs.current[0]?.focus();
+      }
+    } catch (error) {
+      console.error('OTP verification error:', error);
+      Alert.alert('Error', 'Failed to verify code. Please try again.');
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0 || resending) return;
+
+    setResending(true);
+
+    try {
+      const response = await fetch(API_ENDPOINTS.AUTH.RESEND_OTP, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: registeredUserId }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        Alert.alert('Code Sent', 'A new verification code has been sent to your email.');
+        setResendCooldown(60);
+        setOtpDigits(['', '', '', '', '', '']);
+        otpInputRefs.current[0]?.focus();
+      } else {
+        Alert.alert('Error', data.error || 'Failed to resend code');
+      }
+    } catch (error) {
+      console.error('Resend OTP error:', error);
+      Alert.alert('Error', 'Failed to resend code. Please try again.');
+    } finally {
+      setResending(false);
+    }
+  };
+
+  const renderOtpModal = () => (
+    <Modal
+      visible={showOtpModal}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={() => {}}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Ionicons name="mail-outline" size={48} color="#4BA3C3" />
+            <Text style={styles.modalTitle}>Verify Your Email</Text>
+            <Text style={styles.modalSubtitle}>
+              We've sent a 6-digit code to{'\n'}
+              <Text style={styles.emailText}>{email}</Text>
+            </Text>
+          </View>
+
+          <View style={styles.otpContainer}>
+            {otpDigits.map((digit, index) => (
+              <TextInput
+                key={index}
+                ref={(ref) => (otpInputRefs.current[index] = ref)}
+                style={[
+                  styles.otpInput,
+                  digit ? styles.otpInputFilled : null
+                ]}
+                value={digit}
+                onChangeText={(value) => handleOtpChange(index, value)}
+                onKeyPress={({ nativeEvent }) => handleOtpKeyPress(index, nativeEvent.key)}
+                keyboardType="number-pad"
+                maxLength={1}
+                selectTextOnFocus
+                autoFocus={index === 0}
+              />
+            ))}
+          </View>
+
+          <TouchableOpacity
+            style={[styles.verifyButton, verifying && styles.buttonDisabled]}
+            onPress={handleVerifyOtp}
+            disabled={verifying}
+          >
+            <Text style={styles.verifyButtonText}>
+              {verifying ? 'Verifying...' : 'Verify Account'}
+            </Text>
+          </TouchableOpacity>
+
+          <View style={styles.resendContainer}>
+            <Text style={styles.resendText}>Didn't receive the code? </Text>
+            {resendCooldown > 0 ? (
+              <Text style={styles.resendCooldown}>
+                Resend in {resendCooldown}s
+              </Text>
+            ) : (
+              <TouchableOpacity onPress={handleResendOtp} disabled={resending}>
+                <Text style={styles.resendLink}>
+                  {resending ? 'Sending...' : 'Resend Code'}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <TouchableOpacity
+            style={styles.cancelButton}
+            onPress={() => {
+              setShowOtpModal(false);
+              setOtpDigits(['', '', '', '', '', '']);
+              setRegisteredUserId(null);
+            }}
+          >
+            <Text style={styles.cancelButtonText}>Cancel & Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
 
   return (
     <LinearGradient
@@ -187,7 +370,7 @@ export default function SignupScreen() {
             style={[
               styles.content,
               {
-                flex: 1,  // FIX: Prevent collapse when keyboard appears
+                flex: 1,
                 opacity: fadeAnim,
                 transform: [{ translateY: slideAnim }]
               }
@@ -296,11 +479,12 @@ export default function SignupScreen() {
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {renderOtpModal()}
     </LinearGradient>
   );
 }
 
-// Styles unchanged
 const styles = StyleSheet.create({
   gradient: { flex: 1 },
   container: { flex: 1 },
@@ -384,4 +568,102 @@ const styles = StyleSheet.create({
   },
   privacyLink: { alignItems: 'center' },
   privacyText: { color: '#2C5F6E', fontSize: 12, fontWeight: '600' },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 30,
+    width: '100%',
+    maxWidth: 400,
+    alignItems: 'center',
+  },
+  modalHeader: {
+    alignItems: 'center',
+    marginBottom: 25,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#2C5F6E',
+    marginTop: 15,
+    marginBottom: 10,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  emailText: {
+    color: '#4BA3C3',
+    fontWeight: '600',
+  },
+  otpContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 10,
+    marginBottom: 25,
+  },
+  otpInput: {
+    width: 45,
+    height: 55,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#E0E0E0',
+    textAlign: 'center',
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#2C5F6E',
+    backgroundColor: '#F9F9F9',
+  },
+  otpInputFilled: {
+    borderColor: '#4BA3C3',
+    backgroundColor: '#F0F8FB',
+  },
+  verifyButton: {
+    backgroundColor: '#4BA3C3',
+    borderRadius: 25,
+    padding: 16,
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  verifyButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  resendContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  resendText: {
+    color: '#666',
+    fontSize: 14,
+  },
+  resendCooldown: {
+    color: '#999',
+    fontSize: 14,
+  },
+  resendLink: {
+    color: '#4BA3C3',
+    fontSize: 14,
+    fontWeight: 'bold',
+    textDecorationLine: 'underline',
+  },
+  cancelButton: {
+    padding: 10,
+  },
+  cancelButtonText: {
+    color: '#999',
+    fontSize: 14,
+  },
 });

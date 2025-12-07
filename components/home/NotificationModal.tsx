@@ -76,7 +76,7 @@ export function NotificationModal({ visible, onClose, username, socket }: Notifi
     try {
       console.log('Fetching notifications for:', username);
       const response = await fetch(
-        `https://5b4697a9-a207-4dc0-b787-64f8249a493b-00-1mo41brot76f2.sisko.replit.dev/api/notifications/${username}`
+        `https://d0dba9b7-ac8a-4020-84d9-4894ec7b1538-00-efarr67watd.sisko.replit.dev/api/notifications/${username}`
       );
       
       if (!response.ok) {

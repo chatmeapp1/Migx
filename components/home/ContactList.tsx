@@ -1,26 +1,36 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useThemeCustom } from '@/theme/provider';
 import { ContactItem } from './ContactItem';
 
-const onlineFriends = [
-  { name: 'acun', status: '👑', isOnline: true, lastSeen: 'Last seen 04-Dec 17:30', avatar: '👤' },
-  { name: 'adit_namaq', status: 'sedang mengetik.....l', isOnline: true, lastSeen: 'Last seen 04-Dec 17:28', avatar: '👤' },
-  { name: 'bri', status: 'enter ( cebol sedunia )', isOnline: false, lastSeen: 'Last seen 04-Dec 16:45', avatar: '👤' },
-  { name: 'dee', status: '🏰Togel chātröõm', isOnline: false, lastSeen: 'Last seen 04-Dec 15:20', avatar: '👤' },
-  { name: 'dessy', status: '😀', isOnline: true, lastSeen: 'Last seen 04-Dec 17:25', avatar: '👤' },
-  { name: 'ecca', status: 'it\'s a dog🐶', isOnline: true, lastSeen: 'Last seen 04-Dec 17:29', avatar: '👤' },
-  { name: 'gita', status: 'I ❤️ YOU', isOnline: false, lastSeen: 'Last seen 04-Dec 14:10', avatar: '👤' },
-  { name: 'glez', status: '💕 M♡rЯÿ♡r♡ 💕', isOnline: true, lastSeen: 'Last seen 04-Dec 17:31', avatar: '👤' },
-  { name: 'jib', status: 'MultiGram of War', isOnline: true, lastSeen: 'Last seen 04-Dec 17:27', avatar: '👤' },
-  { name: 'jova', status: '💘💘💘💘💘', isOnline: true, lastSeen: 'Last seen 04-Dec 17:32', avatar: '👤' },
+type PresenceStatus = 'online' | 'away' | 'busy' | 'offline';
+
+interface Contact {
+  name: string;
+  status: string;
+  presence: PresenceStatus;
+  lastSeen: string;
+  avatar: string;
+}
+
+const onlineFriends: Contact[] = [
+  { name: 'acun', status: '👑', presence: 'online', lastSeen: 'Last seen 04-Dec 17:30', avatar: '👤' },
+  { name: 'adit_namaq', status: 'sedang mengetik.....l', presence: 'online', lastSeen: 'Last seen 04-Dec 17:28', avatar: '👤' },
+  { name: 'bri', status: 'enter ( cebol sedunia )', presence: 'away', lastSeen: 'Last seen 04-Dec 16:45', avatar: '👤' },
+  { name: 'dee', status: '🏰Togel chātröõm', presence: 'offline', lastSeen: 'Last seen 04-Dec 15:20', avatar: '👤' },
+  { name: 'dessy', status: '😀', presence: 'busy', lastSeen: 'Last seen 04-Dec 17:25', avatar: '👤' },
+  { name: 'ecca', status: 'it\'s a dog🐶', presence: 'online', lastSeen: 'Last seen 04-Dec 17:29', avatar: '👤' },
+  { name: 'gita', status: 'I ❤️ YOU', presence: 'offline', lastSeen: 'Last seen 04-Dec 14:10', avatar: '👤' },
+  { name: 'glez', status: '💕 M♡rЯÿ♡r♡ 💕', presence: 'online', lastSeen: 'Last seen 04-Dec 17:31', avatar: '👤' },
+  { name: 'jib', status: 'MultiGram of War', presence: 'away', lastSeen: 'Last seen 04-Dec 17:27', avatar: '👤' },
+  { name: 'jova', status: '💘💘💘💘💘', presence: 'online', lastSeen: 'Last seen 04-Dec 17:32', avatar: '👤' },
 ];
 
-const mig33Contacts = [
-  { name: 'l________', status: 'No pain no gain', isOnline: true, lastSeen: 'Last seen 04-Dec 17:15', avatar: '👤' },
-  { name: 'litz____', status: 'dapat jg orkor, wlpn of di teguin on wkwk', isOnline: false, lastSeen: 'Last seen 04-Dec 12:30', avatar: '👤' },
-  { name: 'm________', status: 'عَ۞تبنَنہيک شَيُوَتہ،او مَےَوتہ ووَ', isOnline: false, lastSeen: 'Last seen 04-Dec 10:20', avatar: '👤' },
-  { name: 'q______', status: '???', isOnline: false, lastSeen: 'Last seen 04-Dec 08:45', avatar: '👤' },
+const mig33Contacts: Contact[] = [
+  { name: 'l________', status: 'No pain no gain', presence: 'online', lastSeen: 'Last seen 04-Dec 17:15', avatar: '👤' },
+  { name: 'litz____', status: 'dapat jg orkor, wlpn of di teguin on wkwk', presence: 'busy', lastSeen: 'Last seen 04-Dec 12:30', avatar: '👤' },
+  { name: 'm________', status: 'عَ۞تبنَنہيک شَيُوَتہ،او مَےَوتہ ووَ', presence: 'offline', lastSeen: 'Last seen 04-Dec 10:20', avatar: '👤' },
+  { name: 'q______', status: '???', presence: 'away', lastSeen: 'Last seen 04-Dec 08:45', avatar: '👤' },
 ];
 
 export function ContactList() {
@@ -38,7 +48,7 @@ export function ContactList() {
             key={`online-${index}`}
             name={friend.name}
             status={friend.status}
-            isOnline={friend.isOnline}
+            presence={friend.presence}
             lastSeen={friend.lastSeen}
             avatar={friend.avatar}
           />
@@ -55,7 +65,7 @@ export function ContactList() {
             key={`mig33-${index}`}
             name={contact.name}
             status={contact.status}
-            isOnline={contact.isOnline}
+            presence={contact.presence}
             lastSeen={contact.lastSeen}
             avatar={contact.avatar}
           />

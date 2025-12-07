@@ -18,7 +18,7 @@ module.exports = (io, socket) => {
         return;
       }
       
-      const floodCheck = await checkFlood(userId, roomId);
+      const floodCheck = await checkFlood(username);
       if (!floodCheck.allowed) {
         socket.emit('system:message', {
           roomId,

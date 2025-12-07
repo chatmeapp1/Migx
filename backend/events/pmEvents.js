@@ -1,6 +1,6 @@
 const messageService = require('../services/messageService');
 const userService = require('../services/userService');
-const { getUserSocket } = require('../utils/presence');
+const { getUserSocket, getPresence } = require('../utils/presence');
 const { generateMessageId } = require('../utils/idGenerator');
 const { checkGlobalRateLimit } = require('../utils/floodControl');
 
@@ -36,6 +36,15 @@ module.exports = (io, socket) => {
           return;
         }
         recipientUsername = recipient.username;
+      }
+      
+      const recipientPresence = await getPresence(recipientUsername);
+      if (recipientPresence === 'busy') {
+        socket.emit('pm:blocked', {
+          message: 'User is currently busy and cannot receive private messages.',
+          toUsername: recipientUsername
+        });
+        return;
       }
       
       const savedMessage = await messageService.savePrivateMessage(

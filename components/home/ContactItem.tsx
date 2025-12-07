@@ -1,25 +1,87 @@
-
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useThemeCustom } from '@/theme/provider';
 import { parseEmojiMessage } from '@/utils/emojiParser';
 
+type PresenceStatus = 'online' | 'away' | 'busy' | 'offline';
+
 interface ContactItemProps {
   name: string;
   status?: string;
+  presence?: PresenceStatus;
   isOnline?: boolean;
   lastSeen?: string;
   avatar?: string;
 }
 
-export function ContactItem({ name, status, isOnline = false, lastSeen, avatar }: ContactItemProps) {
+const getPresenceColor = (presence: PresenceStatus): string => {
+  switch (presence) {
+    case 'online':
+      return '#90EE90';
+    case 'away':
+      return '#FFD700';
+    case 'busy':
+      return '#FF6B6B';
+    case 'offline':
+    default:
+      return '#808080';
+  }
+};
+
+const getPresenceBorderColor = (presence: PresenceStatus): string => {
+  switch (presence) {
+    case 'online':
+      return '#5CB85C';
+    case 'away':
+      return '#DAA520';
+    case 'busy':
+      return '#DC143C';
+    case 'offline':
+    default:
+      return '#666666';
+  }
+};
+
+const getPresenceLabel = (presence: PresenceStatus): string => {
+  switch (presence) {
+    case 'online':
+      return 'Online';
+    case 'away':
+      return 'Away';
+    case 'busy':
+      return 'Busy';
+    case 'offline':
+    default:
+      return 'Offline';
+  }
+};
+
+const getUsernameColor = (presence: PresenceStatus): string => {
+  switch (presence) {
+    case 'online':
+      return '#4A90E2';
+    case 'away':
+      return '#DAA520';
+    case 'busy':
+      return '#DC143C';
+    case 'offline':
+    default:
+      return '#E74C3C';
+  }
+};
+
+export function ContactItem({ 
+  name, 
+  status, 
+  presence,
+  isOnline = false, 
+  lastSeen, 
+  avatar 
+}: ContactItemProps) {
   const { theme } = useThemeCustom();
   
-  const getUsernameColor = () => {
-    if (isOnline) return '#4A90E2'; // Blue for online
-    return '#E74C3C'; // Red for offline
-  };
-
+  const effectivePresence: PresenceStatus = presence || (isOnline ? 'online' : 'offline');
+  
   const parsedStatus = status ? parseEmojiMessage(status) : [];
   
   return (
@@ -29,18 +91,31 @@ export function ContactItem({ name, status, isOnline = false, lastSeen, avatar }
           <View style={[styles.avatar, { backgroundColor: theme.card }]}>
             <Text style={styles.avatarText}>{avatar || '👤'}</Text>
           </View>
-          <View style={[styles.statusDot, { backgroundColor: isOnline ? '#90EE90' : '#E74C3C', borderColor: isOnline ? '#5CB85C' : '#C0392B' }]} />
+          <View style={[
+            styles.statusDot, 
+            { 
+              backgroundColor: getPresenceColor(effectivePresence), 
+              borderColor: getPresenceBorderColor(effectivePresence) 
+            }
+          ]} />
         </View>
         
         <View style={styles.content}>
-          <Text style={[styles.name, { color: getUsernameColor() }]} numberOfLines={1}>{name}</Text>
+          <View style={styles.nameRow}>
+            <Text style={[styles.name, { color: getUsernameColor(effectivePresence) }]} numberOfLines={1}>{name}</Text>
+            {effectivePresence !== 'offline' && effectivePresence !== 'online' && (
+              <View style={[styles.presenceBadge, { backgroundColor: getPresenceColor(effectivePresence) }]}>
+                <Text style={styles.presenceBadgeText}>{getPresenceLabel(effectivePresence)}</Text>
+              </View>
+            )}
+          </View>
           {status && (
             <View style={styles.statusContainer}>
               {parsedStatus.map((part, index) => (
                 part.type === 'emoji' ? (
-                  <Text key={index} style={styles.statusEmoji}>{part.image}</Text>
+                  <Text key={index} style={styles.statusEmoji}>{part.src}</Text>
                 ) : (
-                  <Text key={index} style={[styles.status, { color: theme.secondary }]}>{part.text}</Text>
+                  <Text key={index} style={[styles.status, { color: theme.secondary }]}>{part.content}</Text>
                 )
               ))}
             </View>
@@ -48,11 +123,16 @@ export function ContactItem({ name, status, isOnline = false, lastSeen, avatar }
         </View>
       </View>
       
-      {lastSeen && (
-        <Text style={[styles.lastSeen, { color: theme.secondary }]} numberOfLines={1}>
-          {lastSeen}
+      <View style={styles.rightSection}>
+        {lastSeen && (
+          <Text style={[styles.lastSeen, { color: theme.secondary }]} numberOfLines={1}>
+            {lastSeen}
+          </Text>
+        )}
+        <Text style={[styles.presenceText, { color: getPresenceColor(effectivePresence) }]}>
+          {getPresenceLabel(effectivePresence)}
         </Text>
-      )}
+      </View>
     </TouchableOpacity>
   );
 }
@@ -97,10 +177,25 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   name: {
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 2,
+  },
+  presenceBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  presenceBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#000',
   },
   statusContainer: {
     flexDirection: 'row',
@@ -113,8 +208,16 @@ const styles = StyleSheet.create({
   statusEmoji: {
     fontSize: 13,
   },
+  rightSection: {
+    alignItems: 'flex-end',
+    marginLeft: 8,
+  },
   lastSeen: {
     fontSize: 12,
-    marginLeft: 8,
+  },
+  presenceText: {
+    fontSize: 11,
+    fontWeight: '500',
+    marginTop: 2,
   },
 });

@@ -1,21 +1,23 @@
 const { client } = require('../redis');
 
-const FLOOD_KEY = (userId, roomId) => `flood:${userId}:${roomId}`;
-const FLOOD_TTL_MS = 700;
+const DEFAULT_TTL = 300;
+
+const FLOOD_KEY = (username) => `flood:${username}`;
 const GLOBAL_RATE_KEY = (userId) => `rate:global:${userId}`;
 const GLOBAL_RATE_LIMIT = 30;
 const GLOBAL_RATE_WINDOW = 60;
 
-const checkFlood = async (userId, roomId) => {
+const checkFlood = async (username) => {
   try {
-    const key = FLOOD_KEY(userId, roomId);
+    const key = FLOOD_KEY(username);
     const exists = await client.exists(key);
     
     if (exists) {
       return { allowed: false, message: 'Slow down! Wait a moment before sending another message.' };
     }
     
-    await client.set(key, '1', { PX: FLOOD_TTL_MS });
+    await client.set(key, '1');
+    await client.expire(key, DEFAULT_TTL);
     return { allowed: true };
   } catch (error) {
     console.error('Error checking flood:', error);
@@ -48,9 +50,9 @@ const checkGlobalRateLimit = async (userId) => {
   }
 };
 
-const resetFlood = async (userId, roomId) => {
+const resetFlood = async (username) => {
   try {
-    const key = FLOOD_KEY(userId, roomId);
+    const key = FLOOD_KEY(username);
     await client.del(key);
     return true;
   } catch (error) {
@@ -105,5 +107,5 @@ module.exports = {
   resetFlood,
   checkTransferLimit,
   checkGameLimit,
-  FLOOD_TTL_MS
+  DEFAULT_TTL
 };

@@ -43,28 +43,39 @@ export function Header() {
   
   useEffect(() => {
     loadUserData();
-    const socketInstance = createSocket();
-    setSocket(socketInstance);
-    
-    // Listen for notification events
-    socketInstance.on('notif:credit', (data: any) => {
-      fetchNotificationCount();
-    });
-    
-    socketInstance.on('notif:gift', (data: any) => {
-      fetchNotificationCount();
-    });
-    
-    socketInstance.on('notif:follow', (data: any) => {
-      fetchNotificationCount();
-    });
-    
-    return () => {
-      socketInstance.off('notif:credit');
-      socketInstance.off('notif:gift');
-      socketInstance.off('notif:follow');
-    };
   }, []);
+  
+  useEffect(() => {
+    if (username) {
+      const socketInstance = createSocket();
+      setSocket(socketInstance);
+      
+      // Listen for notification events
+      socketInstance.on('notif:credit', (data: any) => {
+        console.log('Credit notification received:', data);
+        fetchNotificationCount();
+      });
+      
+      socketInstance.on('notif:gift', (data: any) => {
+        console.log('Gift notification received:', data);
+        fetchNotificationCount();
+      });
+      
+      socketInstance.on('notif:follow', (data: any) => {
+        console.log('Follow notification received:', data);
+        fetchNotificationCount();
+      });
+      
+      // Fetch initial notification count
+      fetchNotificationCount();
+      
+      return () => {
+        socketInstance.off('notif:credit');
+        socketInstance.off('notif:gift');
+        socketInstance.off('notif:follow');
+      };
+    }
+  }, [username]);
   
   useEffect(() => {
     if (username) {
@@ -99,12 +110,20 @@ export function Header() {
   };
   
   const handleBellPress = () => {
+    console.log('Bell icon pressed, username:', username);
+    if (!username) {
+      console.warn('Username not loaded yet');
+      return;
+    }
     setShowNotifications(true);
   };
   
   const handleCloseNotifications = () => {
     setShowNotifications(false);
-    fetchNotificationCount();
+    // Refresh notification count after closing
+    setTimeout(() => {
+      fetchNotificationCount();
+    }, 300);
   };
   
   return (

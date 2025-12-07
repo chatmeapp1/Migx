@@ -61,20 +61,34 @@ export function NotificationModal({ visible, onClose, username, socket }: Notifi
 
   useEffect(() => {
     if (visible && username) {
+      console.log('NotificationModal opened for username:', username);
       fetchNotifications();
     }
   }, [visible, username]);
 
   const fetchNotifications = async () => {
+    if (!username) {
+      console.warn('Cannot fetch notifications: username is missing');
+      return;
+    }
+    
     setLoading(true);
     try {
+      console.log('Fetching notifications for:', username);
       const response = await fetch(
         `https://5b4697a9-a207-4dc0-b787-64f8249a493b-00-1mo41brot76f2.sisko.replit.dev/api/notifications/${username}`
       );
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
+      console.log('Notifications received:', data);
       setNotifications(data.notifications || []);
     } catch (error) {
       console.error('Error fetching notifications:', error);
+      setNotifications([]);
     } finally {
       setLoading(false);
     }

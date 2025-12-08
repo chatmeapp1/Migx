@@ -22,12 +22,15 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- Rooms table
 CREATE TABLE IF NOT EXISTS rooms (
-  id VARCHAR(20) PRIMARY KEY,
+  id BIGSERIAL PRIMARY KEY,
   name VARCHAR(100) NOT NULL UNIQUE,
   owner_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
   creator_name VARCHAR(50),
   description TEXT,
   max_users INTEGER DEFAULT 25,
+  is_private BOOLEAN DEFAULT FALSE,
+  password VARCHAR(100),
+  room_code VARCHAR(20),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -35,7 +38,7 @@ CREATE TABLE IF NOT EXISTS rooms (
 -- Room admins table
 CREATE TABLE IF NOT EXISTS room_admins (
   id SERIAL PRIMARY KEY,
-  room_id VARCHAR(20) REFERENCES rooms(id) ON DELETE CASCADE,
+  room_id BIGINT REFERENCES rooms(id) ON DELETE CASCADE,
   user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(room_id, user_id)
@@ -77,7 +80,7 @@ CREATE TABLE IF NOT EXISTS user_follows (
 -- Messages table
 CREATE TABLE IF NOT EXISTS messages (
   id BIGSERIAL PRIMARY KEY,
-  room_id VARCHAR(20) REFERENCES rooms(id) ON DELETE CASCADE,
+  room_id BIGINT REFERENCES rooms(id) ON DELETE CASCADE,
   user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
   username VARCHAR(50) NOT NULL,
   message TEXT NOT NULL,
@@ -145,7 +148,7 @@ CREATE TABLE IF NOT EXISTS user_levels (
 -- Room bans table (persistent bans)
 CREATE TABLE IF NOT EXISTS room_bans (
   id BIGSERIAL PRIMARY KEY,
-  room_id VARCHAR(20) REFERENCES rooms(id) ON DELETE CASCADE,
+  room_id BIGINT REFERENCES rooms(id) ON DELETE CASCADE,
   user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
   banned_by BIGINT REFERENCES users(id),
   reason TEXT,
@@ -209,8 +212,8 @@ CREATE INDEX IF NOT EXISTS idx_room_bans_room_id ON room_bans(room_id);
 
 
 -- Insert default rooms (only if they don't exist)
-INSERT INTO rooms (id, name, description, max_users) VALUES
-  ('MIGX-00001', 'Indonesia', 'Welcome to Indonesia room', 100),
-  ('MIGX-00002', 'Dhaka cafe', 'Welcome to Dhaka cafe', 50),
-  ('MIGX-00003', 'Mobile fun', 'Fun chat for mobile users', 50)
-ON CONFLICT (id) DO NOTHING;
+INSERT INTO rooms (name, description, max_users, room_code) VALUES
+  ('Indonesia', 'Welcome to Indonesia room', 100, 'MIGX-00001'),
+  ('Dhaka cafe', 'Welcome to Dhaka cafe', 50, 'MIGX-00002'),
+  ('Mobile fun', 'Fun chat for mobile users', 50, 'MIGX-00003')
+ON CONFLICT (name) DO NOTHING;

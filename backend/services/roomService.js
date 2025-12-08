@@ -11,10 +11,10 @@ const createRoom = async (name, ownerId, creatorName, description = '') => {
     const maxUsers = 25;
     
     const result = await query(
-      `INSERT INTO rooms (id, name, owner_id, creator_name, description, max_users, created_at)
+      `INSERT INTO rooms (name, owner_id, creator_name, description, max_users, room_code, created_at)
        VALUES ($1, $2, $3, $4, $5, $6, NOW())
        RETURNING *`,
-      [roomCode, name, ownerId, creatorName, description, maxUsers]
+      [name, ownerId, creatorName, description, maxUsers, roomCode]
     );
     
     const roomId = result.rows[0].id;

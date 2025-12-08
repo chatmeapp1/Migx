@@ -41,10 +41,28 @@ const initDatabase = async () => {
   try {
     const schemaPath = path.join(__dirname, 'schema.sql');
     const schema = fs.readFileSync(schemaPath, 'utf8');
-    await pool.query(schema);
+    
+    // Split schema into statements and execute them separately
+    const statements = schema
+      .split(';')
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
+    
+    for (const statement of statements) {
+      try {
+        await pool.query(statement);
+      } catch (err) {
+        // Ignore errors for INSERT statements (they might already exist)
+        if (!statement.toUpperCase().includes('INSERT')) {
+          console.error('Error executing statement:', err.message);
+        }
+      }
+    }
+    
     console.log('Database schema initialized');
   } catch (error) {
     console.error('Error initializing database:', error);
+    throw error;
   }
 };
 

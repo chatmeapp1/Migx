@@ -173,9 +173,9 @@ CREATE INDEX IF NOT EXISTS idx_game_history_user ON game_history(user_id);
 CREATE INDEX IF NOT EXISTS idx_room_bans_room_id ON room_bans(room_id);
 
 
--- Insert default rooms
+-- Insert default rooms (only if they don't exist)
 INSERT INTO rooms (id, name, description, max_users) VALUES
   ('MIGX-00001', 'Indonesia', 'Welcome to Indonesia room', 100),
   ('MIGX-00002', 'Dhaka cafe', 'Welcome to Dhaka cafe', 50),
   ('MIGX-00003', 'Mobile fun', 'Fun chat for mobile users', 50)
-ON CONFLICT DO NOTHING;
+ON CONFLICT (id) DO NOTHING;

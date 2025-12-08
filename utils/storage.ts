@@ -55,4 +55,27 @@ class Storage {
   }
 }
 
-export default new Storage();
+const storage = new Storage();
+
+export const getStoredUser = async () => {
+  try {
+    const userJson = await storage.getItem('user');
+    if (userJson) {
+      return JSON.parse(userJson);
+    }
+    return null;
+  } catch (error) {
+    console.error('Error getting stored user:', error);
+    return null;
+  }
+};
+
+export const storeUser = async (user: any) => {
+  try {
+    await storage.setItem('user', JSON.stringify(user));
+  } catch (error) {
+    console.error('Error storing user:', error);
+  }
+};
+
+export default storage;

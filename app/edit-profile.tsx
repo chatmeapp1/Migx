@@ -3,10 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Modal, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useThemeCustom } from '@/theme/provider';
 import { EditProfileHeader } from '@/components/profile/EditProfileHeader';
 import { EditProfileStats } from '@/components/profile/EditProfileStats';
-import { getStoredUser } from '@/utils/storage';
+import { getStoredUser, storeUser } from '@/utils/storage';
 import { API_ENDPOINTS } from '@/utils/api';
 
 export default function EditProfileScreen() {
@@ -40,7 +41,7 @@ export default function EditProfileScreen() {
 
     // Pick image
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [16, 9],
       quality: 0.8,
@@ -68,7 +69,7 @@ export default function EditProfileScreen() {
 
     // Pick image
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
@@ -111,12 +112,12 @@ export default function EditProfileScreen() {
       if (response.ok && data.success) {
         Alert.alert('Success', 'Avatar uploaded successfully');
         
-        // Update user data
-        const updatedUser = { ...user, avatar: data.avatar };
+        // Update user data with full backend response
+        const updatedUser = { ...user, ...data.user };
         setUser(updatedUser);
         
         // Update stored user
-        await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+        await storeUser(updatedUser);
       } else {
         Alert.alert('Error', data.error || 'Failed to upload avatar');
       }

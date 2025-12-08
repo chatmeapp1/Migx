@@ -26,6 +26,10 @@ function StatItem({ label, value, onPress }: StatItemProps) {
 
 interface EditProfileStatsProps {
   userId: string;
+  postCount?: number;
+  giftCount?: number;
+  followersCount?: number;
+  followingCount?: number;
   onPostPress?: () => void;
   onGiftPress?: () => void;
   onFollowersPress?: () => void;
@@ -34,23 +38,39 @@ interface EditProfileStatsProps {
 
 export function EditProfileStats({
   userId,
+  postCount: propPostCount,
+  giftCount: propGiftCount,
+  followersCount: propFollowersCount,
+  followingCount: propFollowingCount,
   onPostPress,
   onGiftPress,
   onFollowersPress,
-  onFollowingPress,
+  onFollowingPress
 }: EditProfileStatsProps) {
   const { theme } = useThemeCustom();
-  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
-    postCount: 0,
-    giftCount: 0,
-    followersCount: 0,
-    followingCount: 0
+    postCount: propPostCount || 0,
+    giftCount: propGiftCount || 0,
+    followersCount: propFollowersCount || 0,
+    followingCount: propFollowingCount || 0,
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadStats();
-  }, [userId]);
+    if (propPostCount !== undefined) {
+      // Use props if provided
+      setStats({
+        postCount: propPostCount,
+        giftCount: propGiftCount || 0,
+        followersCount: propFollowersCount || 0,
+        followingCount: propFollowingCount || 0,
+      });
+      setLoading(false);
+    } else {
+      // Otherwise load from API
+      loadStats();
+    }
+  }, [userId, propPostCount, propGiftCount, propFollowersCount, propFollowingCount]);
 
   const loadStats = async () => {
     try {
@@ -59,10 +79,15 @@ export function EditProfileStats({
       const data = await response.json();
 
       if (response.ok) {
-        setStats(data);
+        setStats({
+          postCount: data.postCount || 0,
+          giftCount: data.giftCount || 0,
+          followersCount: data.followersCount || 0,
+          followingCount: data.followingCount || 0,
+        });
       }
     } catch (error) {
-      console.error('Failed to load stats:', error);
+      console.error('Error loading stats:', error);
     } finally {
       setLoading(false);
     }

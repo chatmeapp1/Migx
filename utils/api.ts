@@ -45,6 +45,10 @@ export const API_ENDPOINTS = {
     FOLLOW_STATUS: `${API_BASE_URL}/api/profile/follow/status`,
     STATS: (userId: string) => `${API_BASE_URL}/api/profile/stats/${userId}`,
   },
+  VIEW_PROFILE: {
+    GET: (userId: string, viewerId?: string) => 
+      `${API_BASE_URL}/api/viewprofile/${userId}${viewerId ? `?viewerId=${viewerId}` : ''}`,
+  },
   ROOM: {
     LIST: `${API_BASE_URL}/api/rooms`,
     CREATE: `${API_BASE_URL}/api/rooms/create`,

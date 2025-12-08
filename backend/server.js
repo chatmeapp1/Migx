@@ -16,6 +16,10 @@ const messageRoutes = require('./api/message.route');
 const creditRoutes = require('./api/credit.route');
 const merchantRoutes = require('./api/merchant.route');
 const notificationRoutes = require('./api/notification.route');
+const profileRouter = require('./api/profile.route');
+const viewProfileRouter = require('./api/viewprofile.route');
+const messageRouter = require('./api/message.route');
+const notificationRouter = require('./api/notification.route');
 
 const roomEvents = require('./events/roomEvents');
 const chatEvents = require('./events/chatEvents');
@@ -231,7 +235,8 @@ const chatRoutes = require('./api/chat.route');
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
-app.use('/api/profile', require('./api/profile.route'));
+app.use('/api/profile', profileRouter);
+app.use('/api/viewprofile', viewProfileRouter);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/credit', creditRoutes);
@@ -342,6 +347,7 @@ const startServer = async () => {
 ║    - POST /api/profile/gift                           ║
 ║    - GET  /api/profile/followers/:userId             ║
 ║    - GET  /api/profile/following/:userId              ║
+║    - GET  /api/viewprofile/:userId                    ║
 ╠═══════════════════════════════════════════════════════╣
 ║  Socket Events:                                       ║
 ║    - join_room, leave_room                            ║

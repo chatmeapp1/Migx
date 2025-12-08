@@ -178,11 +178,20 @@ router.post('/create', async (req, res) => {
   try {
     const { name, ownerId, description } = req.body;
     
+    console.log('Create room request:', { name, ownerId, description });
+    
     // Validasi required fields
-    if (!name || !ownerId) {
+    if (!name) {
       return res.status(400).json({ 
         success: false,
-        error: 'Name and owner ID are required' 
+        error: 'Room name is required' 
+      });
+    }
+    
+    if (!ownerId) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'ownerId missing' 
       });
     }
     

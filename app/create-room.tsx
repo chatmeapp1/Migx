@@ -47,14 +47,19 @@ export default function CreateRoomScreen() {
 
     try {
       const userDataStr = await AsyncStorage.getItem('userData');
+      console.log('UserDataStr:', userDataStr);
+      
       if (!userDataStr) {
-        Alert.alert('Error', 'Please login first');
-        router.replace('/login');
+        Alert.alert('Error', 'User data not found. Please login again.');
+        setLoading(false);
         return;
       }
 
       const userData = JSON.parse(userDataStr);
+      console.log('Parsed userData:', userData);
 
+      console.log('Creating room with ownerId:', userData.id);
+      
       const response = await fetch(API_ENDPOINTS.ROOM.CREATE, {
         method: 'POST',
         headers: {
@@ -68,6 +73,7 @@ export default function CreateRoomScreen() {
       });
 
       const data = await response.json();
+      console.log('Create room response:', data);
 
       if (!response.ok || !data.success) {
         setError(data.error || 'Failed to create room');
@@ -85,6 +91,10 @@ export default function CreateRoomScreen() {
           },
         ]
       );
+      
+      // Reset form
+      setName('');
+      setDescription('');
 
     } catch (err) {
       console.log(err);

@@ -60,6 +60,15 @@ export const API_ENDPOINTS = {
     ALL: `${API_BASE_URL}/api/people/all`,
     BY_ROLE: (role: string) => `${API_BASE_URL}/api/people/role/${role}`,
   },
+  LEADERBOARD: {
+    ALL: `${API_BASE_URL}/api/leaderboard/all`,
+    TOP_LEVEL: `${API_BASE_URL}/api/leaderboard/top-level`,
+    TOP_GIFT_SENDER: `${API_BASE_URL}/api/leaderboard/top-gift-sender`,
+    TOP_GIFT_RECEIVER: `${API_BASE_URL}/api/leaderboard/top-gift-receiver`,
+    TOP_FOOTPRINT: `${API_BASE_URL}/api/leaderboard/top-footprint`,
+    TOP_GAMER: `${API_BASE_URL}/api/leaderboard/top-gamer`,
+    TOP_GET: `${API_BASE_URL}/api/leaderboard/top-get`,
+  },
   ROOM: {
     LIST: `${API_BASE_URL}/api/rooms`,
     CREATE: `${API_BASE_URL}/api/rooms/create`,

@@ -250,6 +250,9 @@ app.use('/api/announcements', announcementRoute);
 const peopleRoute = require('./api/people.route');
 app.use('/api/people', peopleRoute);
 
+const leaderboardRoute = require('./api/leaderboard.route');
+app.use('/api/leaderboard', leaderboardRoute);
+
 
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));

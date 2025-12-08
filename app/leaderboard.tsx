@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,13 @@ import {
   ScrollView,
   Dimensions,
   Modal,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useThemeCustom } from '@/theme/provider';
 import Svg, { Path, Circle } from 'react-native-svg';
+import { API_ENDPOINTS } from '@/utils/api';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 
@@ -140,11 +143,18 @@ type LeaderboardCategory = {
 
 type LeaderboardUser = {
   id: string;
-  name: string;
+  username: string;
+  avatar?: string;
   level: number;
   country: string;
-  vouchers: number;
+  gender?: string;
   role?: 'admin' | 'merchant' | 'mentor' | 'care_service' | 'user';
+  total_gifts_sent?: number;
+  total_gifts_received?: number;
+  total_messages?: number;
+  total_games?: number;
+  total_winnings?: number;
+  wins?: number;
 };
 
 // Role colors
@@ -156,76 +166,110 @@ const ROLE_COLORS = {
   user: '#E0E0E0',
 };
 
-// Mock data
-const CATEGORIES: LeaderboardCategory[] = [
-  {
-    id: 'top_level',
-    title: 'TOP LEVEL',
-    icon: <TrophyIcon size={22} color="#0D9488" />,
-    backgroundColor: '#CCFBF1',
-    textColor: '#0D9488',
-    count: 10,
-  },
-  {
-    id: 'top_gift_sender',
-    title: 'TOP GIFT SENDER',
-    icon: <GiftIcon size={22} color="#0D9488" />,
-    backgroundColor: '#CCFBF1',
-    textColor: '#0D9488',
-    count: 10,
-  },
-  {
-    id: 'top_gift_receiver',
-    title: 'TOP GIFT RECEIVER',
-    icon: <GiftIcon size={22} color="#0D9488" />,
-    backgroundColor: '#CCFBF1',
-    textColor: '#0D9488',
-    count: 10,
-  },
-  {
-    id: 'top_footprint',
-    title: 'TOP FOOTPRINT',
-    icon: <FootprintIcon size={22} color="#0D9488" />,
-    backgroundColor: '#CCFBF1',
-    textColor: '#0D9488',
-    count: 10,
-  },
-  {
-    id: 'top_gamer',
-    title: 'TOP GAMER (WEEKLY)',
-    icon: <GamepadIcon size={22} color="#0D9488" />,
-    backgroundColor: '#CCFBF1',
-    textColor: '#0D9488',
-    count: 10,
-  },
-  {
-    id: 'top_get',
-    title: 'TOP GET (WEEKLY)',
-    icon: <DiamondIcon size={22} color="#0D9488" />,
-    backgroundColor: '#CCFBF1',
-    textColor: '#0D9488',
-    count: 10,
-  },
-];
-
-const MOCK_USERS: LeaderboardUser[] = [
-  { id: '1', name: 'female', level: 30, country: 'Indonesia', vouchers: 212, role: 'admin' },
-  { id: '2', name: 'kokoro', level: 1, country: 'Indonesia', vouchers: 174, role: 'merchant' },
-  { id: '3', name: 'oktober', level: 1, country: 'Indonesia', vouchers: 163, role: 'mentor' },
-  { id: '4', name: 'sandal', level: 1, country: 'Indonesia', vouchers: 156, role: 'care_service' },
-  { id: '5', name: 'nikisae', level: 8, country: 'Indonesia', vouchers: 72, role: 'user' },
-  { id: '6', name: 'heroisme', level: 1, country: 'Indonesia', vouchers: 71, role: 'merchant' },
-];
-
 export default function LeaderboardPage() {
   const { theme } = useThemeCustom();
-  const [expandedCategory, setExpandedCategory] = useState<string | null>('top_get');
+  const [expandedCategory, setExpandedCategory] = useState<string | null>('top_level');
+  const [leaderboardData, setLeaderboardData] = useState<Record<string, LeaderboardUser[]>>({});
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const CATEGORIES: LeaderboardCategory[] = [
+    {
+      id: 'top_level',
+      title: 'TOP LEVEL',
+      icon: <TrophyIcon size={22} color="#0D9488" />,
+      backgroundColor: '#CCFBF1',
+      textColor: '#0D9488',
+      count: leaderboardData.top_level?.length || 0,
+    },
+    {
+      id: 'top_gift_sender',
+      title: 'TOP GIFT SENDER',
+      icon: <GiftIcon size={22} color="#0D9488" />,
+      backgroundColor: '#CCFBF1',
+      textColor: '#0D9488',
+      count: leaderboardData.top_gift_sender?.length || 0,
+    },
+    {
+      id: 'top_gift_receiver',
+      title: 'TOP GIFT RECEIVER',
+      icon: <GiftIcon size={22} color="#0D9488" />,
+      backgroundColor: '#CCFBF1',
+      textColor: '#0D9488',
+      count: leaderboardData.top_gift_receiver?.length || 0,
+    },
+    {
+      id: 'top_footprint',
+      title: 'TOP FOOTPRINT',
+      icon: <FootprintIcon size={22} color="#0D9488" />,
+      backgroundColor: '#CCFBF1',
+      textColor: '#0D9488',
+      count: leaderboardData.top_footprint?.length || 0,
+    },
+    {
+      id: 'top_gamer',
+      title: 'TOP GAMER (WEEKLY)',
+      icon: <GamepadIcon size={22} color="#0D9488" />,
+      backgroundColor: '#CCFBF1',
+      textColor: '#0D9488',
+      count: leaderboardData.top_gamer?.length || 0,
+    },
+    {
+      id: 'top_get',
+      title: 'TOP GET (WEEKLY)',
+      icon: <DiamondIcon size={22} color="#0D9488" />,
+      backgroundColor: '#CCFBF1',
+      textColor: '#0D9488',
+      count: leaderboardData.top_get?.length || 0,
+    },
+  ];
+
+  const fetchLeaderboards = async () => {
+    try {
+      const response = await fetch(API_ENDPOINTS.LEADERBOARD.ALL);
+      const data = await response.json();
+      setLeaderboardData(data);
+    } catch (error) {
+      console.error('Error fetching leaderboards:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLeaderboards();
+  }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchLeaderboards();
+  };
 
   const toggleCategory = (categoryId: string) => {
     setExpandedCategory(expandedCategory === categoryId ? null : categoryId);
   };
 
-  const renderUserItem = (user: LeaderboardUser, index: number) => {
+  const getStatValue = (user: LeaderboardUser, categoryId: string) => {
+    switch (categoryId) {
+      case 'top_level':
+        return `Level ${user.level || 0}`;
+      case 'top_gift_sender':
+        return `${user.total_gifts_sent || 0} gifts`;
+      case 'top_gift_receiver':
+        return `${user.total_gifts_received || 0} gifts`;
+      case 'top_footprint':
+        return `${user.total_messages || 0} messages`;
+      case 'top_gamer':
+        return `${user.total_games || 0} games`;
+      case 'top_get':
+        return `${user.total_winnings || 0} coins`;
+      default:
+        return '';
+    }
+  };
+
+  const renderUserItem = (user: LeaderboardUser, index: number, categoryId: string) => {
     const roleColor = ROLE_COLORS[user.role || 'user'];
     const showRank = index < 3;
 
@@ -247,21 +291,40 @@ export default function LeaderboardPage() {
           )}
           
           <View style={[styles.avatar, { backgroundColor: roleColor }]}>
-            <Text style={styles.avatarText}>{user.name.charAt(0).toUpperCase()}</Text>
+            <Text style={styles.avatarText}>{user.username.charAt(0).toUpperCase()}</Text>
           </View>
           
           <View style={styles.userInfo}>
-            <Text style={[styles.userName, { color: theme.text }]}>{user.name}</Text>
+            <Text style={[styles.userName, { color: theme.text }]}>{user.username}</Text>
             <Text style={[styles.userDetails, { color: theme.secondary }]}>
-              Level {user.level}, {user.country}
+              Level {user.level || 0}, {user.country || 'Unknown'}
             </Text>
           </View>
         </View>
         
-        <Text style={[styles.vouchers, { color: theme.text }]}>{user.vouchers} vouchers</Text>
+        <Text style={[styles.vouchers, { color: theme.text }]}>{getStatValue(user, categoryId)}</Text>
       </View>
     );
   };
+
+  if (loading) {
+    return (
+      <Modal visible={true} animationType="slide" transparent={true}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContainer, { height: SCREEN_HEIGHT * 0.75, backgroundColor: theme.background }]}>
+            <View style={[styles.header, { backgroundColor: '#0a5229' }]}>
+              <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
+                <CloseIcon size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={theme.primary} />
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
+  }
 
   return (
     <Modal visible={true} animationType="slide" transparent={true}>
@@ -285,10 +348,21 @@ export default function LeaderboardPage() {
           </View>
 
           {/* Content */}
-          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          <ScrollView 
+            style={styles.content} 
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={theme.primary}
+              />
+            }
+          >
             <View style={styles.categoriesContainer}>
               {CATEGORIES.map((category) => {
                 const isExpanded = expandedCategory === category.id;
+                const users = leaderboardData[category.id] || [];
                 
                 return (
                   <View key={category.id} style={styles.categoryWrapper}>
@@ -325,7 +399,13 @@ export default function LeaderboardPage() {
 
                     {isExpanded && (
                       <View style={[styles.userList, { backgroundColor: theme.background }]}>
-                        {MOCK_USERS.map((user, index) => renderUserItem(user, index))}
+                        {users.length === 0 ? (
+                          <Text style={[styles.emptyText, { color: theme.secondary }]}>
+                            No data available
+                          </Text>
+                        ) : (
+                          users.map((user, index) => renderUserItem(user, index, category.id))
+                        )}
                       </View>
                     )}
                   </View>
@@ -473,5 +553,16 @@ const styles = StyleSheet.create({
   vouchers: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    textAlign: 'center',
+    fontSize: 14,
+    fontStyle: 'italic',
+    paddingVertical: 20,
   },
 });

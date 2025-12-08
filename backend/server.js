@@ -253,6 +253,9 @@ app.use('/api/people', peopleRoute);
 const leaderboardRoute = require('./api/leaderboard.route');
 app.use('/api/leaderboard', leaderboardRoute);
 
+const feedRoute = require('./api/feed.route');
+app.use('/api/feed', feedRoute);
+
 
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));

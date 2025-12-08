@@ -22,9 +22,12 @@ interface TabItem {
   icon: (props: { color: string; size: number }) => React.ReactNode;
 }
 
+import { FeedIcon } from '@/components/ui/SvgIcons';
+
 const TABS: TabItem[] = [
   { key: 'index', name: 'index', title: 'Home', icon: HomeIcon },
   { key: 'chat', name: 'chat', title: 'Chat', icon: ChatIcon },
+  { key: 'feed', name: 'feed', title: 'Feed', icon: FeedIcon },
   { key: 'room', name: 'room', title: 'Room', icon: RoomIcon },
   { key: 'profile', name: 'profile', title: 'Profile', icon: ProfileIcon },
 ];
@@ -148,6 +151,10 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{ title: 'Profile' }}
+      />
+      <Tabs.Screen
+        name="feed"
+        options={{ title: 'Feed' }}
       />
       <Tabs.Screen
         name="explore"

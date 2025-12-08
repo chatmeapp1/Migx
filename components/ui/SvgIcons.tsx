@@ -1,8 +1,13 @@
-
 import React from 'react';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Path, Circle, Rect } from 'react-native-svg';
 
-export const HomeIcon = ({ color = '#000', size = 24 }: { color?: string; size?: number }) => (
+// Define a common type for icon props for consistency
+interface IconProps {
+  color?: string;
+  size?: number;
+}
+
+export const HomeIcon = ({ color = '#000', size = 24 }: IconProps) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
       d="M3 9.5L12 2L21 9.5V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9.5Z"
@@ -21,7 +26,7 @@ export const HomeIcon = ({ color = '#000', size = 24 }: { color?: string; size?:
   </Svg>
 );
 
-export const RoomIcon = ({ color = '#000', size = 24 }: { color?: string; size?: number }) => (
+export const RoomIcon = ({ color = '#000', size = 24 }: IconProps) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
       d="M2 10L12 4L22 10V20C22 20.5304 21.7893 21.0391 21.4142 21.4142C21.0391 21.7893 20.5304 22 20 22H4C3.46957 22 2.96086 21.7893 2.58579 21.4142C2.21071 21.0391 2 20.5304 2 20V10Z"
@@ -47,7 +52,7 @@ export const RoomIcon = ({ color = '#000', size = 24 }: { color?: string; size?:
   </Svg>
 );
 
-export const ChatIcon = ({ color = '#000', size = 24 }: { color?: string; size?: number }) => (
+export const ChatIcon = ({ color = '#000', size = 24 }: IconProps) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
       d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z"
@@ -59,26 +64,62 @@ export const ChatIcon = ({ color = '#000', size = 24 }: { color?: string; size?:
   </Svg>
 );
 
-export const ProfileIcon = ({ color = '#000', size = 24 }: { color?: string; size?: number }) => (
+export const ProfileIcon = ({ color = '#000', size = 24 }: IconProps) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21"
-      stroke={color}
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <Path
-      d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z"
-      stroke={color}
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
+    <Path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <Circle cx="12" cy="7" r="4" stroke={color} strokeWidth="2"/>
   </Svg>
 );
 
-export const BackIcon = ({ color = '#000', size = 24 }: { color?: string; size?: number }) => (
+export const FeedIcon = ({ color = '#000', size = 24 }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Rect x="3" y="3" width="18" height="18" rx="2" stroke={color} strokeWidth="2" fill="none"/>
+    <Path d="M3 9h18M9 21V9" stroke={color} strokeWidth="2"/>
+  </Svg>
+);
+
+export const CameraIcon = ({ color = '#000', size = 24 }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke={color} strokeWidth="2" fill="none"/>
+    <Circle cx="12" cy="13" r="4" stroke={color} strokeWidth="2" fill="none"/>
+  </Svg>
+);
+
+export const SendIcon = ({ color = '#000', size = 24 }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+  </Svg>
+);
+
+export const LikeIcon = ({ color = '#000', size = 24, filled = false }: IconProps & { filled?: boolean }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M7 22V11M2 13v6a2 2 0 0 0 2 2h1M17 11V2l-5 9h6l-1 10h-2" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill={filled ? color : 'none'}/>
+  </Svg>
+);
+
+export const CommentIcon = ({ color = '#000', size = 24 }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke={color} strokeWidth="2" fill="none"/>
+  </Svg>
+);
+
+export const ShareIcon = ({ color = '#000', size = 24 }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="18" cy="5" r="3" stroke={color} strokeWidth="2" fill="none"/>
+    <Circle cx="6" cy="12" r="3" stroke={color} strokeWidth="2" fill="none"/>
+    <Circle cx="18" cy="19" r="3" stroke={color} strokeWidth="2" fill="none"/>
+    <Path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98" stroke={color} strokeWidth="2"/>
+  </Svg>
+);
+
+export const PlusCircleIcon = ({ color = '#000', size = 24 }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2" fill="none"/>
+    <Path d="M12 8v8M8 12h8" stroke={color} strokeWidth="2" strokeLinecap="round"/>
+  </Svg>
+);
+
+export const BackIcon = ({ color = '#000', size = 24 }: IconProps) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
       d="M19 12H5M5 12L12 19M5 12L12 5"
@@ -90,7 +131,7 @@ export const BackIcon = ({ color = '#000', size = 24 }: { color?: string; size?:
   </Svg>
 );
 
-export const MenuGridIcon = ({ color = '#000', size = 24 }: { color?: string; size?: number }) => (
+export const MenuGridIcon = ({ color = '#000', size = 24 }: IconProps) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
       d="M3 3H10V10H3V3Z"

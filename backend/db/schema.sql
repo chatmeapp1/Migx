@@ -206,6 +206,36 @@ CREATE TABLE IF NOT EXISTS announcements (
   id SERIAL PRIMARY KEY,
   title VARCHAR(255) NOT NULL,
   content TEXT NOT NULL,
+  created_by INTEGER REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Feed posts table
+CREATE TABLE IF NOT EXISTS feed_posts (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  content TEXT,
+  image_url TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Feed likes table
+CREATE TABLE IF NOT EXISTS feed_likes (
+  id SERIAL PRIMARY KEY,
+  post_id INTEGER REFERENCES feed_posts(id) ON DELETE CASCADE,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(post_id, user_id)
+);
+
+-- Feed comments table
+CREATE TABLE IF NOT EXISTS feed_comments (
+  id SERIAL PRIMARY KEY,
+  post_id INTEGER REFERENCES feed_posts(id) ON DELETE CASCADE,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  content TEXT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -219,6 +249,10 @@ CREATE INDEX IF NOT EXISTS idx_credit_logs_to_user ON credit_logs(to_user_id);
 CREATE INDEX IF NOT EXISTS idx_merchant_spend_logs_merchant ON merchant_spend_logs(merchant_id);
 CREATE INDEX IF NOT EXISTS idx_game_history_user ON game_history(user_id);
 CREATE INDEX IF NOT EXISTS idx_room_bans_room_id ON room_bans(room_id);
+CREATE INDEX IF NOT EXISTS idx_feed_posts_user_id ON feed_posts(user_id);
+CREATE INDEX IF NOT EXISTS idx_feed_posts_created_at ON feed_posts(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_feed_likes_post_id ON feed_likes(post_id);
+CREATE INDEX IF NOT EXISTS idx_feed_comments_post_id ON feed_comments(post_id);
 
 
 -- Insert default rooms (only if they don't exist)

@@ -69,6 +69,14 @@ export const API_ENDPOINTS = {
     TOP_GAMER: `${API_BASE_URL}/api/leaderboard/top-gamer`,
     TOP_GET: `${API_BASE_URL}/api/leaderboard/top-get`,
   },
+  FEED: {
+    LIST: `${API_BASE_URL}/api/feed`,
+    CREATE: `${API_BASE_URL}/api/feed/create`,
+    DELETE: (postId: number) => `${API_BASE_URL}/api/feed/${postId}`,
+    LIKE: (postId: number) => `${API_BASE_URL}/api/feed/${postId}/like`,
+    COMMENTS: (postId: number) => `${API_BASE_URL}/api/feed/${postId}/comments`,
+    COMMENT: (postId: number) => `${API_BASE_URL}/api/feed/${postId}/comment`,
+  },
   ROOM: {
     LIST: `${API_BASE_URL}/api/rooms`,
     CREATE: `${API_BASE_URL}/api/rooms/create`,

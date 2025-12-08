@@ -384,7 +384,7 @@ export default function ChatRoomScreen() {
           />
         )}
         {currentTab && (
-          <ChatRoomContent messages={currentTab.messages} />
+          <ChatRoomContent messages={currentTab.messages} roomInfo={roomInfo} />
         )}
       </View>
 

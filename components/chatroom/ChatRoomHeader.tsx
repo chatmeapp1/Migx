@@ -42,21 +42,6 @@ export function ChatRoomHeader({ tabs, activeTab, onTabChange, onCloseTab, roomI
         
         <View style={styles.centerContent}>
           <Text style={styles.roomName}>{currentTab?.name || 'Room'}</Text>
-          {roomInfo && (
-            <View style={styles.roomInfoContainer}>
-              {roomInfo.description && (
-                <Text style={styles.roomDescription} numberOfLines={1}>
-                  {roomInfo.description}
-                </Text>
-              )}
-              <Text style={styles.roomMeta} numberOfLines={1}>
-                Currently: {roomInfo.currentUsers.length > 0 ? roomInfo.currentUsers.join(', ') : 'No users'}
-              </Text>
-              <Text style={styles.roomMeta} numberOfLines={1}>
-                Managed by: {roomInfo.creatorName}
-              </Text>
-            </View>
-          )}
         </View>
         
         <TouchableOpacity 

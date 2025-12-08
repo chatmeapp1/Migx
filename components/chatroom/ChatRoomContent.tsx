@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, StyleSheet, View, Text } from 'react-native';
 import { ChatMessage } from './ChatMessage';
 
 interface Message {
@@ -12,11 +12,19 @@ interface Message {
   userType?: 'creator' | 'admin' | 'normal' | 'mentor' | 'merchant';
 }
 
-interface ChatRoomContentProps {
-  messages: Message[];
+interface RoomInfo {
+  name: string;
+  description: string;
+  creatorName: string;
+  currentUsers: string[];
 }
 
-export function ChatRoomContent({ messages }: ChatRoomContentProps) {
+interface ChatRoomContentProps {
+  messages: Message[];
+  roomInfo?: RoomInfo | null;
+}
+
+export function ChatRoomContent({ messages, roomInfo }: ChatRoomContentProps) {
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
@@ -27,11 +35,31 @@ export function ChatRoomContent({ messages }: ChatRoomContentProps) {
     }
   }, [messages]);
 
+  const renderHeader = () => {
+    if (!roomInfo) return null;
+    
+    return (
+      <View style={styles.roomInfoHeader}>
+        {roomInfo.description ? (
+          <Text style={styles.roomDescription}>{roomInfo.description}</Text>
+        ) : null}
+        <Text style={styles.roomMeta}>
+          Managed by: {roomInfo.creatorName || 'Unknown'}
+        </Text>
+        <Text style={styles.roomMeta}>
+          Currently: {roomInfo.currentUsers.length > 0 ? roomInfo.currentUsers.join(', ') : 'No users'}
+        </Text>
+        <View style={styles.divider} />
+      </View>
+    );
+  };
+
   return (
     <FlatList
       ref={flatListRef}
       data={messages}
       keyExtractor={(item) => item.id}
+      ListHeaderComponent={renderHeader}
       renderItem={({ item }) => (
         <ChatMessage
           username={item.username}
@@ -53,6 +81,28 @@ export function ChatRoomContent({ messages }: ChatRoomContentProps) {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
+    paddingBottom: 8,
+  },
+  roomInfoHeader: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: 'rgba(10, 82, 41, 0.1)',
+  },
+  roomDescription: {
+    fontSize: 13,
+    color: '#0a5229',
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  roomMeta: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 2,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#E0E0E0',
+    marginTop: 10,
   },
 });

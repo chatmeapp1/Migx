@@ -87,6 +87,7 @@ export default function ProfileScreen() {
       <View style={[styles.container, { backgroundColor: theme.background }]}>
         <SafeAreaView style={styles.safeArea}>
           <ProfileHeader 
+            avatar={userData?.avatar}
             username={isLoading ? 'Loading...' : (userData?.username || 'Guest')}
             level={userData?.level || 1}
             onEditPress={handleEditProfile}

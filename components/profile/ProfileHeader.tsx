@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useThemeCustom } from '@/theme/provider';
+import { API_BASE_URL } from '@/utils/api';
 
 const EditIcon = ({ size = 20 }: { size?: number }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -31,14 +32,24 @@ interface ProfileHeaderProps {
 
 export function ProfileHeader({ avatar, username, level, onEditPress }: ProfileHeaderProps) {
   const { theme } = useThemeCustom();
+  
+  const avatarUri = avatar?.startsWith('http') 
+    ? avatar 
+    : avatar 
+      ? `${API_BASE_URL}${avatar}` 
+      : null;
 
   return (
     <View style={[styles.container, { backgroundColor: '#1B5E20' }]}>
       <View style={styles.headerContent}>
         <View style={styles.leftSection}>
           <View style={styles.avatarContainer}>
-            {avatar ? (
-              <Image source={{ uri: avatar }} style={styles.avatar} />
+            {avatarUri ? (
+              <Image 
+                source={{ uri: avatarUri }} 
+                style={styles.avatar}
+                onError={(e) => console.log('❌ Avatar load error:', e.nativeEvent.error)}
+              />
             ) : (
               <View style={styles.avatarPlaceholder}>
                 <Text style={styles.avatarText}>👤</Text>

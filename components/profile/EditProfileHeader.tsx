@@ -3,6 +3,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { useThemeCustom } from '@/theme/provider';
+import { API_BASE_URL } from '@/utils/api';
 
 const CameraIcon = ({ size = 24, color = '#fff' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -67,6 +68,12 @@ export function EditProfileHeader({
   onAvatarPress,
 }: EditProfileHeaderProps) {
   const { theme } = useThemeCustom();
+  
+  const avatarUri = avatarImage?.startsWith('http') 
+    ? avatarImage 
+    : avatarImage 
+      ? `${API_BASE_URL}${avatarImage}` 
+      : null;
 
   return (
     <View style={styles.container}>
@@ -111,8 +118,12 @@ export function EditProfileHeader({
           onPress={onAvatarPress}
           activeOpacity={0.7}
         >
-          {avatarImage ? (
-            <Image source={{ uri: avatarImage }} style={styles.avatar} />
+          {avatarUri ? (
+            <Image 
+              source={{ uri: avatarUri }} 
+              style={styles.avatar}
+              onError={(e) => console.log('❌ EditProfile Avatar load error:', e.nativeEvent.error)}
+            />
           ) : (
             <View style={styles.avatarPlaceholder}>
               <Text style={styles.avatarText}>👤</Text>

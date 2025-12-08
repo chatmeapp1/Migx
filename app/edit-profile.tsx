@@ -221,10 +221,11 @@ export default function EditProfileScreen() {
       <View style={[styles.container, { backgroundColor: theme.background }]}>
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           <EditProfileHeader
-            username="migX"
-            level={1}
+            avatarImage={user?.avatar}
+            username={user?.username || "migX"}
+            level={user?.level || 1}
             websiteUrl="migx"
-            userId="0"
+            userId={user?.id?.toString() || "0"}
             onBackPress={handleBackPress}
             onBackgroundPress={handleBackgroundPress}
             onAvatarPress={handleAvatarPress}

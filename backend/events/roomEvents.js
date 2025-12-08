@@ -2,25 +2,21 @@ const roomService = require('../services/roomService');
 const userService = require('../services/userService');
 const banService = require('../services/banService');
 const { addXp, XP_REWARDS } = require('../utils/xpLeveling');
-const {
-  isTempKicked,
-  getPresence,
-  setPresence,
-  addMemberToRoom,
-  removeMemberFromRoom,
-  setRoomUsers
-} = require('../utils/presence');
+const { getPresence } = require('../utils/presence');
 const { 
   addUserRoom, 
   removeUserRoom, 
   addRecentRoom,
   incrementRoomActive,
-  decrementRoomActive,
+  decrementRoomActive
+} = require('../utils/redisUtils');
+const {
   addUserToRoom,
   removeUserFromRoom,
+  getRoomUsers: getRoomPresenceUsers,
   getRoomUserCount,
-  getRoomUsersList
-} = require('../utils/redisUtils');
+  addSystemMessage
+} = require('../utils/redisPresence');
 
 // Helper function to create system messages
 const createSystemMessage = (roomId, message) => ({
@@ -57,8 +53,9 @@ module.exports = (io, socket) => {
         return;
       }
 
-      const currentUsers = await roomService.getRoomUsers(roomId);
-      if (currentUsers.length >= room.max_users) {
+      // Check room capacity using Redis presence
+      const currentUserCount = await getRoomUserCount(roomId);
+      if (currentUserCount >= room.max_users) {
         socket.emit('system:message', {
           roomId,
           message: 'Room is full',
@@ -73,9 +70,14 @@ module.exports = (io, socket) => {
 
       await addUserRoom(username, roomId, room.name);
 
-      // Add user to Redis room tracking
+      // Get current users before adding new user
+      const currentUsersList = await getRoomPresenceUsers(roomId);
+      
+      // Add user to Redis presence
       await addUserToRoom(roomId, username);
-      const userCount = await getRoomUserCount(roomId);
+      
+      // Get updated count after adding user
+      const newUserCount = await getRoomUserCount(roomId);
 
       const user = await userService.getUserById(userId);
       const userWithPresence = {
@@ -83,6 +85,7 @@ module.exports = (io, socket) => {
         presence: await getPresence(username)
       };
 
+      // Get all users from database
       const updatedUsers = await roomService.getRoomUsers(roomId);
       const usersWithPresence = await Promise.all(
         updatedUsers.map(async (u) => ({
@@ -91,18 +94,21 @@ module.exports = (io, socket) => {
         }))
       );
 
-      await setRoomUsers(roomId, usersWithPresence);
-
-      // Get current users list for display
-      const currentUsersList = await getRoomUsersList(roomId);
-      const userListString = currentUsersList.join(', ');
+      // Create user list string for welcome message
+      const userListString = currentUsersList.length > 0 
+        ? currentUsersList.join(', ') 
+        : username;
 
       // MIG33-style welcome messages - send to the joining user only
+      const welcomeMsg1 = `Welcome to ${room.name}...`;
+      const welcomeMsg2 = `Currently users in the room: ${userListString}`;
+      const welcomeMsg3 = `This room created by ${room.creator_name || 'admin'}`;
+
       const welcomeMessages = [
         {
           roomId,
           username: room.name,
-          message: `Welcome to ${room.name}...`,
+          message: welcomeMsg1,
           timestamp: new Date().toISOString(),
           type: 'system',
           messageType: 'system'
@@ -110,7 +116,7 @@ module.exports = (io, socket) => {
         {
           roomId,
           username: room.name,
-          message: `Currently users in the room: ${userListString}`,
+          message: welcomeMsg2,
           timestamp: new Date().toISOString(),
           type: 'system',
           messageType: 'system'
@@ -118,7 +124,7 @@ module.exports = (io, socket) => {
         {
           roomId,
           username: room.name,
-          message: `This room created by ${room.creator_name || 'admin'}`,
+          message: welcomeMsg3,
           timestamp: new Date().toISOString(),
           type: 'system',
           messageType: 'system'
@@ -128,18 +134,25 @@ module.exports = (io, socket) => {
       // Send welcome messages to joining user
       welcomeMessages.forEach(msg => {
         socket.emit('chat:message', msg);
+        // Optionally save to Redis
+        addSystemMessage(roomId, `${room.name} : ${msg.message}`);
       });
 
       // MIG33-style enter message to all users in room
+      const enterMsg = `${username} [${newUserCount}] has entered`;
       const enterMessage = {
         roomId,
         username: room.name,
-        message: `${username} [${userCount}] has entered`,
+        message: enterMsg,
         timestamp: new Date().toISOString(),
         type: 'system',
         messageType: 'system'
       };
+      
       io.to(`room:${roomId}`).emit('chat:message', enterMessage);
+      
+      // Save enter message to Redis
+      await addSystemMessage(roomId, `${room.name} : ${enterMsg}`);
 
       io.to(`room:${roomId}`).emit('room:user:joined', {
         roomId,
@@ -151,7 +164,7 @@ module.exports = (io, socket) => {
         roomId,
         roomName: room.name,
         description: room.description,
-        userCount,
+        userCount: newUserCount,
         username
       });
       
@@ -159,8 +172,8 @@ module.exports = (io, socket) => {
         roomId,
         room,
         users: usersWithPresence,
-        currentUsers: currentUsersList,
-        userCount
+        currentUsers: await getRoomPresenceUsers(roomId),
+        userCount: newUserCount
       });
 
       socket.emit('chatlist:roomJoined', {
@@ -175,7 +188,7 @@ module.exports = (io, socket) => {
       
       io.emit('rooms:updateCount', {
         roomId,
-        userCount: usersWithPresence.length,
+        userCount: newUserCount,
         maxUsers: room.max_users
       });
 
@@ -197,8 +210,10 @@ module.exports = (io, socket) => {
       socket.leave(`room:${roomId}`);
       await removeUserRoom(username, roomId);
 
-      // Remove user from Redis room tracking
+      // Remove user from Redis presence
       await removeUserFromRoom(roomId, username);
+      
+      // Get updated count after removing user
       const userCount = await getRoomUserCount(roomId);
 
       const updatedUsers = await roomService.getRoomUsers(roomId);
@@ -209,19 +224,22 @@ module.exports = (io, socket) => {
         }))
       );
 
-      await setRoomUsers(roomId, usersWithPresence);
-
-      // MIG33-style system message: "Indonesia: migtes4 [0] has left"
+      // MIG33-style left message: "Indonesia : migtes4 [1] has left"
       const room = await roomService.getRoomById(roomId);
+      const leftMsg = `${username} [${userCount}] has left`;
       const leftMessage = {
         roomId,
         username: room.name,
-        message: `${username} [${userCount}] has left`,
+        message: leftMsg,
         timestamp: new Date().toISOString(),
         type: 'system',
         messageType: 'system'
       };
+      
       io.to(`room:${roomId}`).emit('chat:message', leftMessage);
+      
+      // Save left message to Redis
+      await addSystemMessage(roomId, `${room.name} : ${leftMsg}`);
 
       io.to(`room:${roomId}`).emit('room:user:left', {
         roomId,
@@ -236,7 +254,7 @@ module.exports = (io, socket) => {
       
       io.emit('rooms:updateCount', {
         roomId,
-        userCount: usersWithPresence.length,
+        userCount,
         maxUsers: room?.max_users || 25
       });
 

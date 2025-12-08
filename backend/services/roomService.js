@@ -3,19 +3,21 @@ const presence = require('../utils/presence');
 
 const createRoom = async (name, ownerId, description = '') => {
   try {
-    // Generate MIGX-xxxxx format roomId
+    // Generate MIGX-xxxxx format room_code
     const randomDigits = Math.floor(10000 + Math.random() * 90000);
-    const roomId = `MIGX-${randomDigits}`;
+    const roomCode = `MIGX-${randomDigits}`;
     
     // Fixed maxUsers to 25 for MIG33 Classic
     const maxUsers = 25;
     
     const result = await query(
-      `INSERT INTO rooms (id, name, owner_id, description, max_users, created_at)
+      `INSERT INTO rooms (name, owner_id, description, max_users, room_code, created_at)
        VALUES ($1, $2, $3, $4, $5, NOW())
        RETURNING *`,
-      [roomId, name, ownerId, description, maxUsers]
+      [name, ownerId, description, maxUsers, roomCode]
     );
+    
+    const roomId = result.rows[0].id;
     
     await query(
       'INSERT INTO room_admins (room_id, user_id) VALUES ($1, $2)',

@@ -238,7 +238,9 @@ router.post('/create', async (req, res) => {
       success: true,
       message: 'Room created successfully',
       room: {
-        roomId: room.id,
+        id: room.id,
+        roomId: room.room_code || room.id,
+        roomCode: room.room_code,
         name: room.name,
         description: room.description,
         ownerId: room.owner_id,

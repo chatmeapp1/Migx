@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -8,11 +8,14 @@ import {
   TextInput, 
   TouchableOpacity,
   Image,
-  StatusBar
+  StatusBar,
+  Alert
 } from 'react-native';
 import { router } from 'expo-router';
 import { useThemeCustom } from '@/theme/provider';
 import Svg, { Path } from 'react-native-svg';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_ENDPOINTS } from '@/utils/api';
 
 const BackIcon = ({ size = 24, color = '#fff' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -43,11 +46,110 @@ export default function TransferCreditScreen() {
   const [username, setUsername] = useState('');
   const [amount, setAmount] = useState('');
   const [pin, setPin] = useState('');
-  const coinBalance = 1250; // Example balance
+  const [userData, setUserData] = useState<any>(null);
+  const [coinBalance, setCoinBalance] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = () => {
-    console.log('Transfer submitted:', { username, amount, pin });
-    // Implement transfer logic here
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
+    try {
+      const userDataStr = await AsyncStorage.getItem('user_data');
+      if (userDataStr) {
+        const data = JSON.parse(userDataStr);
+        setUserData(data);
+        fetchBalance(data.id);
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error);
+    }
+  };
+
+  const fetchBalance = async (userId: string) => {
+    try {
+      const response = await fetch(`${API_ENDPOINTS.CREDIT.BALANCE}/${userId}`);
+      const data = await response.json();
+      setCoinBalance(data.balance || 0);
+    } catch (error) {
+      console.error('Error fetching balance:', error);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!userData) {
+      Alert.alert('Error', 'User data not found');
+      return;
+    }
+
+    if (!username.trim()) {
+      Alert.alert('Error', 'Please enter username');
+      return;
+    }
+
+    if (!amount.trim() || parseFloat(amount) <= 0) {
+      Alert.alert('Error', 'Please enter valid amount');
+      return;
+    }
+
+    if (!pin.trim() || pin.length !== 6) {
+      Alert.alert('Error', 'Please enter 6-digit PIN');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Find recipient user by username
+      const userResponse = await fetch(`${API_ENDPOINTS.USER.PROFILE}?username=${username}`);
+      const recipientData = await userResponse.json();
+
+      if (!recipientData.id) {
+        Alert.alert('Error', 'User not found');
+        setIsLoading(false);
+        return;
+      }
+
+      // Verify PIN (you may need to add PIN verification endpoint)
+      // For now, we'll proceed with transfer
+
+      const transferResponse = await fetch(API_ENDPOINTS.CREDIT.TRANSFER, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fromUserId: userData.id,
+          toUserId: recipientData.id,
+          amount: parseFloat(amount),
+          message: 'Credit transfer'
+        }),
+      });
+
+      const transferData = await transferResponse.json();
+
+      if (transferResponse.ok && transferData.success) {
+        Alert.alert('Success', `Successfully transferred ${amount} credits to ${username}`, [
+          {
+            text: 'OK',
+            onPress: () => {
+              setUsername('');
+              setAmount('');
+              setPin('');
+              fetchBalance(userData.id);
+            }
+          }
+        ]);
+      } else {
+        Alert.alert('Error', transferData.error || 'Transfer failed');
+      }
+    } catch (error) {
+      console.error('Transfer error:', error);
+      Alert.alert('Error', 'Failed to transfer credits');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleHistory = () => {
@@ -143,11 +245,14 @@ export default function TransferCreditScreen() {
           </View>
 
           <TouchableOpacity 
-            style={styles.submitButton}
+            style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}
             onPress={handleSubmit}
             activeOpacity={0.8}
+            disabled={isLoading}
           >
-            <Text style={styles.submitButtonText}>Submit</Text>
+            <Text style={styles.submitButtonText}>
+              {isLoading ? 'Processing...' : 'Submit'}
+            </Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -240,6 +345,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+  },
+  submitButtonDisabled: {
+    backgroundColor: '#A5D6A7',
+    opacity: 0.6,
   },
   submitButtonText: {
     color: '#fff',

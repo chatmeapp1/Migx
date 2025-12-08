@@ -168,6 +168,53 @@ const getRoomUsers = async (roomId) => {
   }
 };
 
+const addUserToRoom = async (roomId, username) => {
+  try {
+    const redis = getRedisClient();
+    const key = `room:users:${roomId}`;
+    await redis.sadd(key, username);
+    await redis.expire(key, DEFAULT_TTL);
+    return true;
+  } catch (error) {
+    console.error('Error adding user to room:', error);
+    return false;
+  }
+};
+
+const removeUserFromRoom = async (roomId, username) => {
+  try {
+    const redis = getRedisClient();
+    const key = `room:users:${roomId}`;
+    await redis.srem(key, username);
+    return true;
+  } catch (error) {
+    console.error('Error removing user from room:', error);
+    return false;
+  }
+};
+
+const getRoomUserCount = async (roomId) => {
+  try {
+    const redis = getRedisClient();
+    const key = `room:users:${roomId}`;
+    return await redis.scard(key);
+  } catch (error) {
+    console.error('Error getting room user count:', error);
+    return 0;
+  }
+};
+
+const getRoomUsersList = async (roomId) => {
+  try {
+    const redis = getRedisClient();
+    const key = `room:users:${roomId}`;
+    return await redis.smembers(key);
+  } catch (error) {
+    console.error('Error getting room users list:', error);
+    return [];
+  }
+};
+
 const setUserRoom = async (username, roomId) => {
   try {
     const redis = getRedisClient();
@@ -556,6 +603,10 @@ module.exports = {
   updateHotRooms,
   incrementRoomActive,
   decrementRoomActive,
+  addUserToRoom,
+  removeUserFromRoom,
+  getRoomUserCount,
+  getRoomUsersList,
   DEFAULT_TTL,
   ONLINE_PRESENCE_TTL
 };

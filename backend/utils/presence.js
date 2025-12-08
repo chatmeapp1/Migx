@@ -15,7 +15,7 @@ const ROOM_INFO_KEY = (roomId) => `room:info:${roomId}`;
 const DEFAULT_TTL = 300;
 const ONLINE_PRESENCE_TTL = 180;
 
-const addUserToRoom = async (roomId, userId, username) => {
+const addUserToRoomDetailed = async (roomId, userId, username) => {
   try {
     const userData = JSON.stringify({ id: userId, username, joinedAt: Date.now() });
     await client.sAdd(ROOM_USERS_KEY(roomId), userData);
@@ -421,7 +421,7 @@ const removeRoomInfo = async (roomId) => {
 };
 
 module.exports = {
-  addUserToRoom,
+  addUserToRoomDetailed,
   removeUserFromRoom,
   getRoomUsers,
   getRoomUserCount,

@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useThemeCustom } from '@/theme/provider';
 import { usePresence, PresenceStatus } from '@/hooks/usePresence';
 import { PresenceSelector } from './PresenceSelector';
+import { API_BASE_URL } from '@/utils/api';
 
 interface UserProfileSectionProps {
   username?: string;
@@ -84,7 +85,7 @@ export function UserProfileSection({
     if (!userData?.id) return;
 
     try {
-      const response = await fetch(`https://9212ae89-43be-4a31-98db-f91f871d81be-00-xbc1oair0gwx.pike.replit.dev/api/users/${userData.id}/status-message`, {
+      const response = await fetch(`${API_BASE_URL}/api/users/${userData.id}/status-message`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

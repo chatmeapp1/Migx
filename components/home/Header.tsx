@@ -4,7 +4,7 @@ import { useThemeCustom } from '@/theme/provider';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { NotificationModal } from './NotificationModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createSocket } from '@/utils/api';
+import { createSocket, API_BASE_URL } from '@/utils/api';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const UserIcon = ({ size = 24, color = '#4A90E2' }) => (
@@ -69,7 +69,7 @@ export function Header() {
 
     try {
       const response = await fetch(
-        `https://de8810a7-f473-4c18-aad0-2eadcac86bf6-00-1m4qhdwn5iq40.pike.replit.dev${username}/count`
+        `${API_BASE_URL}/api/notifications/${username}/count`
       );
       const data = await response.json();
       setNotificationCount(data.count || 0);

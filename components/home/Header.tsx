@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeCustom } from '@/theme/provider';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { NotificationModal } from './NotificationModal';
+import { ProfileMenuModal } from './ProfileMenuModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import API_BASE_URL, { createSocket } from '@/utils/api';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,12 +23,20 @@ const BellIcon = ({ size = 20, color = '#fff' }) => (
   </Svg>
 );
 
+const MenuIcon = ({ size = 24, color = '#fff' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M3 6h18M3 12h18M3 18h18" stroke={color} strokeWidth="2" strokeLinecap="round" />
+  </Svg>
+);
+
 export function Header() {
   const { theme } = useThemeCustom();
   const insets = useSafeAreaInsets();
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
   const [username, setUsername] = useState('');
+  const [userData, setUserData] = useState<any>(null);
   const [socket, setSocket] = useState<any>(null);
 
   useEffect(() => {
@@ -59,6 +68,7 @@ export function Header() {
       if (userDataStr) {
         const data = JSON.parse(userDataStr);
         setUsername(data.username);
+        setUserData(data);
       }
     } catch (error) {
       console.error('Error loading user data:', error);
@@ -93,16 +103,22 @@ export function Header() {
             <Text style={[styles.title, { color: '#FFFFFF' }]}>My Friends</Text>
           </View>
 
-          <TouchableOpacity style={styles.iconButton} onPress={() => setShowNotifications(true)}>
-            <BellIcon size={24} color="#FFFFFF" />
-            {notificationCount > 0 && (
-              <View style={styles.notifBadge}>
-                <Text style={styles.notifBadgeText}>
-                  {notificationCount > 99 ? '99+' : notificationCount}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
+          <View style={styles.rightSection}>
+            <TouchableOpacity style={styles.iconButton} onPress={() => setShowNotifications(true)}>
+              <BellIcon size={24} color="#FFFFFF" />
+              {notificationCount > 0 && (
+                <View style={styles.notifBadge}>
+                  <Text style={styles.notifBadgeText}>
+                    {notificationCount > 99 ? '99+' : notificationCount}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.iconButton} onPress={() => setShowProfileMenu(true)}>
+              <MenuIcon size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
         </View>
       </LinearGradient>
 
@@ -111,6 +127,12 @@ export function Header() {
         onClose={() => setShowNotifications(false)}
         username={username}
         socket={socket}
+      />
+
+      <ProfileMenuModal
+        visible={showProfileMenu}
+        onClose={() => setShowProfileMenu(false)}
+        userData={userData}
       />
     </>
   );
@@ -131,6 +153,7 @@ const styles = StyleSheet.create({
     width: '100%'
   },
   leftSection: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  rightSection: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   title: { fontSize: 16, fontWeight: 'bold' },
   iconButton: { padding: 4 },
   notifBadge: {

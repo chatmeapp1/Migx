@@ -27,10 +27,9 @@ const TAB_CONFIG: Record<string, { title: string; icon: (props: { color: string;
   'chat': { title: 'Chat', icon: ChatIcon },
   'feed': { title: 'Feed', icon: FeedIcon },
   'room': { title: 'Room', icon: RoomIcon },
-  'profile': { title: 'Profile', icon: ProfileIcon },
 };
 
-const VISIBLE_TABS = ['index', 'chat', 'feed', 'room', 'profile'];
+const VISIBLE_TABS = ['index', 'chat', 'feed', 'room'];
 const TOTAL_TABS = VISIBLE_TABS.length;
 
 interface CustomTabBarProps {
@@ -167,7 +166,7 @@ export default function TabLayout() {
       <Tabs.Screen name="chat" options={{ title: 'Chat' }} />
       <Tabs.Screen name="feed" options={{ title: 'Feed' }} />
       <Tabs.Screen name="room" options={{ title: 'Room' }} />
-      <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
+      <Tabs.Screen name="profile" options={{ href: null }} />
       <Tabs.Screen name="explore" options={{ href: null }} />
     </Tabs>
   );

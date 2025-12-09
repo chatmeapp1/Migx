@@ -240,54 +240,94 @@ export default function ChatRoomScreen() {
   const [tabs, setTabs] = useState<ChatTab[]>([]);
   const [activeTab, setActiveTab] = useState(roomId);
   const [tabsLoaded, setTabsLoaded] = useState(false);
+  const [isReconnecting, setIsReconnecting] = useState(false);
 
-  // Load user data and tabs from storage FIRST
-  useEffect(() => {
-    const loadUserData = async () => {
-      try {
-        const userDataStr = await AsyncStorage.getItem('user_data');
-        if (userDataStr) {
-          const userData = JSON.parse(userDataStr);
-          console.log('👤 User data loaded:', userData);
-          setCurrentUsername(userData.username || 'migx');
-          setCurrentUserId(userData.id || '');
-        } else {
-          console.log('⚠️ No user data found in storage');
-        }
+  // Clear all room tabs
+  const clearRoomTabs = async () => {
+    console.log('🗑️ Clearing all room tabs');
+    setTabs([]);
+    setActiveTab(roomId);
+    await AsyncStorage.removeItem('chatroom_tabs');
+  };
 
-        // Load saved tabs
-        const savedTabsStr = await AsyncStorage.getItem('chatroom_tabs');
-        if (savedTabsStr) {
-          const savedTabs = JSON.parse(savedTabsStr);
-          console.log('📑 Loaded saved tabs:', savedTabs);
-          
-          // Check if current room already exists in saved tabs
-          const existingTab = savedTabs.find((t: ChatTab) => t.id === roomId);
-          if (existingTab) {
-            setTabs(savedTabs);
-          } else {
-            // Add current room to saved tabs
-            const newTabs = [...savedTabs, {
-              id: roomId,
-              name: roomName,
-              type: 'room' as const,
-              messages: [],
-            }];
-            setTabs(newTabs);
-            await AsyncStorage.setItem('chatroom_tabs', JSON.stringify(newTabs));
-          }
-        } else {
-          // No saved tabs, create new one
-          const newTabs = [{
+  // Load active rooms from server
+  const loadActiveRooms = async (username: string) => {
+    try {
+      console.log('📥 Loading active rooms from server for:', username);
+      const response = await fetch(`${API_BASE_URL}/api/chat/joined/${username}`);
+      const data = await response.json();
+      
+      if (data.success && data.rooms && data.rooms.length > 0) {
+        const serverTabs: ChatTab[] = data.rooms.map((room: any) => ({
+          id: room.id,
+          name: room.name,
+          type: 'room' as const,
+          messages: [],
+        }));
+        
+        // Check if current room is in the list, if not add it
+        const currentRoomExists = serverTabs.some(t => t.id === roomId);
+        if (!currentRoomExists) {
+          serverTabs.push({
             id: roomId,
             name: roomName,
             type: 'room' as const,
             messages: [],
-          }];
-          setTabs(newTabs);
-          await AsyncStorage.setItem('chatroom_tabs', JSON.stringify(newTabs));
+          });
         }
         
+        console.log('📑 Loaded tabs from server:', serverTabs);
+        setTabs(serverTabs);
+        await AsyncStorage.setItem('chatroom_tabs', JSON.stringify(serverTabs));
+        return serverTabs;
+      } else {
+        // No rooms from server, create tab for current room only
+        const newTabs = [{
+          id: roomId,
+          name: roomName,
+          type: 'room' as const,
+          messages: [],
+        }];
+        setTabs(newTabs);
+        await AsyncStorage.setItem('chatroom_tabs', JSON.stringify(newTabs));
+        return newTabs;
+      }
+    } catch (error) {
+      console.error('❌ Error loading active rooms:', error);
+      // Fallback to current room
+      const newTabs = [{
+        id: roomId,
+        name: roomName,
+        type: 'room' as const,
+        messages: [],
+      }];
+      setTabs(newTabs);
+      return newTabs;
+    }
+  };
+
+  // Load user data and tabs from server
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const userDataStr = await AsyncStorage.getItem('user_data');
+        let username = 'guest';
+        
+        if (userDataStr) {
+          const userData = JSON.parse(userDataStr);
+          console.log('👤 User data loaded:', userData);
+          username = userData.username || 'guest';
+          setCurrentUsername(username);
+          setCurrentUserId(userData.id || 'guest-id');
+        } else {
+          console.log('⚠️ No user data found in storage - using guest');
+          username = 'guest';
+          setCurrentUsername('guest');
+          setCurrentUserId('guest-id');
+        }
+
+        // Always load tabs from server on initial load
+        await loadActiveRooms(username);
         setTabsLoaded(true);
       } catch (error) {
         console.error('❌ Error loading user data:', error);
@@ -304,13 +344,31 @@ export default function ChatRoomScreen() {
     loadUserData();
   }, [roomId, roomName]);
 
-  // Save tabs whenever they change
+  // Handle socket reconnection - clear tabs and reload from server
   useEffect(() => {
-    if (tabsLoaded && tabs.length > 0) {
-      AsyncStorage.setItem('chatroom_tabs', JSON.stringify(tabs))
-        .catch(error => console.error('❌ Error saving tabs:', error));
-    }
-  }, [tabs, tabsLoaded]);
+    if (!socket) return;
+    
+    const handleReconnect = async () => {
+      console.log('🔄 Socket reconnected - clearing tabs and reloading from server');
+      setIsReconnecting(true);
+      
+      // Clear all local tabs
+      await clearRoomTabs();
+      
+      // Load fresh tabs from server
+      if (currentUsername) {
+        await loadActiveRooms(currentUsername);
+      }
+      
+      setIsReconnecting(false);
+    };
+    
+    socket.on('reconnect', handleReconnect);
+    
+    return () => {
+      socket.off('reconnect', handleReconnect);
+    };
+  }, [socket, currentUsername]);
 
   const addSystemMessage = (message: string) => {
     const index = tabs.findIndex(t => t.id === activeTab);

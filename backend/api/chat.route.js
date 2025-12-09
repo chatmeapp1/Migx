@@ -10,6 +10,39 @@ const {
 const roomService = require('../services/roomService');
 const userService = require('../services/userService');
 
+router.get('/joined/:username', async (req, res) => {
+  try {
+    const { username } = req.params;
+    
+    if (!username) {
+      return res.status(400).json({ error: 'Username required' });
+    }
+
+    const userRooms = await getUserRooms(username);
+    
+    const roomsWithInfo = await Promise.all(
+      userRooms.map(async (room) => {
+        const roomInfo = await roomService.getRoomById(room.roomId);
+        return {
+          id: room.roomId,
+          name: room.roomName || roomInfo?.name || 'Unknown Room',
+          type: 'room',
+          joinedAt: room.joinedAt
+        };
+      })
+    );
+
+    res.json({
+      success: true,
+      rooms: roomsWithInfo
+    });
+    
+  } catch (error) {
+    console.error('Get joined rooms error:', error);
+    res.status(500).json({ error: 'Failed to get joined rooms' });
+  }
+});
+
 router.get('/list/:username', async (req, res) => {
   try {
     const { username } = req.params;

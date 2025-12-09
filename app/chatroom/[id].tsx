@@ -444,22 +444,17 @@ export default function ChatRoomScreen() {
     }
   };
 
-  const handleLeaveRoom = async () => {
-    if (socket && currentUsername && currentUserId) {
-      console.log('🚪 User explicitly leaving room:', activeTab);
-      socket.emit('leave_room', { roomId: activeTab, username: currentUsername, userId: currentUserId });
-    }
+  const removeRoomTab = async (roomIdToRemove: string) => {
+    // Filter out the room tab
+    const remainingTabs = tabs.filter(t => t.id !== roomIdToRemove);
     
-    // Remove tab from storage and state
-    const remainingTabs = tabs.filter(t => t.id !== activeTab);
-    
-    // Update state first
+    // Update state
     setTabs(remainingTabs);
     
     try {
       if (remainingTabs.length > 0) {
         await AsyncStorage.setItem('chatroom_tabs', JSON.stringify(remainingTabs));
-        // Switch to another tab instead of going back
+        // Switch to first available tab
         setActiveTab(remainingTabs[0].id);
       } else {
         await AsyncStorage.removeItem('chatroom_tabs');
@@ -468,8 +463,35 @@ export default function ChatRoomScreen() {
       }
     } catch (error) {
       console.error('❌ Error saving tabs:', error);
-      router.back();
+      if (remainingTabs.length === 0) {
+        router.back();
+      }
     }
+  };
+
+  const handleLeaveRoom = async () => {
+    const roomIdToLeave = activeTab;
+    
+    if (socket) {
+      console.log('🚪 User explicitly leaving room:', roomIdToLeave);
+      
+      // Emit leave room event
+      socket.emit('leave_room', { 
+        roomId: roomIdToLeave, 
+        username: currentUsername, 
+        userId: currentUserId 
+      });
+      
+      // Clean up socket listeners for this room
+      socket.off(`room:${roomIdToLeave}:message`);
+      socket.off(`room:${roomIdToLeave}:system`);
+      socket.off('chat:message');
+      socket.off('room:user:joined');
+      socket.off('room:user:left');
+    }
+    
+    // Remove the tab and update UI
+    await removeRoomTab(roomIdToLeave);
   };
 
   const currentTab = tabs.find(t => t.id === activeTab);

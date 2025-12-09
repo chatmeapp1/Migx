@@ -95,8 +95,6 @@ export default function ProfileScreen() {
 
           <ScrollView style={styles.scrollView}>
             <View style={[styles.menuSection, { backgroundColor: theme.card }]}>
-              <ModeToggle />
-
               <ProfileMenuItem 
                 icon={<AccountIcon size={24} />}
                 title="My Account"
@@ -125,15 +123,15 @@ export default function ProfileScreen() {
                 icon={<LeaderboardIcon size={24} />}
                 title="Leaderboard"
                 onPress={handleLeaderboard}
-                showDivider={true}
               />
 
               <ProfileMenuItem 
                 icon={<SettingsIcon size={24} />}
                 title="Settings"
                 onPress={handleSettings}
-                showDivider={isMerchant}
               />
+
+              <ModeToggle />
 
               {isMerchant && (
                 <ProfileMenuItem 

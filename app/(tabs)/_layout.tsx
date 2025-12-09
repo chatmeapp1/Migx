@@ -22,28 +22,15 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = 50;
 const VELOCITY_THRESHOLD = 300;
 
-interface TabItem {
-  key: string;
-  name: string;
-  title: string;
-  icon: (props: { color: string; size: number }) => React.ReactNode;
-}
-
-const TABS: TabItem[] = [
-  { key: 'index', name: 'index', title: 'Home', icon: HomeIcon },
-  { key: 'chat', name: 'chat', title: 'Chat', icon: ChatIcon },
-  { key: 'feed', name: 'feed', title: 'Feed', icon: FeedIcon },
-  { key: 'room', name: 'room', title: 'Room', icon: RoomIcon },
-  { key: 'profile', name: 'profile', title: 'Profile', icon: ProfileIcon },
-];
-
-const NAME_TO_INDEX: Record<string, number> = {
-  'index': 0,
-  'chat': 1,
-  'feed': 2,
-  'room': 3,
-  'profile': 4,
+const TAB_CONFIG: Record<string, { title: string; icon: (props: { color: string; size: number }) => React.ReactNode }> = {
+  'index': { title: 'Home', icon: HomeIcon },
+  'chat': { title: 'Chat', icon: ChatIcon },
+  'feed': { title: 'Feed', icon: FeedIcon },
+  'room': { title: 'Room', icon: RoomIcon },
+  'profile': { title: 'Profile', icon: ProfileIcon },
 };
+
+const VISIBLE_TAB_ORDER = ['index', 'chat', 'feed', 'room', 'profile'];
 
 interface CustomTabBarProps {
   state: any;
@@ -56,26 +43,27 @@ function CustomTabBar({ state, descriptors, navigation }: CustomTabBarProps) {
   const insets = useSafeAreaInsets();
   const isNavigating = useRef(false);
   const swipeProgress = useSharedValue(0);
-  const currentIndexRef = useRef(0);
-
+  const currentVisualIndexRef = useRef(0);
+  
   const currentRouteName = state.routes[state.index]?.name || 'index';
-  const currentIndex = NAME_TO_INDEX[currentRouteName] ?? 0;
+  const currentVisualIndex = VISIBLE_TAB_ORDER.indexOf(currentRouteName);
+  const safeVisualIndex = currentVisualIndex >= 0 ? currentVisualIndex : 0;
   
-  currentIndexRef.current = currentIndex;
-  
-  const animatedIndex = useSharedValue(currentIndex);
+  const animatedIndex = useSharedValue(safeVisualIndex);
+  const totalTabs = VISIBLE_TAB_ORDER.length;
 
-  const TAB_WIDTH = SCREEN_WIDTH / TABS.length;
+  const TAB_WIDTH = SCREEN_WIDTH / totalTabs;
   const INDICATOR_WIDTH = 40;
   const INDICATOR_OFFSET = (TAB_WIDTH - INDICATOR_WIDTH) / 2;
 
   useEffect(() => {
-    animatedIndex.value = withSpring(currentIndex, {
+    currentVisualIndexRef.current = safeVisualIndex;
+    animatedIndex.value = withSpring(safeVisualIndex, {
       damping: 18,
       stiffness: 180,
       mass: 0.3,
     });
-  }, [currentIndex]);
+  }, [safeVisualIndex]);
 
   const indicatorStyle = useAnimatedStyle(() => {
     const basePosition = animatedIndex.value * TAB_WIDTH + INDICATOR_OFFSET;
@@ -90,9 +78,9 @@ function CustomTabBar({ state, descriptors, navigation }: CustomTabBarProps) {
     };
   });
 
-  const doNavigation = useCallback((targetIndex: number) => {
+  const doNavigation = useCallback((targetVisualIndex: number) => {
     if (isNavigating.current) return;
-    if (targetIndex < 0 || targetIndex >= TABS.length) return;
+    if (targetVisualIndex < 0 || targetVisualIndex >= totalTabs) return;
     
     isNavigating.current = true;
     
@@ -102,34 +90,34 @@ function CustomTabBar({ state, descriptors, navigation }: CustomTabBarProps) {
       } catch (e) {}
     }
     
-    const route = TABS[targetIndex];
-    if (route) {
-      navigation.navigate(route.name);
+    const targetRouteName = VISIBLE_TAB_ORDER[targetVisualIndex];
+    if (targetRouteName) {
+      navigation.navigate(targetRouteName);
     }
     
     setTimeout(() => {
       isNavigating.current = false;
     }, 150);
-  }, [navigation]);
+  }, [navigation, totalTabs]);
 
-  const handlePress = useCallback((index: number) => {
-    doNavigation(index);
+  const handlePress = useCallback((visualIndex: number) => {
+    doNavigation(visualIndex);
   }, [doNavigation]);
 
   const handleSwipeEnd = useCallback((translationX: number, velocityX: number) => {
-    const idx = currentIndexRef.current;
-    const canLeft = idx < TABS.length - 1;
-    const canRight = idx > 0;
+    const idx = currentVisualIndexRef.current;
+    const canGoNext = idx < totalTabs - 1;
+    const canGoPrev = idx > 0;
     
-    const shouldGoNext = (translationX < -SWIPE_THRESHOLD || velocityX < -VELOCITY_THRESHOLD) && canLeft;
-    const shouldGoPrev = (translationX > SWIPE_THRESHOLD || velocityX > VELOCITY_THRESHOLD) && canRight;
+    const shouldGoNext = (translationX < -SWIPE_THRESHOLD || velocityX < -VELOCITY_THRESHOLD) && canGoNext;
+    const shouldGoPrev = (translationX > SWIPE_THRESHOLD || velocityX > VELOCITY_THRESHOLD) && canGoPrev;
     
     if (shouldGoNext) {
       doNavigation(idx + 1);
     } else if (shouldGoPrev) {
       doNavigation(idx - 1);
     }
-  }, [doNavigation]);
+  }, [doNavigation, totalTabs]);
 
   const panGesture = Gesture.Pan()
     .activeOffsetX([-15, 15])
@@ -138,14 +126,14 @@ function CustomTabBar({ state, descriptors, navigation }: CustomTabBarProps) {
       const normalizedTranslation = event.translationX / SCREEN_WIDTH;
       let progress = normalizedTranslation * 2.5;
       
-      const idx = currentIndexRef.current;
-      const canRight = idx > 0;
-      const canLeft = idx < TABS.length - 1;
+      const idx = currentVisualIndexRef.current;
+      const canGoPrev = idx > 0;
+      const canGoNext = idx < totalTabs - 1;
       
-      if (!canRight && progress > 0) {
+      if (!canGoPrev && progress > 0) {
         progress *= 0.15;
       }
-      if (!canLeft && progress < 0) {
+      if (!canGoNext && progress < 0) {
         progress *= 0.15;
       }
       
@@ -179,20 +167,23 @@ function CustomTabBar({ state, descriptors, navigation }: CustomTabBarProps) {
         />
 
         <View style={styles.tabsRow}>
-          {TABS.map((tab, index) => {
-            const isActive = currentIndex === index;
+          {VISIBLE_TAB_ORDER.map((tabName, index) => {
+            const config = TAB_CONFIG[tabName];
+            if (!config) return null;
+            
+            const isActive = safeVisualIndex === index;
             const color = isActive ? '#FFFFFF' : 'rgba(255,255,255,0.6)';
 
             return (
               <TouchableOpacity
-                key={tab.key}
+                key={tabName}
                 style={styles.tab}
                 onPress={() => handlePress(index)}
                 activeOpacity={0.7}
               >
                 <View style={styles.tabContent}>
-                  {tab.icon({ color, size: 24 })}
-                  <Text style={[styles.tabLabel, { color }]}>{tab.title}</Text>
+                  {config.icon({ color, size: 24 })}
+                  <Text style={[styles.tabLabel, { color }]}>{config.title}</Text>
                 </View>
               </TouchableOpacity>
             );

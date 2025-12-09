@@ -44,6 +44,7 @@ router.get('/', authMiddleware, async (req, res) => {
     const { page = 1, limit = 10 } = req.query;
     const offset = (page - 1) * limit;
     const userId = req.user.id;
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
 
     const postsQuery = `
       SELECT 
@@ -69,9 +70,17 @@ router.get('/', authMiddleware, async (req, res) => {
     const totalPosts = parseInt(countResult.rows[0].count);
     const hasMore = offset + parseInt(limit) < totalPosts;
 
+    // Convert relative image URLs to full URLs
+    const posts = result.rows.map(post => ({
+      ...post,
+      image_url: post.image_url && !post.image_url.startsWith('http') 
+        ? `${baseUrl}${post.image_url}` 
+        : post.image_url
+    }));
+
     res.json({
       success: true,
-      posts: result.rows,
+      posts,
       hasMore,
       currentPage: parseInt(page),
       totalPages: Math.ceil(totalPosts / limit)
@@ -87,7 +96,8 @@ router.post('/create', authMiddleware, upload.single('image'), async (req, res) 
   try {
     const { content } = req.body;
     const userId = req.user.id;
-    const imageUrl = req.file ? `/uploads/posts/${req.file.filename}` : null;
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const imageUrl = req.file ? `${baseUrl}/uploads/posts/${req.file.filename}` : null;
 
     if (!content && !imageUrl) {
       return res.status(400).json({ success: false, error: 'Content or image required' });

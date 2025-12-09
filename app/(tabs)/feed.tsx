@@ -399,8 +399,14 @@ export default function FeedScreen() {
           }
           scrollEventThrottle={16}
           nestedScrollEnabled={false}
+          bounces={true}
+          alwaysBounceVertical={false}
         >
-          {posts.map(post => renderPost({ item: post }))}
+          {posts.map(post => (
+            <View key={post.id.toString()}>
+              {renderPost({ item: post })}
+            </View>
+          ))}
           {loading && !refreshing && (
             <ActivityIndicator size="small" color={theme.primary} style={styles.loader} />
           )}

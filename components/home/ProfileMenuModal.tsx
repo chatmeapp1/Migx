@@ -1,10 +1,9 @@
-
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
 import { useThemeCustom } from '@/theme/provider';
-import { router } from 'expo-router';
+import { router, usePathname } from 'expo-router';
 import { 
   AccountIcon, 
   CommentIcon, 
@@ -31,6 +30,14 @@ interface ProfileMenuModalProps {
 
 export function ProfileMenuModal({ visible, onClose, userData }: ProfileMenuModalProps) {
   const { theme } = useThemeCustom();
+  const pathname = usePathname();
+
+  // Auto close modal saat route berubah
+  useEffect(() => {
+    if (visible && pathname) {
+      onClose();
+    }
+  }, [pathname]);
 
   if (!userData) return null;
 
@@ -134,28 +141,28 @@ export function ProfileMenuModal({ visible, onClose, userData }: ProfileMenuModa
               onPress={handleMyAccount}
               theme={theme}
             />
-            
+
             <MenuItem 
               icon={<CommentIcon size={24} />}
               title="Official Comment"
               onPress={handleOfficialComment}
               theme={theme}
             />
-            
+
             <MenuItem 
               icon={<GiftIcon size={24} />}
               title="Gift Store"
               onPress={handleGiftStore}
               theme={theme}
             />
-            
+
             <MenuItem 
               icon={<PeopleIcon size={24} />}
               title="People"
               onPress={handlePeople}
               theme={theme}
             />
-            
+
             <MenuItem 
               icon={<LeaderboardIcon size={24} />}
               title="Leaderboard"
@@ -163,7 +170,7 @@ export function ProfileMenuModal({ visible, onClose, userData }: ProfileMenuModa
               theme={theme}
               showDivider={true}
             />
-            
+
             <MenuItem 
               icon={<SettingsIcon size={24} />}
               title="Settings"
@@ -171,7 +178,7 @@ export function ProfileMenuModal({ visible, onClose, userData }: ProfileMenuModa
               theme={theme}
               showDivider={isMerchant}
             />
-            
+
             {isMerchant && (
               <MenuItem 
                 icon={<DashboardIcon size={24} />}

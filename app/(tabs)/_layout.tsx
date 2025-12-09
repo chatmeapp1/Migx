@@ -83,17 +83,27 @@ function CustomTabBar({ state, descriptors, navigation }: CustomTabBarProps) {
   }, [navigation]);
 
   const panGesture = Gesture.Pan()
-    .activeOffsetX([-20, 20])
-    .failOffsetY([-20, 20])
-    .onUpdate((event) => {
+    .activeOffsetX([-30, 30])
+    .failOffsetY([-30, 30])
+    .maxPointers(1)
+    .minDistance(10)
+    .onStart(() => {
       'worklet';
-      // Update animasi indicator saat swipe
+      // Lock current index saat mulai swipe
       const currentVisualIdx = VISIBLE_TABS.indexOf(currentRouteName);
       if (currentVisualIdx >= 0) {
-        const offset = -event.translationX / SCREEN_WIDTH;
-        const newIdx = Math.max(0, Math.min(TOTAL_TABS - 1, currentVisualIdx + offset));
-        animatedIndex.value = newIdx;
+        animatedIndex.value = currentVisualIdx;
       }
+    })
+    .onUpdate((event) => {
+      'worklet';
+      const currentVisualIdx = VISIBLE_TABS.indexOf(currentRouteName);
+      if (currentVisualIdx < 0) return;
+      
+      // Hitung pergerakan indicator
+      const progress = -event.translationX / (SCREEN_WIDTH * 0.7);
+      const newIdx = Math.max(0, Math.min(TOTAL_TABS - 1, currentVisualIdx + progress));
+      animatedIndex.value = newIdx;
     })
     .onEnd((event) => {
       'worklet';
@@ -101,24 +111,30 @@ function CustomTabBar({ state, descriptors, navigation }: CustomTabBarProps) {
       const tx = event.translationX;
       const currentVisualIdx = VISIBLE_TABS.indexOf(currentRouteName);
       
-      if (currentVisualIdx < 0) return;
+      if (currentVisualIdx < 0) {
+        animatedIndex.value = withSpring(0);
+        return;
+      }
+
+      let targetIdx = currentVisualIdx;
 
       // Swipe ke kiri (next tab)
       if ((tx < -SWIPE_THRESHOLD || vx < -VELOCITY_THRESHOLD) && currentVisualIdx < TOTAL_TABS - 1) {
-        runOnJS(navigateToTab)(currentVisualIdx + 1);
+        targetIdx = currentVisualIdx + 1;
+        runOnJS(navigateToTab)(targetIdx);
       } 
       // Swipe ke kanan (prev tab)
       else if ((tx > SWIPE_THRESHOLD || vx > VELOCITY_THRESHOLD) && currentVisualIdx > 0) {
-        runOnJS(navigateToTab)(currentVisualIdx - 1);
+        targetIdx = currentVisualIdx - 1;
+        runOnJS(navigateToTab)(targetIdx);
       }
-      // Reset jika tidak cukup untuk pindah tab
-      else {
-        animatedIndex.value = withSpring(currentVisualIdx, {
-          damping: 18,
-          stiffness: 180,
-          mass: 0.3,
-        });
-      }
+      
+      // Animate ke target
+      animatedIndex.value = withSpring(targetIdx, {
+        damping: 20,
+        stiffness: 200,
+        mass: 0.5,
+      });
     });
 
   return (

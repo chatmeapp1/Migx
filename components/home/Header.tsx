@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, StatusBar } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeCustom } from '@/theme/provider';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { NotificationModal } from './NotificationModal';
@@ -79,19 +80,21 @@ export function Header() {
   };
 
   return (
-    <View
+    <LinearGradient 
+      colors={['#0D5E32', '#0A4726']} 
+      start={{ x: 0, y: 0 }} 
+      end={{ x: 1, y: 0 }}
       style={[
         styles.container,
-        { backgroundColor: '#0a5229', paddingTop: insets.top }
+        { paddingTop: insets.top }
       ]}
     >
-      <StatusBar backgroundColor="#0a5229" barStyle="light-content" />
+      <StatusBar backgroundColor="#0D5E32" barStyle="light-content" />
 
       <View
         style={[
           styles.topBar,
           {
-            backgroundColor: '#0a5229',
             borderBottomColor: theme.border
           }
         ]}
@@ -119,7 +122,7 @@ export function Header() {
         username={username}
         socket={socket}
       />
-    </View>
+    </LinearGradient>
   );
 }
 

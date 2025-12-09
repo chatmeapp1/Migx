@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
 import { useThemeCustom } from '@/theme/provider';
 import { API_BASE_URL } from '@/utils/api';
@@ -40,7 +41,12 @@ export function ProfileHeader({ avatar, username, level, onEditPress }: ProfileH
       : null;
 
   return (
-    <View style={[styles.container, { backgroundColor: '#1B5E20' }]}>
+    <LinearGradient 
+      colors={['#0D5E32', '#0A4726']} 
+      start={{ x: 0, y: 0 }} 
+      end={{ x: 1, y: 0 }}
+      style={styles.container}
+    >
       <View style={styles.headerContent}>
         <View style={styles.leftSection}>
           <View style={styles.avatarContainer}>
@@ -71,7 +77,7 @@ export function ProfileHeader({ avatar, username, level, onEditPress }: ProfileH
           <EditIcon size={20} />
         </TouchableOpacity>
       </View>
-    </View>
+    </LinearGradient>
   );
 }
 

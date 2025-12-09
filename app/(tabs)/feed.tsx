@@ -380,9 +380,14 @@ export default function FeedScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
-        <Text style={[styles.headerTitle, { color: theme.text }]}>Feed</Text>
-      </View>
+      <LinearGradient 
+        colors={['#0D5E32', '#0A4726']} 
+        start={{ x: 0, y: 0 }} 
+        end={{ x: 1, y: 0 }}
+        style={[styles.header, { borderBottomColor: theme.border }]}
+      >
+        <Text style={[styles.headerTitle, { color: '#FFFFFF' }]}>Feed</Text>
+      </LinearGradient>
 
       <FlatList
         data={posts}

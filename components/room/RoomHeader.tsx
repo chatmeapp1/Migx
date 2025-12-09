@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeCustom } from '@/theme/provider';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 
@@ -27,25 +28,30 @@ export function RoomHeader() {
   const { theme } = useThemeCustom();
   
   return (
-    <View style={[styles.container, { backgroundColor: '#1B5E20' }]}>
-      <View style={[styles.topBar, { backgroundColor: '#1B5E20', borderBottomColor: theme.border }]}>
+    <LinearGradient 
+      colors={['#0D5E32', '#0A4726']} 
+      start={{ x: 0, y: 0 }} 
+      end={{ x: 1, y: 0 }}
+      style={styles.container}
+    >
+      <View style={[styles.topBar, { borderBottomColor: theme.border }]}>
         <View style={styles.leftSection}>
           <HomeIcon size={20} color="#FFFFFF" />
           <Text style={[styles.title, { color: '#FFFFFF' }]}>Chat Rooms</Text>
         </View>
         <View style={styles.rightSection}>
-          <TouchableOpacity style={[styles.iconButton, { backgroundColor: '#0a5229' }]}>
+          <TouchableOpacity style={[styles.iconButton, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
             <ChatIcon size={18} color="#FFFFFF" />
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.iconButton, { backgroundColor: '#0a5229' }]}>
+          <TouchableOpacity style={[styles.iconButton, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
             <MenuIcon size={18} color="#FFFFFF" />
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.iconButton, { backgroundColor: '#0a5229' }]}>
+          <TouchableOpacity style={[styles.iconButton, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
             <MenuIcon size={18} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </LinearGradient>
   );
 }
 

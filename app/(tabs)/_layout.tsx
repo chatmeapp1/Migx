@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import { Tabs } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
@@ -83,13 +84,15 @@ function CustomTabBar({ state, descriptors, navigation }: CustomTabBarProps) {
   }, [handleNavigate]);
 
   return (
-    <View 
+    <LinearGradient 
+      colors={['#0D5E32', '#0A4726']} 
+      start={{ x: 0, y: 0 }} 
+      end={{ x: 1, y: 0 }}
       style={[
         styles.tabBar, 
         { 
-          backgroundColor: '#0a5229',
           paddingBottom: Math.max(insets.bottom, 8),
-          borderTopColor: '#0a5229',
+          borderTopColor: '#0A4726',
         }
       ]}
     >
@@ -121,7 +124,7 @@ function CustomTabBar({ state, descriptors, navigation }: CustomTabBarProps) {
           );
         })}
       </View>
-    </View>
+    </LinearGradient>
   );
 }
 

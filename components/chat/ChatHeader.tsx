@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeCustom } from '@/theme/provider';
 import Svg, { Path } from 'react-native-svg';
 import { API_ENDPOINTS } from '@/utils/api';
@@ -51,14 +52,19 @@ export function ChatHeader() {
   };
   
   return (
-    <View style={[styles.container, { backgroundColor: theme.card }]}>
-      <View style={[styles.statsBar, { backgroundColor: theme.card }]}>
-        <StatsIcon size={18} color={theme.primary} />
-        <Text style={[styles.statsText, { color: theme.secondary }]}>
+    <LinearGradient 
+      colors={['#0D5E32', '#0A4726']} 
+      start={{ x: 0, y: 0 }} 
+      end={{ x: 1, y: 0 }}
+      style={styles.container}
+    >
+      <View style={styles.statsBar}>
+        <StatsIcon size={18} color="#FFFFFF" />
+        <Text style={[styles.statsText, { color: '#FFFFFF' }]}>
           {formatNumber(stats.users)} users. {formatNumber(stats.rooms)} rooms. {formatNumber(stats.groups)} groups.
         </Text>
       </View>
-    </View>
+    </LinearGradient>
   );
 }
 

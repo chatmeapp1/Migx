@@ -22,18 +22,18 @@ export function ModeToggle() {
   return (
     <>
       <View style={[styles.container, { backgroundColor: theme.card }]}>
-        <View style={[styles.iconContainer, { backgroundColor: theme.border }]}>
+        <View style={[styles.iconContainer, { backgroundColor: isDark ? '#2A2A2A' : theme.border }]}>
           <MoonIcon size={24} color={theme.primary} />
         </View>
         <Text style={[styles.title, { color: theme.text }]}>Dark Mode</Text>
         <Switch
           value={isDark}
           onValueChange={toggleTheme}
-          trackColor={{ false: theme.border, true: theme.primary }}
+          trackColor={{ false: isDark ? '#3A3A3A' : theme.border, true: theme.primary }}
           thumbColor={isDark ? '#fff' : '#f4f3f4'}
         />
       </View>
-      <View style={[styles.divider, { backgroundColor: theme.border }]} />
+      <View style={[styles.divider, { backgroundColor: isDark ? '#2A2A2A' : theme.border }]} />
     </>
   );
 }

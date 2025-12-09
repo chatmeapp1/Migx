@@ -10,7 +10,7 @@ interface ProfileMenuItemProps {
 }
 
 export function ProfileMenuItem({ icon, title, onPress, showDivider = true }: ProfileMenuItemProps) {
-  const { theme } = useThemeCustom();
+  const { theme, isDark } = useThemeCustom();
 
   return (
     <>
@@ -19,12 +19,12 @@ export function ProfileMenuItem({ icon, title, onPress, showDivider = true }: Pr
         onPress={onPress}
         activeOpacity={0.7}
       >
-        <View style={[styles.iconContainer, { backgroundColor: theme.border }]}>
+        <View style={[styles.iconContainer, { backgroundColor: isDark ? '#2A2A2A' : theme.border }]}>
           {icon}
         </View>
         <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
       </TouchableOpacity>
-      {showDivider && <View style={[styles.divider, { backgroundColor: theme.border }]} />}
+      {showDivider && <View style={[styles.divider, { backgroundColor: isDark ? '#2A2A2A' : theme.border }]} />}
     </>
   );
 }

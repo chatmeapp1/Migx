@@ -14,7 +14,6 @@ import {
   Share as RNShare,
   Linking,
   Platform,
-  ScrollView,
 } from 'react-native';
 import { useThemeCustom } from '@/theme/provider';
 import { API_ENDPOINTS } from '@/utils/api';
@@ -30,6 +29,7 @@ import {
   ShareIcon,
 } from '@/components/ui/SvgIcons';
 import Svg, { Path } from 'react-native-svg';
+import { SwipeableScreen } from '@/components/navigation/SwipeableScreen';
 
 const CloseIcon = ({ size = 24, color = '#000' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -379,8 +379,9 @@ export default function FeedScreen() {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <LinearGradient
+    <SwipeableScreen>
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <LinearGradient
         colors={['#0D5E32', '#0A4726']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -389,26 +390,26 @@ export default function FeedScreen() {
         <Text style={[styles.headerTitle, { color: '#FFFFFF' }]}>Feed</Text>
       </LinearGradient>
 
-        <ScrollView
-          style={styles.container}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />
-          }
-          scrollEventThrottle={16}
-          nestedScrollEnabled={false}
-          bounces={true}
-          alwaysBounceVertical={false}
-        >
-          {posts.map(post => (
-            <View key={post.id.toString()}>
-              {renderPost({ item: post })}
-            </View>
-          ))}
-          {loading && !refreshing && (
+      <FlatList
+        data={posts}
+        renderItem={renderPost}
+        keyExtractor={item => item.id.toString()}
+        contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />
+        }
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={
+          loading && !refreshing ? (
             <ActivityIndicator size="small" color={theme.primary} style={styles.loader} />
-          )}
-        </ScrollView>
+          ) : null
+        }
+        showsVerticalScrollIndicator={false}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={5}
+        windowSize={10}
+      />
 
         <TouchableOpacity
           style={styles.fab}
@@ -527,6 +528,7 @@ export default function FeedScreen() {
           </View>
         </Modal>
       </View>
+    </SwipeableScreen>
   );
 }
 
@@ -546,10 +548,12 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 10,
+    paddingBottom: 100,
   },
   postCard: {
     borderRadius: 12,
     padding: 15,
+    marginHorizontal: 10,
     marginBottom: 15,
     borderWidth: 1,
   },

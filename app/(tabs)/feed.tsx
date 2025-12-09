@@ -527,7 +527,6 @@ export default function FeedScreen() {
           </View>
         </Modal>
       </View>
-    </View>
   );
 }
 

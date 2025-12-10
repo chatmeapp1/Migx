@@ -256,6 +256,77 @@ app.use('/api/leaderboard', leaderboardRoute);
 const feedRoute = require('./api/feed.route');
 app.use('/api/feed', feedRoute);
 
+// Admin unban endpoint
+const { clearGlobalBan, getAdminKickCount } = require('./utils/adminKick');
+const { clearAdminCooldown, clearVoteCooldown, getCooldownStatus } = require('./utils/roomCooldown');
+
+app.post('/api/admin/unban', async (req, res) => {
+  try {
+    const { username, adminId } = req.body;
+    
+    if (!username) {
+      return res.status(400).json({ success: false, error: 'Username is required' });
+    }
+    
+    await clearGlobalBan(username);
+    
+    res.json({ 
+      success: true, 
+      message: `${username} has been unbanned globally.` 
+    });
+  } catch (error) {
+    console.error('Error unbanning user:', error);
+    res.status(500).json({ success: false, error: 'Failed to unban user' });
+  }
+});
+
+app.post('/api/admin/clear-cooldown', async (req, res) => {
+  try {
+    const { username, roomId, type } = req.body;
+    
+    if (!username || !roomId) {
+      return res.status(400).json({ success: false, error: 'Username and roomId are required' });
+    }
+    
+    if (type === 'admin') {
+      await clearAdminCooldown(username, roomId);
+    } else if (type === 'vote') {
+      await clearVoteCooldown(username, roomId);
+    } else {
+      await clearAdminCooldown(username, roomId);
+      await clearVoteCooldown(username, roomId);
+    }
+    
+    res.json({ 
+      success: true, 
+      message: `Cooldown cleared for ${username} in room ${roomId}` 
+    });
+  } catch (error) {
+    console.error('Error clearing cooldown:', error);
+    res.status(500).json({ success: false, error: 'Failed to clear cooldown' });
+  }
+});
+
+app.get('/api/admin/ban-status/:username', async (req, res) => {
+  try {
+    const { username } = req.params;
+    const { roomId } = req.query;
+    
+    const kickCount = await getAdminKickCount(username);
+    const cooldownStatus = roomId ? await getCooldownStatus(username, roomId) : null;
+    
+    res.json({ 
+      success: true,
+      username,
+      adminKickCount: kickCount,
+      isGlobalBanned: cooldownStatus?.isGlobalBanned || kickCount >= 3,
+      cooldownStatus
+    });
+  } catch (error) {
+    console.error('Error getting ban status:', error);
+    res.status(500).json({ success: false, error: 'Failed to get ban status' });
+  }
+});
 
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));

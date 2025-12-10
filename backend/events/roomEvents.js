@@ -17,6 +17,9 @@ const {
   getRoomUserCount,
   addSystemMessage
 } = require('../utils/redisPresence');
+const { adminKick: executeAdminKick, isGloballyBanned } = require('../utils/adminKick');
+const { startVoteKick, addVote, hasActiveVote } = require('../utils/voteKick');
+const { checkJoinAllowed } = require('../utils/roomCooldown');
 
 // Helper function to create system messages
 const createSystemMessage = (roomId, message) => ({
@@ -45,6 +48,24 @@ module.exports = (io, socket) => {
 
       if (!roomId || !userId || !username) {
         socket.emit('error', { message: 'Missing required fields' });
+        return;
+      }
+
+      // Check kick cooldowns and global ban
+      const joinCheck = await checkJoinAllowed(username, roomId);
+      if (!joinCheck.allowed) {
+        socket.emit('system:message', {
+          roomId,
+          message: joinCheck.reason,
+          timestamp: new Date().toISOString(),
+          type: 'error'
+        });
+        socket.emit('room:join:rejected', {
+          roomId,
+          reason: joinCheck.reason,
+          type: joinCheck.type,
+          remainingSeconds: joinCheck.remainingSeconds
+        });
         return;
       }
 
@@ -511,10 +532,147 @@ module.exports = (io, socket) => {
     }
   };
 
+  const kickUser = async (data) => {
+    try {
+      const { roomId, targetUsername, kickerUserId, kickerUsername, isAdmin } = data;
+
+      if (!roomId || !targetUsername) {
+        socket.emit('error', { message: 'Missing required fields' });
+        return;
+      }
+
+      const room = await roomService.getRoomById(roomId);
+      if (!room) {
+        socket.emit('error', { message: 'Room not found' });
+        return;
+      }
+
+      // Check if kicker is admin
+      const kickerIsAdmin = isAdmin || await roomService.isRoomAdmin(roomId, kickerUserId);
+
+      if (kickerIsAdmin) {
+        // Admin kick - immediate, no vote needed
+        const result = await executeAdminKick(io, roomId, kickerUsername, targetUsername);
+
+        // Find target socket and force leave
+        const roomSockets = await io.in(`room:${roomId}`).fetchSockets();
+        for (const targetSocket of roomSockets) {
+          if (targetSocket.username === targetUsername || targetSocket.handshake?.auth?.username === targetUsername) {
+            targetSocket.leave(`room:${roomId}`);
+            targetSocket.emit('room:kicked', {
+              roomId,
+              reason: 'You have been kicked by admin.',
+              type: 'adminKick',
+              isGlobalBanned: result.isGlobalBanned
+            });
+          }
+        }
+
+        // Remove from presence
+        await removeUserFromRoom(roomId, targetUsername);
+        await removeUserRoom(targetUsername, roomId);
+
+        // Update user count
+        const userCount = await getRoomUserCount(roomId);
+        io.to(`room:${roomId}`).emit('room:user:left', {
+          roomId,
+          username: targetUsername,
+          users: await getRoomPresenceUsers(roomId)
+        });
+
+        io.emit('rooms:updateCount', {
+          roomId,
+          userCount,
+          maxUsers: room.max_users || 25
+        });
+
+      } else {
+        // Non-admin - start vote kick
+        const activeVote = await hasActiveVote(roomId, targetUsername);
+        if (activeVote) {
+          // Add vote to existing
+          await addVote(io, roomId, kickerUsername, targetUsername);
+        } else {
+          // Start new vote
+          const roomUserCount = await getRoomUserCount(roomId);
+          await startVoteKick(io, roomId, kickerUsername, targetUsername, roomUserCount);
+        }
+      }
+
+    } catch (error) {
+      console.error('Error in kick handler:', error);
+      socket.emit('error', { message: 'Failed to process kick' });
+    }
+  };
+
+  const voteKickUser = async (data) => {
+    try {
+      const { roomId, targetUsername, voterUsername } = data;
+
+      if (!roomId || !targetUsername || !voterUsername) {
+        socket.emit('error', { message: 'Missing required fields' });
+        return;
+      }
+
+      const activeVote = await hasActiveVote(roomId, targetUsername);
+      if (!activeVote) {
+        socket.emit('system:message', {
+          roomId,
+          message: `No active vote to kick ${targetUsername}.`,
+          timestamp: new Date().toISOString(),
+          type: 'warning'
+        });
+        return;
+      }
+
+      const result = await addVote(io, roomId, voterUsername, targetUsername);
+      
+      if (result.kicked) {
+        // User was kicked - find and remove from room
+        const roomSockets = await io.in(`room:${roomId}`).fetchSockets();
+        for (const targetSocket of roomSockets) {
+          if (targetSocket.username === targetUsername || targetSocket.handshake?.auth?.username === targetUsername) {
+            targetSocket.leave(`room:${roomId}`);
+            targetSocket.emit('room:kicked', {
+              roomId,
+              reason: 'You have been vote-kicked.',
+              type: 'voteKick'
+            });
+          }
+        }
+
+        // Remove from presence
+        await removeUserFromRoom(roomId, targetUsername);
+        await removeUserRoom(targetUsername, roomId);
+
+        const userCount = await getRoomUserCount(roomId);
+        const room = await roomService.getRoomById(roomId);
+        
+        io.to(`room:${roomId}`).emit('room:user:left', {
+          roomId,
+          username: targetUsername,
+          users: await getRoomPresenceUsers(roomId)
+        });
+
+        io.emit('rooms:updateCount', {
+          roomId,
+          userCount,
+          maxUsers: room?.max_users || 25
+        });
+      }
+
+    } catch (error) {
+      console.error('Error in vote kick handler:', error);
+      socket.emit('error', { message: 'Failed to process vote' });
+    }
+  };
+
   socket.on('join_room', joinRoom);
   socket.on('leave_room', leaveRoom);
   socket.on('room:leave', leaveRoom);
   socket.on('room:users:get', getRoomUsers);
+  socket.on('room:kick', kickUser);
+  socket.on('room:voteKick', voteKickUser);
   socket.on('room:admin:kick', adminKick);
   socket.on('room:admin:ban', adminBan);
   socket.on('room:admin:unban', adminUnban);

@@ -98,8 +98,19 @@ export default function ChatRoomScreen() {
       autoConnect: true,
     });
 
-    newSocket.on('connect', () => {
+    newSocket.on('connect', async () => {
       console.log('✅ Socket connected:', newSocket.id);
+      
+      // Clear all tabs on connect/reconnect
+      console.log('🗑️ Clearing all tabs on connect...');
+      await clearRoomTabs();
+      
+      // Load fresh tabs from server
+      if (currentUsername) {
+        await loadActiveRooms(currentUsername);
+      }
+      
+      // Join current room
       if (currentUsername && currentUserId) {
         console.log('📤 Emitting join_room:', { roomId, userId: currentUserId, username: currentUsername });
         newSocket.emit('join_room', { 
@@ -258,17 +269,23 @@ export default function ChatRoomScreen() {
       const data = await response.json();
       
       if (data.success && data.rooms && data.rooms.length > 0) {
-        const serverTabs: ChatTab[] = data.rooms.map((room: any) => ({
-          id: room.id,
-          name: room.name,
-          type: 'room' as const,
-          messages: [],
-        }));
+        // Remove duplicates using Map with roomId as key
+        const uniqueRoomsMap = new Map();
+        
+        data.rooms.forEach((room: any) => {
+          if (!uniqueRoomsMap.has(room.id)) {
+            uniqueRoomsMap.set(room.id, {
+              id: room.id,
+              name: room.name,
+              type: 'room' as const,
+              messages: [],
+            });
+          }
+        });
         
         // Check if current room is in the list, if not add it
-        const currentRoomExists = serverTabs.some(t => t.id === roomId);
-        if (!currentRoomExists) {
-          serverTabs.push({
+        if (!uniqueRoomsMap.has(roomId)) {
+          uniqueRoomsMap.set(roomId, {
             id: roomId,
             name: roomName,
             type: 'room' as const,
@@ -276,9 +293,15 @@ export default function ChatRoomScreen() {
           });
         }
         
-        console.log('📑 Loaded tabs from server:', serverTabs);
+        const serverTabs = Array.from(uniqueRoomsMap.values());
+        
+        console.log('📑 Loaded unique tabs from server:', serverTabs);
         setTabs(serverTabs);
-        await AsyncStorage.setItem('chatroom_tabs', JSON.stringify(serverTabs));
+        
+        // Set current room as active
+        setActiveTab(roomId);
+        
+        // Don't save to AsyncStorage - always load from server
         return serverTabs;
       } else {
         // No rooms from server, create tab for current room only
@@ -289,7 +312,7 @@ export default function ChatRoomScreen() {
           messages: [],
         }];
         setTabs(newTabs);
-        await AsyncStorage.setItem('chatroom_tabs', JSON.stringify(newTabs));
+        setActiveTab(roomId);
         return newTabs;
       }
     } catch (error) {
@@ -302,11 +325,12 @@ export default function ChatRoomScreen() {
         messages: [],
       }];
       setTabs(newTabs);
+      setActiveTab(roomId);
       return newTabs;
     }
   };
 
-  // Load user data and tabs from server
+  // Load user data - DON'T load tabs from AsyncStorage
   useEffect(() => {
     const loadUserData = async () => {
       try {
@@ -326,49 +350,19 @@ export default function ChatRoomScreen() {
           setCurrentUserId('guest-id');
         }
 
-        // Always load tabs from server on initial load
-        await loadActiveRooms(username);
+        // DON'T load tabs here - let socket connect event handle it
+        // Just mark tabs as loaded so socket can connect
         setTabsLoaded(true);
       } catch (error) {
         console.error('❌ Error loading user data:', error);
-        // Fallback to single tab
-        setTabs([{
-          id: roomId,
-          name: roomName,
-          type: 'room' as const,
-          messages: [],
-        }]);
         setTabsLoaded(true);
       }
     };
     loadUserData();
   }, [roomId, roomName]);
 
-  // Handle socket reconnection - clear tabs and reload from server
-  useEffect(() => {
-    if (!socket) return;
-    
-    const handleReconnect = async () => {
-      console.log('🔄 Socket reconnected - clearing tabs and reloading from server');
-      setIsReconnecting(true);
-      
-      // Clear all local tabs
-      await clearRoomTabs();
-      
-      // Load fresh tabs from server
-      if (currentUsername) {
-        await loadActiveRooms(currentUsername);
-      }
-      
-      setIsReconnecting(false);
-    };
-    
-    socket.on('reconnect', handleReconnect);
-    
-    return () => {
-      socket.off('reconnect', handleReconnect);
-    };
-  }, [socket, currentUsername]);
+  // Reconnect is handled by 'connect' event above
+  // No need for separate reconnect handler
 
   const addSystemMessage = (message: string) => {
     const index = tabs.findIndex(t => t.id === activeTab);
@@ -502,30 +496,7 @@ export default function ChatRoomScreen() {
     }
   };
 
-  const removeRoomTab = async (roomIdToRemove: string) => {
-    // Filter out the room tab
-    const remainingTabs = tabs.filter(t => t.id !== roomIdToRemove);
-    
-    // Update state
-    setTabs(remainingTabs);
-    
-    try {
-      if (remainingTabs.length > 0) {
-        await AsyncStorage.setItem('chatroom_tabs', JSON.stringify(remainingTabs));
-        // Switch to first available tab
-        setActiveTab(remainingTabs[0].id);
-      } else {
-        await AsyncStorage.removeItem('chatroom_tabs');
-        // No more tabs, go back to previous screen
-        router.back();
-      }
-    } catch (error) {
-      console.error('❌ Error saving tabs:', error);
-      if (remainingTabs.length === 0) {
-        router.back();
-      }
-    }
-  };
+  
 
   const handleLeaveRoom = async () => {
     const roomIdToLeave = activeTab;
@@ -541,8 +512,18 @@ export default function ChatRoomScreen() {
       });
     }
     
-    // Remove the tab and update UI
-    await removeRoomTab(roomIdToLeave);
+    const filtered = tabs.filter(t => t.id !== roomIdToLeave);
+    
+    if (filtered.length === 0) {
+      // No more tabs, go back to room list
+      router.back();
+      return;
+    }
+    
+    setTabs(filtered);
+    
+    // Switch to first available tab
+    setActiveTab(filtered[0].id);
   };
 
   const currentTab = tabs.find(t => t.id === activeTab);
@@ -620,19 +601,13 @@ export default function ChatRoomScreen() {
           
           if (filtered.length === 0) {
             // No more tabs, go back to room list
-            await AsyncStorage.removeItem('chatroom_tabs');
             router.back();
             return;
           }
           
           setTabs(filtered);
           
-          // Update storage
-          try {
-            await AsyncStorage.setItem('chatroom_tabs', JSON.stringify(filtered));
-          } catch (error) {
-            console.error('❌ Error saving tabs:', error);
-          }
+          // Don't save to AsyncStorage - tabs will be loaded from server on next connect
           
           // Switch to another tab if closing the active one
           if (activeTab === id) {

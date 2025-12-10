@@ -754,7 +754,6 @@ export default function ChatRoomScreen() {
           styles.inputWrapper, 
           { 
             backgroundColor: HEADER_COLOR,
-            paddingBottom: insets.bottom,
           }
         ]}
       >

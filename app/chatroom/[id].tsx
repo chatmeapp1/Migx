@@ -475,14 +475,16 @@ export default function ChatRoomScreen() {
         username: currentUsername, 
         userId: currentUserId 
       });
+      
+      // Disconnect socket to ensure clean exit
+      socket.disconnect();
     }
     
-    // Remove tab from state
-    const filtered = tabs.filter(t => t.id !== roomIdToLeave);
-    setTabs(filtered);
+    // Clear all tabs
+    await clearRoomTabs();
     
-    // Always go back to room list
-    router.back();
+    // Navigate back to room list
+    router.replace('/(tabs)/room');
   };
 
   const currentTab = tabs.find(t => t.id === activeTab);

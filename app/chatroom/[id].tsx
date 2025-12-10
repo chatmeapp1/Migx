@@ -79,6 +79,14 @@ export default function ChatRoomScreen() {
   const [hasVoted, setHasVoted] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false); // State for the main menu
 
+  // Track modal state changes
+  useEffect(() => {
+    console.log('Modal state changed:', roomInfoModalVisible);
+    if (roomInfoModalVisible) {
+      console.log('RoomInfoModal opened.');
+    }
+  }, [roomInfoModalVisible]);
+
   // Initialize socket connection
   useEffect(() => {
     if (!tabsLoaded || !currentUsername || !currentUserId) {
@@ -504,14 +512,18 @@ export default function ChatRoomScreen() {
     setHasVoted(true);
   };
 
-  const handleMenuAction = (action: string) => {
+  const handleMenuAction = async (action: string) => {
     console.log('Menu action:', action);
-    console.log('Current roomInfoModalVisible state:', roomInfoModalVisible);
     
     if (action === 'room-info') {
-      console.log('Opening room info modal for roomId:', roomId);
+      console.log('Opening RoomInfoModal...');
+      console.log('roomInfoVisible =', roomInfoModalVisible);
+      
+      // Open modal immediately
       setRoomInfoModalVisible(true);
-      console.log('After setState - roomInfoModalVisible should be true');
+      
+      console.log('Modal state set to true');
+      console.log('RoomInfoModal should now be visible');
     } else if (action === 'kick') {
       setKickModalVisible(true);
     } else if (action === 'participants') {

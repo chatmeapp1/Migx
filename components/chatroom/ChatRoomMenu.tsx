@@ -36,7 +36,12 @@ export function ChatRoomMenu({ visible, onClose, onMenuItemPress, onOpenParticip
 
   const handleMenuPress = (action: string) => {
     console.log('ChatRoomMenu: Menu pressed:', action);
-    if (action === 'participants' && onOpenParticipants) {
+    
+    if (action === 'room-info') {
+      console.log('Room Info menu item clicked');
+      onMenuItemPress(action);
+      onClose();
+    } else if (action === 'participants' && onOpenParticipants) {
       onOpenParticipants();
       onClose();
     } else {

@@ -38,6 +38,8 @@ export function RoomInfoModal({ visible, onClose, roomId }: RoomInfoModalProps) 
 
   useEffect(() => {
     console.log('RoomInfoModal props:', { visible, roomId });
+    console.log('RoomInfoModal rendering, visible:', visible);
+    
     if (visible && roomId) {
       console.log('Fetching room info for roomId:', roomId);
       fetchRoomInfo();
@@ -76,8 +78,6 @@ export function RoomInfoModal({ visible, onClose, roomId }: RoomInfoModalProps) 
     });
   };
 
-  console.log('RoomInfoModal rendering, visible:', visible);
-  
   return (
     <Modal
       visible={visible}

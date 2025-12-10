@@ -161,6 +161,10 @@ export function RoomList() {
     router.push('/create-room');
   };
 
+  const handleRoomPress = (roomId: string) => {
+    router.push(`/chatroom/${roomId}`);
+  };
+
   if (loading) {
     return (
       <View style={[styles.container, styles.loadingContainer, { backgroundColor: theme.background }]}>
@@ -196,6 +200,7 @@ export function RoomList() {
             title="★ Your Favorites"
             rooms={favoriteRooms.map(formatRoomForDisplay)}
             backgroundColor="#FF6B35"
+            onRoomPress={handleRoomPress}
           />
         )}
         
@@ -204,6 +209,7 @@ export function RoomList() {
             title="Recent Rooms"
             rooms={recentRooms.map(formatRoomForDisplay)}
             backgroundColor={theme.card}
+            onRoomPress={handleRoomPress}
           />
         )}
         
@@ -218,6 +224,7 @@ export function RoomList() {
           title="What's Hot"
           rooms={whatsHotRooms.map(formatRoomForDisplay)}
           backgroundColor={theme.card}
+          onRoomPress={handleRoomPress}
         />
         
         <TouchableOpacity style={[styles.actionButton, { backgroundColor: theme.card }]} onPress={onRefresh}>

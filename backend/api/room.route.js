@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const roomService = require('../services/roomService');
 const banService = require('../services/banService');
-const { getRecentRooms, addRecentRoom, getFavoriteRooms, getHotRooms } = require('../utils/redisUtils');
+const { getRecentRooms, addRecentRoom, getFavoriteRooms, addFavoriteRoom, removeFavoriteRoom, getHotRooms } = require('../utils/redisUtils');
 const presence = require('../utils/presence');
 
 router.get('/', async (req, res) => {

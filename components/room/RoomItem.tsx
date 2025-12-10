@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -6,9 +5,10 @@ import { useThemeCustom } from '@/theme/provider';
 import Svg, { Circle } from 'react-native-svg';
 
 interface RoomItemProps {
-  id: string;
+  roomId: string;
   name: string;
   userCount: string;
+  onPress?: (roomId: string) => void;
 }
 
 const RoomIcon = ({ size = 18, color = '#4A90E2' }: { size?: number; color?: string }) => (
@@ -17,15 +17,14 @@ const RoomIcon = ({ size = 18, color = '#4A90E2' }: { size?: number; color?: str
   </Svg>
 );
 
-export function RoomItem({ id, name, userCount }: RoomItemProps) {
-  const router = useRouter();
+export function RoomItem({ roomId, name, userCount, onPress }: RoomItemProps) {
   const { theme } = useThemeCustom();
+  const router = useRouter();
 
   const handlePress = () => {
-    router.push({
-      pathname: '/chatroom/[id]',
-      params: { id, name },
-    });
+    if (onPress) {
+      onPress(roomId);
+    }
   };
 
   return (

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useThemeCustom } from '@/theme/provider';
@@ -16,6 +15,7 @@ interface RoomCategoryProps {
   rooms: Room[];
   backgroundColor?: string;
   isSpecial?: boolean;
+  onRoomPress?: (roomId: string) => void;
 }
 
 const MinusIcon = ({ size = 16, color = '#2C5F7F' }: { size?: number; color?: string }) => (
@@ -36,13 +36,13 @@ const ActionIcon = ({ size = 16, color = '#00AA00' }: { size?: number; color?: s
   </Svg>
 );
 
-export function RoomCategory({ title, rooms, backgroundColor = '#B8E6F7', isSpecial = false }: RoomCategoryProps) {
+export function RoomCategory({ title, rooms, backgroundColor = '#B8E6F7', isSpecial = false, onRoomPress }: RoomCategoryProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const { theme } = useThemeCustom();
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={[styles.header, { backgroundColor: backgroundColor === '#B8E6F7' ? theme.card : backgroundColor }]}
         onPress={() => setIsExpanded(!isExpanded)}
       >
@@ -52,15 +52,16 @@ export function RoomCategory({ title, rooms, backgroundColor = '#B8E6F7', isSpec
         </View>
         {isSpecial && <ActionIcon color={theme.primary} />}
       </TouchableOpacity>
-      
+
       {isExpanded && (
         <View style={styles.roomList}>
           {rooms.map((room, index) => (
             <RoomItem
               key={room.id || index}
-              id={room.id}
+              roomId={room.id}
               name={room.name}
               userCount={room.userCount}
+              onPress={onRoomPress}
             />
           ))}
         </View>

@@ -197,6 +197,21 @@ const getRoomUserCount = async (roomId) => {
   try {
     const redis = getRedisClient();
     const key = `room:users:${roomId}`;
+
+module.exports = {
+  getRedisClient,
+  getRecentRooms,
+  addRecentRoom,
+  getFavoriteRooms,
+  addFavoriteRoom,
+  removeFavoriteRoom,
+  getHotRooms,
+  getRoomParticipants,
+  addRoomParticipant,
+  removeRoomParticipant,
+  clearRoomParticipants
+};
+
     return await redis.sCard(key);
   } catch (error) {
     console.error('Error getting room user count:', error);
@@ -540,6 +555,8 @@ const clearRecentRooms = async (username) => {
     return false;
   }
 };
+
+const FAVORITE_ROOMS_KEY = (username) => `user:${username}:favorites`;
 
 const getFavoriteRooms = async (username) => {
   try {

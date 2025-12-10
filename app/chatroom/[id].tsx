@@ -512,18 +512,12 @@ export default function ChatRoomScreen() {
       });
     }
     
+    // Remove tab from state
     const filtered = tabs.filter(t => t.id !== roomIdToLeave);
-    
-    if (filtered.length === 0) {
-      // No more tabs, go back to room list
-      router.back();
-      return;
-    }
-    
     setTabs(filtered);
     
-    // Switch to first available tab
-    setActiveTab(filtered[0].id);
+    // Always go back to room list
+    router.back();
   };
 
   const currentTab = tabs.find(t => t.id === activeTab);

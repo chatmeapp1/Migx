@@ -506,9 +506,12 @@ export default function ChatRoomScreen() {
 
   const handleMenuAction = (action: string) => {
     console.log('Menu action:', action);
+    console.log('Current roomInfoModalVisible state:', roomInfoModalVisible);
+    
     if (action === 'room-info') {
-      console.log('Opening room info modal...');
+      console.log('Opening room info modal for roomId:', roomId);
       setRoomInfoModalVisible(true);
+      console.log('After setState - roomInfoModalVisible should be true');
     } else if (action === 'kick') {
       setKickModalVisible(true);
     } else if (action === 'participants') {
@@ -716,7 +719,10 @@ export default function ChatRoomScreen() {
 
       <RoomInfoModal
         visible={roomInfoModalVisible}
-        onClose={() => setRoomInfoModalVisible(false)}
+        onClose={() => {
+          console.log('Closing room info modal');
+          setRoomInfoModalVisible(false);
+        }}
         roomId={roomId}
       />
 

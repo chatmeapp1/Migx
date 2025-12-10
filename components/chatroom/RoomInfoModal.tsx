@@ -37,7 +37,9 @@ export function RoomInfoModal({ visible, onClose, roomId }: RoomInfoModalProps) 
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    console.log('RoomInfoModal props:', { visible, roomId });
     if (visible && roomId) {
+      console.log('Fetching room info for roomId:', roomId);
       fetchRoomInfo();
     }
   }, [visible, roomId]);
@@ -45,11 +47,16 @@ export function RoomInfoModal({ visible, onClose, roomId }: RoomInfoModalProps) 
   const fetchRoomInfo = async () => {
     try {
       setLoading(true);
+      console.log('Fetching room info from:', `${API_BASE_URL}/api/rooms/${roomId}/info`);
       const response = await fetch(`${API_BASE_URL}/api/rooms/${roomId}/info`);
       const data = await response.json();
+      console.log('Room info response:', data);
       
       if (data.success) {
         setRoomInfo(data.roomInfo);
+        console.log('Room info loaded successfully:', data.roomInfo);
+      } else {
+        console.error('Failed to fetch room info:', data.message);
       }
     } catch (error) {
       console.error('Error fetching room info:', error);
@@ -69,6 +76,8 @@ export function RoomInfoModal({ visible, onClose, roomId }: RoomInfoModalProps) 
     });
   };
 
+  console.log('RoomInfoModal rendering, visible:', visible);
+  
   return (
     <Modal
       visible={visible}

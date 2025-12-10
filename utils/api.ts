@@ -5,8 +5,8 @@ let socket: any = null;
 
 // Backend URL - Replit handles port forwarding automatically
 const API_BASE_URL = Platform.OS === 'web'
-  ? 'https://9834f2c5-8b8e-4e08-93e2-d200b9f9bcf8-00-10j5uhgzffsw5.sisko.replit.dev'
-  : 'https://9834f2c5-8b8e-4e08-93e2-d200b9f9bcf8-00-10j5uhgzffsw5.sisko.replit.dev';
+  ? 'https://b6a5208c-7a94-4cba-b501-cef4bd2d2d5a-00-3np3rqy0c37sx.sisko.replit.dev'
+  : 'https://b6a5208c-7a94-4cba-b501-cef4bd2d2d5a-00-3np3rqy0c37sx.sisko.replit.dev';
 
 console.log('🌐 API_BASE_URL configured as:', API_BASE_URL);
 console.log('🔍 Backend Health Check:', `${API_BASE_URL}/health`);

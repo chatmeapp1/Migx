@@ -140,9 +140,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   cmdText: {
-    color: '#D77A7A',
+    color: '#C96F4A',
     fontStyle: 'italic',
-    fontWeight: '500',
+    fontWeight: 'bold',
     fontSize: 13,
   },
 });

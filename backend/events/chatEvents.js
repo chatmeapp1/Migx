@@ -48,8 +48,76 @@ module.exports = (io, socket) => {
       if (message.startsWith('/')) {
         const parts = message.slice(1).split(' ');
         const cmdKey = parts[0].toLowerCase();
-        const target = parts[1] || null;
 
+        // Handle /me command
+        if (cmdKey === 'me') {
+          const actionText = parts.slice(1).join(' ');
+          if (!actionText) {
+            socket.emit('system:message', {
+              roomId,
+              message: `Usage: /me <action text>`,
+              timestamp: new Date().toISOString(),
+              type: 'warning'
+            });
+            return;
+          }
+          const formatted = `** ${username} ${actionText} **`;
+          const systemMsg = {
+            id: generateMessageId(),
+            roomId,
+            message: formatted,
+            messageType: 'cmdMe',
+            type: 'cmdMe',
+            timestamp: new Date().toISOString()
+          };
+          io.to(`room:${roomId}`).emit('chat:message', systemMsg);
+          return;
+        }
+
+        // Handle /roll command
+        if (cmdKey === 'roll') {
+          const rollResult = Math.floor(Math.random() * 100) + 1;
+          const formatted = `** ${username} rolls ${rollResult} **`;
+          const systemMsg = {
+            id: generateMessageId(),
+            roomId,
+            message: formatted,
+            messageType: 'cmdRoll',
+            type: 'cmdRoll',
+            timestamp: new Date().toISOString()
+          };
+          io.to(`room:${roomId}`).emit('chat:message', systemMsg);
+          return;
+        }
+
+        // Handle /gift command
+        if (cmdKey === 'gift') {
+          const giftName = parts[1] || null;
+          const targetUser = parts[2] || null;
+          if (!giftName || !targetUser) {
+            socket.emit('system:message', {
+              roomId,
+              message: `Usage: /gift <giftname> <username>`,
+              timestamp: new Date().toISOString(),
+              type: 'warning'
+            });
+            return;
+          }
+          const formatted = `** ${username} sent [${giftName}] to ${targetUser} **`;
+          const systemMsg = {
+            id: generateMessageId(),
+            roomId,
+            message: formatted,
+            messageType: 'cmdGift',
+            type: 'cmdGift',
+            timestamp: new Date().toISOString()
+          };
+          io.to(`room:${roomId}`).emit('chat:message', systemMsg);
+          return;
+        }
+
+        // Handle other MIG33 commands
+        const target = parts[1] || null;
         const cmd = MIG33_CMD[cmdKey];
         if (cmd) {
           // If command requires target but none provided, show hint

@@ -158,6 +158,9 @@ export default function ChatRoomScreen() {
       console.log('📨 Received message:', data);
       const targetRoomId = data.roomId || roomId;
       
+      const cmdTypes = ['cmd', 'cmdMe', 'cmdRoll', 'cmdGift'];
+      const isCommandMessage = cmdTypes.includes(data.messageType) || cmdTypes.includes(data.type);
+      
       const newMessage = {
         id: data.id || Date.now().toString(),
         username: data.username,
@@ -165,7 +168,7 @@ export default function ChatRoomScreen() {
         isOwnMessage: data.username === currentUsername,
         isSystem: data.messageType === 'system' || data.type === 'system',
         isNotice: data.messageType === 'notice',
-        isCmd: data.messageType === 'cmd' || data.type === 'cmd',
+        isCmd: isCommandMessage,
       };
 
       // Use functional update to get latest tabs state

@@ -1,7 +1,6 @@
 import React, { useRef, useEffect, useMemo } from 'react';
-import { FlatList, StyleSheet, View, Text } from 'react-native';
+import { FlatList, StyleSheet } from 'react-native';
 import { ChatMessage } from './ChatMessage';
-import { useThemeCustom } from '@/theme/provider';
 
 interface Message {
   id: string;
@@ -27,7 +26,6 @@ interface ChatRoomContentProps {
 
 export function ChatRoomContent({ messages, roomInfo }: ChatRoomContentProps) {
   const flatListRef = useRef<FlatList>(null);
-  const { theme } = useThemeCustom();
 
   useEffect(() => {
     if (messages.length > 0 && flatListRef.current) {
@@ -40,47 +38,43 @@ export function ChatRoomContent({ messages, roomInfo }: ChatRoomContentProps) {
   const allMessages = useMemo(() => {
     const result: Message[] = [];
     
-    if (roomInfo && roomInfo.description) {
-      result.push({
-        id: 'room-info-header',
-        username: roomInfo.name || 'Room',
-        message: roomInfo.description,
-        isSystem: true,
-        isNotice: false,
-      });
+    if (roomInfo) {
+      if (roomInfo.description) {
+        result.push({
+          id: 'room-info-description',
+          username: roomInfo.name || 'Room',
+          message: roomInfo.description,
+          isSystem: true,
+        });
+      }
+      
+      if (roomInfo.currentUsers && roomInfo.currentUsers.length > 0) {
+        result.push({
+          id: 'room-info-users',
+          username: roomInfo.name || 'Room',
+          message: `Currently users in the room: ${roomInfo.currentUsers.join(', ')}`,
+          isSystem: true,
+        });
+      }
+      
+      if (roomInfo.creatorName) {
+        result.push({
+          id: 'room-info-creator',
+          username: roomInfo.name || 'Room',
+          message: `This room created by ${roomInfo.creatorName}`,
+          isSystem: true,
+        });
+      }
     }
     
     return [...result, ...messages];
   }, [messages, roomInfo]);
-
-  const renderRoomInfoHeader = () => {
-    if (!roomInfo) return null;
-    
-    return (
-      <View style={[styles.roomInfoContainer, { backgroundColor: theme.card }]}>
-        <Text style={[styles.roomName, { color: theme.primary }]}>
-          {roomInfo.name}
-        </Text>
-        {roomInfo.description ? (
-          <Text style={[styles.roomDescription, { color: theme.text }]}>
-            {roomInfo.description}
-          </Text>
-        ) : null}
-        {roomInfo.creatorName ? (
-          <Text style={[styles.creatorInfo, { color: theme.secondary || '#888' }]}>
-            Created by: {roomInfo.creatorName}
-          </Text>
-        ) : null}
-      </View>
-    );
-  };
 
   return (
     <FlatList
       ref={flatListRef}
       data={allMessages}
       keyExtractor={(item) => item.id}
-      ListHeaderComponent={renderRoomInfoHeader}
       renderItem={({ item }) => (
         <ChatMessage
           username={item.username}
@@ -104,25 +98,5 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     paddingBottom: 8,
-  },
-  roomInfoContainer: {
-    padding: 12,
-    marginHorizontal: 8,
-    marginTop: 8,
-    marginBottom: 12,
-    borderRadius: 8,
-  },
-  roomName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  roomDescription: {
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  creatorInfo: {
-    fontSize: 12,
-    fontStyle: 'italic',
   },
 });

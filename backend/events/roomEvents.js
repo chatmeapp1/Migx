@@ -222,13 +222,27 @@ module.exports = (io, socket) => {
         timestamp: Date.now().toString()
       });
 
+      console.log('📤 Emitting chatlist events to user:', username);
+
+      // Emit to socket directly
       socket.emit('chatlist:roomJoined', {
         roomId,
         roomName: room.name
       });
       
-      // Emit chatlist update to user
-      io.to(`user:${username}`).emit('chatlist:update', { roomId });
+      // Emit chatlist update to user's room
+      io.to(`user:${username}`).emit('chatlist:update', { 
+        roomId,
+        roomName: room.name,
+        action: 'joined'
+      });
+
+      // Also emit directly to socket as fallback
+      socket.emit('chatlist:update', { 
+        roomId,
+        roomName: room.name,
+        action: 'joined'
+      });
 
       await addXp(userId, XP_REWARDS.JOIN_ROOM, 'join_room', io);
 
@@ -300,11 +314,22 @@ module.exports = (io, socket) => {
       const redis = require('../redis').getRedisClient();
       await redis.sRem(`user:rooms:${username}`, roomId);
       
+      console.log('📤 Emitting leave events to user:', username);
+
       socket.emit('room:left', { roomId });
       socket.emit('chatlist:roomLeft', { roomId });
       
-      // Emit chatlist update to user
-      io.to(`user:${username}`).emit('chatlist:update', { roomId });
+      // Emit chatlist update to user's room
+      io.to(`user:${username}`).emit('chatlist:update', { 
+        roomId,
+        action: 'left'
+      });
+
+      // Also emit directly to socket as fallback
+      socket.emit('chatlist:update', { 
+        roomId,
+        action: 'left'
+      });
 
       await decrementRoomActive(roomId);
 

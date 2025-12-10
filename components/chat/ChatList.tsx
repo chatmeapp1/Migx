@@ -109,17 +109,20 @@ export function ChatList() {
   };
 
   const handleChatListUpdate = (data: any) => {
-    console.log('Chat list update received:', data);
-    loadRooms(); // Reload the list
+    console.log('💬 Chat list update received:', data);
+    // Immediately reload the list to show changes
+    loadRooms();
   };
 
   const handleRoomJoined = (data: any) => {
-    console.log('Room joined:', data);
+    console.log('➕ Room joined event:', data);
+    // Immediately reload to show the new room
     loadRooms();
   };
 
   const handleRoomLeft = (data: any) => {
-    console.log('Room left:', data);
+    console.log('➖ Room left event:', data);
+    // Immediately reload to remove the room
     loadRooms();
   };
 

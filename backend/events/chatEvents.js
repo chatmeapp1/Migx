@@ -59,17 +59,26 @@ module.exports = (io, socket) => {
 
       // Save as last message in Redis for chat list
       const redis = require('../redis').getRedisClient();
-      await redis.hSet(`room:lastmsg:${roomId}`, {
-        message,
-        username,
-        timestamp: Date.now().toString()
-      });
+      
+      try {
+        await redis.hSet(`room:lastmsg:${roomId}`, {
+          message,
+          username,
+          timestamp: Date.now().toString()
+        });
+      } catch (err) {
+        console.error('Error saving last message to Redis:', err.message);
+      }
 
       // Notify all room members of chatlist update
-      const roomUsers = await require('../utils/redisPresence').getRoomUsers(roomId);
-      roomUsers.forEach(user => {
-        io.to(`user:${user}`).emit('chatlist:update', { roomId });
-      });
+      try {
+        const roomUsers = await require('../utils/redisPresence').getRoomUsers(roomId);
+        roomUsers.forEach(user => {
+          io.to(`user:${user}`).emit('chatlist:update', { roomId });
+        });
+      } catch (err) {
+        console.error('Error notifying chatlist update:', err.message);
+      }
 
       await addXp(userId, XP_REWARDS.SEND_MESSAGE, 'send_message', io);
 

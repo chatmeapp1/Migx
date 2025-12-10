@@ -202,6 +202,17 @@ module.exports = (io, socket) => {
 
       // Save user room to Redis for chat list
       const redis = require('../redis').getRedisClient();
+      
+      // Clear any existing key with wrong type first
+      try {
+        const keyType = await redis.type(`user:rooms:${username}`);
+        if (keyType !== 'set' && keyType !== 'none') {
+          await redis.del(`user:rooms:${username}`);
+        }
+      } catch (err) {
+        console.log('Redis key type check error:', err.message);
+      }
+      
       await redis.sAdd(`user:rooms:${username}`, roomId);
       
       // Set initial last message

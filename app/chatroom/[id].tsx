@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -18,6 +18,7 @@ import { io, Socket } from 'socket.io-client';
 import API_BASE_URL from '@/utils/api';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS, interpolate } from 'react-native-reanimated';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const SWIPE_THRESHOLD = 60;
@@ -31,14 +32,7 @@ import { MenuParticipantsModal } from '@/components/chatroom/MenuParticipantsMod
 import { RoomInfoModal } from '@/components/chatroom/RoomInfoModal';
 import { VoteKickButton } from '@/components/chatroom/VoteKickButton';
 import { ChatRoomMenu } from '@/components/chatroom/ChatRoomMenu';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-interface ChatTab {
-  id: string;
-  name: string;
-  type: 'room' | 'private';
-  messages: any[];
-}
+import { useTabRoom, Message, RoomTab } from '@/contexts/TabRoomContext';
 
 const HEADER_COLOR = '#0a5229';
 
@@ -51,10 +45,25 @@ export default function ChatRoomScreen() {
   const roomId = params.id as string;
   const roomName = (params.name as string) || 'Mobile fun';
 
+  const {
+    roomTabs,
+    activeRoomId,
+    socket,
+    currentUsername,
+    currentUserId,
+    setSocket,
+    setUserInfo,
+    openTab,
+    closeTab,
+    switchTab,
+    addMessage,
+    updateRoomName,
+    clearAllTabs,
+    getTab,
+    hasTab,
+  } = useTabRoom();
+
   const [keyboardVisible, setKeyboardVisible] = useState(false);
-  const [socket, setSocket] = useState<Socket | null>(null);
-  const [currentUsername, setCurrentUsername] = useState('');
-  const [currentUserId, setCurrentUserId] = useState(''); 
   const [isAdmin, setIsAdmin] = useState(false);
   const [roomUsers, setRoomUsers] = useState<string[]>([]);
   const [roomInfo, setRoomInfo] = useState<{
@@ -71,222 +80,228 @@ export default function ChatRoomScreen() {
   const [kickModalVisible, setKickModalVisible] = useState(false);
   const [selectedUserToKick, setSelectedUserToKick] = useState<string | null>(null);
   const [participantsModalVisible, setParticipantsModalVisible] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
+  
   const [roomInfoModalVisible, setRoomInfoModalVisible] = useState(false);
   const [roomInfoData, setRoomInfoData] = useState<any>(null);
+  
   const [activeVote, setActiveVote] = useState<{
     target: string;
     remainingVotes: number;
     remainingSeconds: number;
   } | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
-  const [menuVisible, setMenuVisible] = useState(false); // State for the main menu
 
-  // Track modal state changes
-  useEffect(() => {
-    console.log('Modal state changed:', roomInfoModalVisible);
-    if (roomInfoModalVisible) {
-      console.log('RoomInfoModal opened.');
-    }
-  }, [roomInfoModalVisible]);
+  const [isConnected, setIsConnected] = useState(false);
+  const socketInitialized = useRef(false);
+  const joinedRooms = useRef<Set<string>>(new Set());
 
-  // Initialize socket connection
   useEffect(() => {
-    if (!tabsLoaded || !currentUsername || !currentUserId) {
-      console.log('⏳ Waiting for tabs and user data to load...');
+    const loadUserData = async () => {
+      try {
+        const userDataStr = await AsyncStorage.getItem('user_data');
+        if (userDataStr) {
+          const userData = JSON.parse(userDataStr);
+          console.log('👤 User data loaded:', userData);
+          setUserInfo(userData.username || 'guest', userData.id || 'guest-id');
+        } else {
+          console.log('⚠️ No user data found - using guest');
+          setUserInfo('guest', 'guest-id');
+        }
+      } catch (error) {
+        console.error('❌ Error loading user data:', error);
+        setUserInfo('guest', 'guest-id');
+      }
+    };
+    loadUserData();
+  }, [setUserInfo]);
+
+  useEffect(() => {
+    if (!currentUsername || !currentUserId) {
       return;
     }
 
-    console.log('🔌 Connecting to socket server:', API_BASE_URL);
-    console.log('📍 Room ID:', roomId);
-    console.log('👤 Username:', currentUsername);
-    console.log('🆔 User ID:', currentUserId);
-    
-    const newSocket = io(API_BASE_URL, {
-      transports: ['websocket'],
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionAttempts: Infinity,
-      timeout: 10000,
-      forceNew: false,
-      autoConnect: true,
-    });
-
-    newSocket.on('connect', async () => {
-      console.log('✅ Socket connected:', newSocket.id);
+    if (!socket && !socketInitialized.current) {
+      socketInitialized.current = true;
+      console.log('🔌 Creating new socket connection:', API_BASE_URL);
       
-      // Load/add room tab (don't clear existing tabs)
-      if (currentUsername) {
-        await loadActiveRooms(currentUsername);
-      }
-      
-      // Join current room
-      if (currentUsername && currentUserId) {
-        console.log('📤 Emitting join_room:', { roomId, userId: currentUserId, username: currentUsername });
-        newSocket.emit('join_room', { 
-          roomId, 
-          userId: currentUserId, 
-          username: currentUsername 
-        });
-        
-        // Request room users list
-        setTimeout(() => {
-          console.log('📤 Requesting room users...');
-          newSocket.emit('room:users:get', { roomId });
-        }, 500);
-      }
-    });
-
-    newSocket.on('system:message', (data: { roomId: string; message: string; type: string }) => {
-      console.log('📨 System message received:', data);
-      addSystemMessage(data.message);
-    });
-
-    newSocket.on('room:joined', (data: any) => {
-      console.log('🎯 Room joined successfully:', data);
-      if (data.room) {
-        const copy = [...tabs];
-        const index = copy.findIndex(t => t.id === roomId);
-        if (index !== -1) {
-          copy[index].name = data.room.name;
-          setTabs(copy);
-        }
-        
-        // Extract usernames from users array
-        const usernames = data.users 
-          ? data.users.map((u: any) => u.username || u)
-          : data.currentUsers || [];
-        
-        // Update room info
-        setRoomInfo({
-          name: data.room.name,
-          description: data.room.description || 'Welcome to this chat room',
-          creatorName: data.room.creator_name || data.room.owner_name || 'admin',
-          currentUsers: usernames
-        });
-        
-        // Update room users list
-        setRoomUsers(usernames);
-        
-        console.log('📋 Room info updated:', {
-          name: data.room.name,
-          description: data.room.description,
-          creator: data.room.creator_name || data.room.owner_name,
-          userCount: usernames.length,
-          users: usernames
-        });
-      }
-    });
-
-    // Real-time message receiving
-    newSocket.on('chat:message', (data: any) => {
-      console.log('📨 Received message:', data);
-      const targetRoomId = data.roomId || roomId;
-      
-      const cmdTypes = ['cmd', 'cmdMe', 'cmdRoll', 'cmdGift'];
-      const isCommandMessage = cmdTypes.includes(data.messageType) || cmdTypes.includes(data.type);
-      
-      const newMessage = {
-        id: data.id || Date.now().toString(),
-        username: data.username,
-        message: data.message,
-        isOwnMessage: data.username === currentUsername,
-        isSystem: data.messageType === 'system' || data.type === 'system',
-        isNotice: data.messageType === 'notice',
-        isCmd: isCommandMessage,
-      };
-
-      // Use functional update to get latest tabs state
-      setTabs(prevTabs => {
-        const index = prevTabs.findIndex(t => t.id === targetRoomId);
-        if (index === -1) return prevTabs;
-
-        // Only add if not already in the list (avoid duplicates)
-        const messageExists = prevTabs[index].messages.some(m => m.id === newMessage.id);
-        if (messageExists) return prevTabs;
-
-        const copy = [...prevTabs];
-        copy[index] = {
-          ...copy[index],
-          messages: [...copy[index].messages, newMessage]
-        };
-        return copy;
+      const newSocket = io(API_BASE_URL, {
+        transports: ['websocket'],
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionAttempts: Infinity,
+        timeout: 10000,
+        forceNew: false,
+        autoConnect: true,
       });
-    });
 
-    newSocket.on('vote-started', (data: { target: string; remainingVotes: number; remainingSeconds: number }) => {
-      setActiveVote(data);
-      setHasVoted(false);
-    });
+      newSocket.on('connect', () => {
+        console.log('✅ Socket connected:', newSocket.id);
+        setIsConnected(true);
+      });
 
-    newSocket.on('vote-updated', (data: { remainingVotes: number; remainingSeconds: number }) => {
-      setActiveVote(prev => prev ? { ...prev, ...data } : null);
-    });
+      newSocket.on('disconnect', () => {
+        console.log('⚠️ Socket disconnected');
+        setIsConnected(false);
+      });
 
-    newSocket.on('vote-ended', () => {
-      setActiveVote(null);
-      setHasVoted(false);
-    });
+      newSocket.on('reconnect', () => {
+        console.log('🔄 Socket reconnected');
+        setIsConnected(true);
+        joinedRooms.current.forEach(joinedRoomId => {
+          console.log('🔄 Re-joining room after reconnect:', joinedRoomId);
+          newSocket.emit('rejoin_room', {
+            roomId: joinedRoomId,
+            userId: currentUserId,
+            username: currentUsername
+          });
+        });
+      });
 
-    newSocket.on('force-kick', (data: { target: string }) => {
-      if (data.target === currentUsername) {
-        Alert.alert('Kicked', 'You have been kicked from the room', [
-          {
-            text: 'OK',
-            onPress: () => router.back(),
-          },
-        ]);
-      }
-    });
+      newSocket.on('system:message', (data: { roomId: string; message: string; type: string }) => {
+        console.log('📨 System message received:', data);
+        const newMessage: Message = {
+          id: Date.now().toString(),
+          username: 'System',
+          message: data.message,
+          isSystem: true,
+        };
+        addMessage(data.roomId || roomId, newMessage);
+      });
 
-    newSocket.on('room:users', (data: { roomId: string; users: any[]; count: number }) => {
-      console.log('📥 Room users updated:', data);
-      if (data.roomId === roomId) {
-        const usernames = data.users.map((u: any) => u.username || u);
-        setRoomUsers(usernames);
-      }
-    });
+      newSocket.on('room:joined', (data: any) => {
+        console.log('🎯 Room joined successfully:', data);
+        if (data.room) {
+          updateRoomName(data.roomId || roomId, data.room.name);
+          
+          const usernames = data.users 
+            ? data.users.map((u: any) => u.username || u)
+            : data.currentUsers || [];
+          
+          setRoomInfo({
+            name: data.room.name,
+            description: data.room.description || 'Welcome to this chat room',
+            creatorName: data.room.creator_name || data.room.owner_name || 'admin',
+            currentUsers: usernames
+          });
+          
+          setRoomUsers(usernames);
+        }
+      });
 
-    newSocket.on('room:user:joined', (data: { roomId: string; user: any; users: any[] }) => {
-      console.log('👤 User joined room:', data);
-      if (data.roomId === roomId) {
-        const usernames = data.users.map((u: any) => u.username || u);
-        setRoomUsers(usernames);
-      }
-    });
+      newSocket.on('chat:message', (data: any) => {
+        console.log('📨 Received message:', data);
+        const targetRoomId = data.roomId || roomId;
+        
+        const cmdTypes = ['cmd', 'cmdMe', 'cmdRoll', 'cmdGift'];
+        const isCommandMessage = cmdTypes.includes(data.messageType) || cmdTypes.includes(data.type);
+        
+        const newMessage: Message = {
+          id: data.id || Date.now().toString(),
+          username: data.username,
+          message: data.message,
+          isOwnMessage: data.username === currentUsername,
+          isSystem: data.messageType === 'system' || data.type === 'system',
+          isNotice: data.messageType === 'notice',
+          isCmd: isCommandMessage,
+          timestamp: data.timestamp,
+        };
 
-    newSocket.on('room:user:left', (data: { roomId: string; username: string; users: any[] }) => {
-      console.log('👋 User left room:', data);
-      if (data.roomId === roomId) {
-        const usernames = Array.isArray(data.users) 
-          ? data.users.map((u: any) => typeof u === 'string' ? u : u.username)
-          : data.users || [];
-        setRoomUsers(usernames);
-      }
-    });
+        addMessage(targetRoomId, newMessage);
+      });
 
-    newSocket.on('room:user:kicked', (data: { roomId: string; username: string }) => {
-      console.log('🚫 User kicked from room:', data);
-      if (data.roomId === roomId) {
-        setRoomUsers(prev => prev.filter(u => u !== data.username));
-      }
-    });
+      newSocket.on('vote-started', (data: { target: string; remainingVotes: number; remainingSeconds: number }) => {
+        setActiveVote(data);
+        setHasVoted(false);
+      });
 
-    newSocket.on('room:participantsUpdated', (data: { roomId: string; participants: string[]; count: number }) => {
-      console.log('👥 Participants updated:', data);
-      if (data.roomId === roomId) {
-        setRoomUsers(data.participants);
-        console.log('📋 Updated participants list:', data.participants);
-      }
-    });
+      newSocket.on('vote-updated', (data: { remainingVotes: number; remainingSeconds: number }) => {
+        setActiveVote(prev => prev ? { ...prev, ...data } : null);
+      });
 
-    setSocket(newSocket);
+      newSocket.on('vote-ended', () => {
+        setActiveVote(null);
+        setHasVoted(false);
+      });
 
-    return () => {
-      // Don't disconnect or leave room - keep connection alive
-      // User only leaves when explicitly clicking leave button
-      console.log('⚠️ Component unmounting but socket stays connected');
-    };
-  }, [roomId, currentUsername, currentUserId, tabsLoaded]);
+      newSocket.on('force-kick', (data: { target: string }) => {
+        if (data.target === currentUsername) {
+          Alert.alert('Kicked', 'You have been kicked from the room', [
+            { text: 'OK', onPress: () => router.back() },
+          ]);
+        }
+      });
+
+      newSocket.on('room:users', (data: { roomId: string; users: any[]; count: number }) => {
+        console.log('📥 Room users updated:', data);
+        if (data.roomId === activeRoomId) {
+          const usernames = data.users.map((u: any) => u.username || u);
+          setRoomUsers(usernames);
+        }
+      });
+
+      newSocket.on('room:user:joined', (data: { roomId: string; user: any; users: any[] }) => {
+        console.log('👤 User joined room:', data);
+        if (data.roomId === activeRoomId) {
+          const usernames = data.users.map((u: any) => u.username || u);
+          setRoomUsers(usernames);
+        }
+      });
+
+      newSocket.on('room:user:left', (data: { roomId: string; username: string; users: any[] }) => {
+        console.log('👋 User left room:', data);
+        if (data.roomId === activeRoomId) {
+          const usernames = Array.isArray(data.users) 
+            ? data.users.map((u: any) => typeof u === 'string' ? u : u.username)
+            : [];
+          setRoomUsers(usernames);
+        }
+      });
+
+      newSocket.on('room:user:kicked', (data: { roomId: string; username: string }) => {
+        console.log('🚫 User kicked from room:', data);
+        if (data.roomId === activeRoomId) {
+          setRoomUsers(prev => prev.filter(u => u !== data.username));
+        }
+      });
+
+      newSocket.on('room:participantsUpdated', (data: { roomId: string; participants: string[]; count: number }) => {
+        console.log('👥 Participants updated:', data);
+        if (data.roomId === activeRoomId) {
+          setRoomUsers(data.participants);
+        }
+      });
+
+      setSocket(newSocket);
+    }
+  }, [currentUsername, currentUserId, socket, setSocket, addMessage, updateRoomName, activeRoomId, roomId, router]);
+
+  useEffect(() => {
+    if (!socket || !isConnected || !currentUsername || !currentUserId) {
+      return;
+    }
+
+    if (!hasTab(roomId)) {
+      openTab(roomId, roomName);
+    } else {
+      switchTab(roomId);
+    }
+
+    if (!joinedRooms.current.has(roomId)) {
+      console.log('📤 Emitting join_room:', { roomId, userId: currentUserId, username: currentUsername });
+      socket.emit('join_room', { 
+        roomId, 
+        userId: currentUserId, 
+        username: currentUsername 
+      });
+      
+      joinedRooms.current.add(roomId);
+      
+      setTimeout(() => {
+        socket.emit('room:users:get', { roomId });
+      }, 500);
+    }
+  }, [roomId, roomName, socket, isConnected, currentUsername, currentUserId, hasTab, openTab, switchTab]);
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
@@ -301,277 +316,114 @@ export default function ChatRoomScreen() {
     };
   }, []);
 
-  // Handle Android back button - navigate back without leaving room or disconnecting
   useEffect(() => {
     const backAction = () => {
       console.log('📱 Back button pressed - navigating back (keeping socket alive)');
       router.back();
-      return true; // Prevent default behavior
+      return true;
     };
 
     const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
-
     return () => backHandler.remove();
   }, [router]);
 
-  // Handle app state changes (background/foreground)
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextAppState) => {
       if (nextAppState === 'active') {
-        console.log('📱 App came to foreground - ensuring socket connection');
+        console.log('📱 App came to foreground');
         if (socket && !socket.connected) {
           socket.connect();
         }
       } else if (nextAppState === 'background') {
         console.log('📱 App went to background - keeping socket alive');
-        // Socket stays connected in background
       }
     });
 
-    return () => {
-      subscription.remove();
-    };
+    return () => subscription.remove();
   }, [socket]);
 
-  const [tabs, setTabs] = useState<ChatTab[]>([]);
-  const [activeTab, setActiveTab] = useState(roomId);
-  const [tabsLoaded, setTabsLoaded] = useState(false);
-  const [isReconnecting, setIsReconnecting] = useState(false);
-
-  // DO NOT save tabs to AsyncStorage - always start fresh
-  // Tabs are temporary and should not persist between sessions
-
-  // Clear all room tabs (no AsyncStorage involved)
-  const clearRoomTabs = async () => {
-    console.log('🗑️ Clearing all room tabs');
-    setTabs([]);
-    setActiveTab(roomId);
-  };
-
-  // Load active rooms from server
-  const loadActiveRooms = async (username: string) => {
-    try {
-      console.log('📥 Loading active rooms from server for:', username);
-      
-      // Check if room already exists in tabs
-      setTabs(prevTabs => {
-        const existingTab = prevTabs.find(t => t.id === roomId);
-        
-        if (existingTab) {
-          // Room already exists, just switch to it
-          console.log('📑 Room already in tabs, switching to it:', roomId);
-          return prevTabs;
-        } else {
-          // Add new tab for this room
-          const newTab = {
-            id: roomId,
-            name: roomName,
-            type: 'room' as const,
-            messages: [],
-          };
-          
-          console.log('📑 Adding new tab for room:', roomId);
-          return [...prevTabs, newTab];
-        }
-      });
-      
-      setActiveTab(roomId);
-      
-      return [];
-    } catch (error) {
-      console.error('❌ Error loading active rooms:', error);
-      // Fallback - add current room if not exists
-      setTabs(prevTabs => {
-        const existingTab = prevTabs.find(t => t.id === roomId);
-        if (existingTab) return prevTabs;
-        
-        return [...prevTabs, {
-          id: roomId,
-          name: roomName,
-          type: 'room' as const,
-          messages: [],
-        }];
-      });
-      setActiveTab(roomId);
-      return [];
-    }
-  };
-
-  // Load user data and existing tabs from AsyncStorage
-  useEffect(() => {
-    const loadUserData = async () => {
-      try {
-        const userDataStr = await AsyncStorage.getItem('user_data');
-        let username = 'guest';
-        
-        if (userDataStr) {
-          const userData = JSON.parse(userDataStr);
-          console.log('👤 User data loaded:', userData);
-          username = userData.username || 'guest';
-          setCurrentUsername(username);
-          setCurrentUserId(userData.id || 'guest-id');
-        } else {
-          console.log('⚠️ No user data found in storage - using guest');
-          username = 'guest';
-          setCurrentUsername('guest');
-          setCurrentUserId('guest-id');
-        }
-
-        // Always start with fresh single tab - DO NOT load from storage
-        console.log('📂 Starting with fresh single tab for room:', roomId);
-        setTabs([{
-          id: roomId,
-          name: roomName,
-          type: 'room' as const,
-          messages: [],
-        }]);
-
-        setActiveTab(roomId);
-        setTabsLoaded(true);
-      } catch (error) {
-        console.error('❌ Error loading user data:', error);
-        setTabsLoaded(true);
-      }
-    };
-    loadUserData();
-  }, [roomId, roomName]);
-
-  // Reconnect is handled by 'connect' event above
-  // No need for separate reconnect handler
-
-  const addSystemMessage = (message: string) => {
-    const index = tabs.findIndex(t => t.id === activeTab);
-    if (index === -1) return;
-
-    const copy = [...tabs];
-    copy[index].messages.push({
-      id: Date.now().toString(),
-      username: 'Indonesia',
-      message,
-      isSystem: true,
-    });
-
-    setTabs(copy);
-  };
-
-  const handleSendMessage = (message: string) => {
+  const handleSendMessage = useCallback((message: string) => {
     if (!socket || !message.trim() || !currentUserId) return;
 
-    console.log('📤 Sending message to room:', activeTab);
+    console.log('📤 Sending message to room:', activeRoomId);
     
-    // Send message via socket
     socket.emit('chat:message', {
-      roomId: activeTab,
+      roomId: activeRoomId,
       userId: currentUserId,
       username: currentUsername,
       message: message.trim(),
     });
+  }, [socket, currentUserId, currentUsername, activeRoomId]);
 
-    // Message will be added when we receive it back from server via 'chat:message' event
-  };
-
-  const handleKickMenuPress = () => {
-    setKickModalVisible(true);
-  };
+  const handleKickMenuPress = () => setKickModalVisible(true);
 
   const handleSelectUserToKick = (target: string) => {
     if (isAdmin) {
-      // Admin kick directly
-      Alert.alert(
-        'Admin Kick',
-        `Kick ${target} from the room?`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Kick',
-            style: 'destructive',
-            onPress: () => handleAdminKick(target),
-          },
-        ]
-      );
+      Alert.alert('Admin Kick', `Kick ${target} from the room?`, [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Kick', style: 'destructive', onPress: () => handleAdminKick(target) },
+      ]);
     } else {
-      // Regular user needs to pay for vote
-      Alert.alert(
-        'Start Vote Kick',
-        `Kick ${target} for 500 IDR?`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Start Vote',
-            onPress: () => handleStartKick(target),
-          },
-        ]
-      );
+      Alert.alert('Start Vote Kick', `Kick ${target} for 500 IDR?`, [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Start Vote', onPress: () => handleStartKick(target) },
+      ]);
     }
   };
 
   const handleStartKick = (target: string) => {
     if (!socket) return;
-
-    socket.emit('kick-start', {
-      roomId,
-      startedBy: currentUsername,
-      target,
-    });
+    socket.emit('kick-start', { roomId, startedBy: currentUsername, target });
   };
 
   const handleAdminKick = (target: string) => {
     if (!socket) return;
-
-    socket.emit('admin-kick', {
-      roomId,
-      target,
-    });
+    socket.emit('admin-kick', { roomId, target });
   };
 
   const handleVoteKick = () => {
     if (!socket || !activeVote || hasVoted) return;
-
-    socket.emit('kick-vote', {
-      roomId,
-      username: currentUsername,
-      target: activeVote.target,
-    });
-
+    socket.emit('kick-vote', { roomId, username: currentUsername, target: activeVote.target });
     setHasVoted(true);
   };
 
-  const handleMenuAction = (action: string) => {
-    console.log('Menu action received:', action, 'type:', typeof action);
+  const handleOpenRoomInfo = useCallback(() => {
+    console.log('Opening RoomInfoModal...');
+    setRoomInfoModalVisible(true);
     
+    fetch(`${API_BASE_URL}/api/rooms/${activeRoomId || roomId}/info`)
+      .then(response => response.json())
+      .then(data => {
+        console.log('Room info loaded:', data);
+        if (data.success) {
+          setRoomInfoData(data.roomInfo);
+        }
+      })
+      .catch(err => {
+        console.log('Error loading room info:', err);
+      });
+  }, [activeRoomId, roomId]);
+
+  const handleCloseRoomInfo = useCallback(() => {
+    console.log('Closing RoomInfoModal');
+    setRoomInfoModalVisible(false);
+    setRoomInfoData(null);
+  }, []);
+
+  const handleMenuAction = useCallback((action: string) => {
+    console.log('Menu action received:', action);
     const trimmedAction = action?.trim?.() || action;
-    console.log('Trimmed action:', trimmedAction);
     
     if (trimmedAction === 'room-info') {
-      console.log('Opening RoomInfoModal NOW...');
-      setRoomInfoModalVisible(true);
-      console.log('roomInfoModalVisible set to true');
-      
-      fetch(`${API_BASE_URL}/api/rooms/${roomId}/info`)
-        .then(response => response.json())
-        .then(data => {
-          console.log('Room info loaded:', data);
-          if (data.success) {
-            setRoomInfoData(data.roomInfo);
-          }
-        })
-        .catch(err => {
-          console.log('Error loading room info:', err);
-        });
+      handleOpenRoomInfo();
       return;
     }
     
     if (trimmedAction === 'add-favorite') {
-      console.log('Adding room to favorites:', roomId);
       fetch(`${API_BASE_URL}/api/rooms/favorites/add`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: currentUsername,
-          roomId: roomId,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: currentUsername, roomId: activeRoomId || roomId }),
       })
         .then(response => response.json())
         .then(data => {
@@ -581,10 +433,7 @@ export default function ChatRoomScreen() {
             Alert.alert('Error', data.message || 'Failed to add favorite');
           }
         })
-        .catch(err => {
-          console.log('Error adding favorite:', err);
-          Alert.alert('Error', 'Failed to add room to favorites');
-        });
+        .catch(() => Alert.alert('Error', 'Failed to add room to favorites'));
       return;
     }
     
@@ -599,45 +448,28 @@ export default function ChatRoomScreen() {
     }
     
     if (trimmedAction === 'leave-room') {
-      Alert.alert(
-        'Leave Room',
-        'Are you sure you want to leave this room?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Leave',
-            style: 'destructive',
-            onPress: handleLeaveRoom,
-          },
-        ]
-      );
+      Alert.alert('Leave Room', 'Are you sure you want to leave this room?', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Leave', style: 'destructive', onPress: handleLeaveRoom },
+      ]);
     }
-  };
+  }, [handleOpenRoomInfo, currentUsername, activeRoomId, roomId]);
 
-  const handleOpenParticipants = () => {
-    setParticipantsModalVisible(!participantsModalVisible);
-  };
+  const handleOpenParticipants = () => setParticipantsModalVisible(!participantsModalVisible);
 
   const handleUserMenuPress = (username: string) => {
     console.log('User menu pressed:', username);
-    // You can add more actions here (e.g., show user profile, send message, etc.)
   };
 
   const handleMenuItemPress = (action: string) => {
-    if (action === 'kick') {
-      handleKickMenuPress();
-    }
+    if (action === 'kick') handleKickMenuPress();
   };
 
-  
-
-  const handleLeaveRoom = async () => {
-    const roomIdToLeave = activeTab;
+  const handleLeaveRoom = useCallback(async () => {
+    const roomIdToLeave = activeRoomId || roomId;
     
     if (socket) {
       console.log('🚪 User explicitly leaving room:', roomIdToLeave);
-      
-      // Emit leave room event
       socket.emit('leave_room', { 
         roomId: roomIdToLeave, 
         username: currentUsername, 
@@ -645,60 +477,43 @@ export default function ChatRoomScreen() {
       });
     }
     
-    // Remove this tab from tabs array
-    const filteredTabs = tabs.filter(t => t.id !== roomIdToLeave);
+    joinedRooms.current.delete(roomIdToLeave);
+    closeTab(roomIdToLeave);
     
-    if (filteredTabs.length === 0) {
-      // No more tabs left - clear all and go back to room menu
-      console.log('🚪 Last tab closed - navigating to room menu');
-      await clearRoomTabs();
-      
-      // Disconnect socket
-      if (socket) {
-        socket.disconnect();
-      }
-      
-      // Navigate to room menu tab
+    const remainingTabs = roomTabs.filter(t => t.roomId !== roomIdToLeave);
+    
+    if (remainingTabs.length === 0) {
+      console.log('🚪 Last tab closed - navigating to room menu (keeping socket alive for other uses)');
+      clearAllTabs();
       router.replace('/(tabs)/room');
     } else {
-      // Still have other tabs - just close current tab and switch to another
-      console.log('🚪 Closing current tab, switching to another tab');
-      setTabs(filteredTabs);
-      
-      // Switch to first remaining tab
-      setActiveTab(filteredTabs[0].id);
-      
-      // No need to save - tabs are temporary
+      switchTab(remainingTabs[0].roomId);
     }
-  };
+  }, [socket, activeRoomId, roomId, currentUsername, currentUserId, roomTabs, closeTab, clearAllTabs, switchTab, router]);
 
-  const currentTab = tabs.find(t => t.id === activeTab);
-  const currentTabIndex = tabs.findIndex(t => t.id === activeTab);
+  const currentTab = getTab(activeRoomId || roomId);
+  const currentTabIndex = roomTabs.findIndex(t => t.roomId === (activeRoomId || roomId));
   const translateX = useSharedValue(0);
 
-  const handleSwipeTab = (direction: number) => {
+  const handleSwipeTab = useCallback((direction: number) => {
     const newIndex = currentTabIndex + direction;
-    if (newIndex >= 0 && newIndex < tabs.length) {
-      setActiveTab(tabs[newIndex].id);
+    if (newIndex >= 0 && newIndex < roomTabs.length) {
+      switchTab(roomTabs[newIndex].roomId);
     }
-  };
+  }, [currentTabIndex, roomTabs, switchTab]);
 
   const contentGesture = Gesture.Pan()
     .activeOffsetX([-25, 25])
     .failOffsetY([-20, 20])
     .onUpdate((event) => {
       'worklet';
-      const canSwipeLeft = currentTabIndex < tabs.length - 1;
+      const canSwipeLeft = currentTabIndex < roomTabs.length - 1;
       const canSwipeRight = currentTabIndex > 0;
       
       let translation = event.translationX * 0.5;
       
-      if (!canSwipeRight && translation > 0) {
-        translation *= 0.2;
-      }
-      if (!canSwipeLeft && translation < 0) {
-        translation *= 0.2;
-      }
+      if (!canSwipeRight && translation > 0) translation *= 0.2;
+      if (!canSwipeLeft && translation < 0) translation *= 0.2;
       
       translateX.value = Math.max(-40, Math.min(40, translation));
     })
@@ -707,69 +522,71 @@ export default function ChatRoomScreen() {
       const shouldSwipeLeft = event.translationX < -SWIPE_THRESHOLD || event.velocityX < -VELOCITY_THRESHOLD;
       const shouldSwipeRight = event.translationX > SWIPE_THRESHOLD || event.velocityX > VELOCITY_THRESHOLD;
       
-      if (shouldSwipeLeft && currentTabIndex < tabs.length - 1) {
+      if (shouldSwipeLeft && currentTabIndex < roomTabs.length - 1) {
         runOnJS(handleSwipeTab)(1);
       } else if (shouldSwipeRight && currentTabIndex > 0) {
         runOnJS(handleSwipeTab)(-1);
       }
       
-      translateX.value = withSpring(0, {
-        damping: 20,
-        stiffness: 200,
-      });
+      translateX.value = withSpring(0);
     });
 
   const contentAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
-    opacity: interpolate(
-      Math.abs(translateX.value),
-      [0, 40],
-      [1, 0.92]
-    ),
+    opacity: interpolate(Math.abs(translateX.value), [0, 40], [1, 0.9]),
+  }));
+
+  const handleHeaderBack = useCallback(() => {
+    console.log('📱 Header back pressed - navigating back (keeping socket alive)');
+    router.back();
+  }, [router]);
+
+  const tabs = roomTabs.map(tab => ({
+    id: tab.roomId,
+    name: tab.roomName,
+    type: 'room' as const,
+    messages: tab.messages,
   }));
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: HEADER_COLOR }]}
+      style={[styles.container, { backgroundColor: theme.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      keyboardVerticalOffset={0}
     >
-      <StatusBar barStyle="light-content" backgroundColor={HEADER_COLOR} />
-
+      <StatusBar backgroundColor={HEADER_COLOR} barStyle="light-content" />
+      
       <ChatRoomHeader
         tabs={tabs}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        onBack={() => {
-          // Navigate back without leaving room or disconnecting socket
-          console.log('🔙 Header back pressed - keeping connection alive');
-          router.back();
-        }}
-        onCloseTab={async (id) => {
-          // Leave room via socket
-          if (socket && currentUsername && currentUserId) {
-            console.log('🚪 Closing tab and leaving room:', id);
-            socket.emit('leave_room', { roomId: id, username: currentUsername, userId: currentUserId });
-          }
-          
-          const filtered = tabs.filter(t => t.id !== id);
-          
-          if (filtered.length === 0) {
-            // No more tabs, go back to room list
-            router.back();
+        activeTab={activeRoomId || roomId}
+        onTabChange={(id) => switchTab(id)}
+        onCloseTab={(id) => {
+          if (roomTabs.length === 1) {
+            handleLeaveRoom();
             return;
           }
           
-          setTabs(filtered);
+          const tabToClose = roomTabs.find(t => t.roomId === id);
+          if (tabToClose && socket) {
+            socket.emit('leave_room', {
+              roomId: id,
+              username: currentUsername,
+              userId: currentUserId
+            });
+          }
           
-          // Don't save to AsyncStorage - tabs will be loaded from server on next connect
+          joinedRooms.current.delete(id);
+          closeTab(id);
           
-          // Switch to another tab if closing the active one
-          if (activeTab === id) {
-            setActiveTab(filtered[0].id);
+          if (activeRoomId === id && roomTabs.length > 1) {
+            const remainingTabs = roomTabs.filter(t => t.roomId !== id);
+            if (remainingTabs.length > 0) {
+              switchTab(remainingTabs[0].roomId);
+            }
           }
         }}
         roomInfo={roomInfo}
+        onBack={handleHeaderBack}
       />
 
       <GestureDetector gesture={contentGesture}>
@@ -823,20 +640,16 @@ export default function ChatRoomScreen() {
 
       <RoomInfoModal
         visible={roomInfoModalVisible}
-        onClose={() => {
-          console.log('Closing room info modal');
-          setRoomInfoModalVisible(false);
-          setRoomInfoData(null);
-        }}
+        onClose={handleCloseRoomInfo}
         info={roomInfoData}
-        roomId={roomId}
+        roomId={activeRoomId || roomId}
       />
 
       <ChatRoomMenu
         visible={menuVisible}
         onClose={() => setMenuVisible(false)}
         onMenuItemPress={handleMenuAction}
-        onOpenParticipants={handleOpenParticipants} // Pass the handler here
+        onOpenParticipants={handleOpenParticipants}
       />
     </KeyboardAvoidingView>
   );
@@ -850,9 +663,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   inputWrapper: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+    paddingTop: 4,
   },
 });

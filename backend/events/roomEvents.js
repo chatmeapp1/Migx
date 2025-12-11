@@ -15,6 +15,7 @@ const {
   removeUserFromRoom,
   getRoomUsers: getRoomPresenceUsers,
   getRoomUserCount,
+  isUserInRoom,
   addSystemMessage
 } = require('../utils/redisPresence');
 const { adminKick: executeAdminKick, isGloballyBanned } = require('../utils/adminKick');
@@ -110,6 +111,9 @@ module.exports = (io, socket) => {
       // Store username on socket for disconnect handler
       socket.username = username;
 
+      // Check if user is already in room (prevents duplicate join messages)
+      const alreadyInRoom = await isUserInRoom(roomId, username);
+      
       await addUserRoom(username, roomId, room.name);
 
       // Get current users before adding new user
@@ -140,77 +144,82 @@ module.exports = (io, socket) => {
         }))
       );
 
-      // Create user list string for welcome message
-      const userListString = currentUsersList.length > 0
-        ? currentUsersList.join(', ')
-        : username;
+      // Only send welcome and enter messages if user wasn't already in room
+      if (!alreadyInRoom) {
+        // Create user list string for welcome message
+        const userListString = currentUsersList.length > 0
+          ? currentUsersList.join(', ')
+          : username;
 
-      // MIG33-style welcome messages - send to the joining user only
-      const welcomeMsg1 = `Welcome to ${room.name}...`;
-      const welcomeMsg2 = `Currently users in the room: ${userListString}`;
-      const welcomeMsg3 = `This room is managed by ${room.owner_name || room.creator_name || 'admin'}`;
+        // MIG33-style welcome messages - send to the joining user only
+        const welcomeMsg1 = `Welcome to ${room.name}...`;
+        const welcomeMsg2 = `Currently users in the room: ${userListString}`;
+        const welcomeMsg3 = `This room is managed by ${room.owner_name || room.creator_name || 'admin'}`;
 
-      // Send welcome messages immediately
-      socket.emit('chat:message', {
-        id: Date.now().toString() + '-1',
-        roomId,
-        username: room.name,
-        message: welcomeMsg1,
-        timestamp: new Date().toISOString(),
-        type: 'system',
-        messageType: 'system'
-      });
-
-      setTimeout(() => {
+        // Send welcome messages immediately
         socket.emit('chat:message', {
-          id: Date.now().toString() + '-2',
+          id: Date.now().toString() + '-1',
           roomId,
           username: room.name,
-          message: welcomeMsg2,
+          message: welcomeMsg1,
           timestamp: new Date().toISOString(),
           type: 'system',
           messageType: 'system'
         });
-      }, 100);
 
-      setTimeout(() => {
-        socket.emit('chat:message', {
-          id: Date.now().toString() + '-3',
+        setTimeout(() => {
+          socket.emit('chat:message', {
+            id: Date.now().toString() + '-2',
+            roomId,
+            username: room.name,
+            message: welcomeMsg2,
+            timestamp: new Date().toISOString(),
+            type: 'system',
+            messageType: 'system'
+          });
+        }, 100);
+
+        setTimeout(() => {
+          socket.emit('chat:message', {
+            id: Date.now().toString() + '-3',
+            roomId,
+            username: room.name,
+            message: welcomeMsg3,
+            timestamp: new Date().toISOString(),
+            type: 'system',
+            messageType: 'system'
+          });
+        }, 200);
+
+        // Save to Redis
+        await addSystemMessage(roomId, `${room.name} : ${welcomeMsg1}`);
+        await addSystemMessage(roomId, `${room.name} : ${welcomeMsg2}`);
+        await addSystemMessage(roomId, `${room.name} : ${welcomeMsg3}`);
+
+        // MIG33-style enter message to all users in room
+        const enterMsg = `${username} [${newUserCount}] has entered`;
+        const enterMessage = {
           roomId,
           username: room.name,
-          message: welcomeMsg3,
+          message: enterMsg,
           timestamp: new Date().toISOString(),
           type: 'system',
           messageType: 'system'
+        };
+
+        io.to(`room:${roomId}`).emit('chat:message', enterMessage);
+
+        // Save enter message to Redis
+        await addSystemMessage(roomId, `${room.name} : ${enterMsg}`);
+
+        io.to(`room:${roomId}`).emit('room:user:joined', {
+          roomId,
+          user: userWithPresence,
+          users: usersWithPresence
         });
-      }, 200);
-
-      // Save to Redis
-      await addSystemMessage(roomId, `${room.name} : ${welcomeMsg1}`);
-      await addSystemMessage(roomId, `${room.name} : ${welcomeMsg2}`);
-      await addSystemMessage(roomId, `${room.name} : ${welcomeMsg3}`);
-
-      // MIG33-style enter message to all users in room
-      const enterMsg = `${username} [${newUserCount}] has entered`;
-      const enterMessage = {
-        roomId,
-        username: room.name,
-        message: enterMsg,
-        timestamp: new Date().toISOString(),
-        type: 'system',
-        messageType: 'system'
-      };
-
-      io.to(`room:${roomId}`).emit('chat:message', enterMessage);
-
-      // Save enter message to Redis
-      await addSystemMessage(roomId, `${room.name} : ${enterMsg}`);
-
-      io.to(`room:${roomId}`).emit('room:user:joined', {
-        roomId,
-        user: userWithPresence,
-        users: usersWithPresence
-      });
+      } else {
+        console.log(`✅ User ${username} already in room ${roomId}, skipping duplicate join messages`);
+      }
 
       console.log('📤 Sending room:joined event:', {
         roomId,
@@ -299,11 +308,18 @@ module.exports = (io, socket) => {
 
   const leaveRoom = async (data) => {
     try {
-      const { roomId, username } = data;
+      const { roomId, username, userId } = data;
 
       if (!roomId || !username) {
         socket.emit('error', { message: 'Missing required fields' });
         return;
+      }
+
+      const timerKey = `${userId || socket.userId || 'unknown'}-${roomId}`;
+      if (disconnectTimers.has(timerKey)) {
+        clearTimeout(disconnectTimers.get(timerKey));
+        disconnectTimers.delete(timerKey);
+        console.log(`✅ Cleared disconnect timer for explicit leave: ${username}`);
       }
 
       socket.leave(`room:${roomId}`);
@@ -701,7 +717,66 @@ module.exports = (io, socket) => {
     }
   };
 
+  const rejoinRoom = async (data) => {
+    try {
+      const { roomId, userId, username } = data;
+      
+      console.log(`🔄 User rejoining room (silent):`, { roomId, userId, username });
+      
+      if (!roomId || !userId || !username) {
+        socket.emit('error', { message: 'Missing required fields' });
+        return;
+      }
+      
+      const timerKey = `${userId}-${roomId}`;
+      if (disconnectTimers.has(timerKey)) {
+        clearTimeout(disconnectTimers.get(timerKey));
+        disconnectTimers.delete(timerKey);
+        console.log(`✅ Rejoin - cleared disconnect timer for:`, username);
+      }
+      
+      const room = await roomService.getRoomById(roomId);
+      if (!room) {
+        socket.emit('error', { message: 'Room not found' });
+        return;
+      }
+      
+      socket.join(`room:${roomId}`);
+      socket.join(`user:${username}`);
+      socket.username = username;
+      
+      await addUserToRoom(roomId, username);
+      
+      const { addRoomParticipant, getRoomParticipants } = require('../utils/redisUtils');
+      await addRoomParticipant(roomId, username);
+      
+      const updatedUsers = await roomService.getRoomUsers(roomId);
+      const usersWithPresence = await Promise.all(
+        updatedUsers.map(async (u) => ({
+          ...u,
+          presence: await getPresence(u.username)
+        }))
+      );
+      
+      socket.emit('room:joined', {
+        roomId,
+        room,
+        users: usersWithPresence,
+        currentUsers: await getRoomPresenceUsers(roomId),
+        userCount: await getRoomUserCount(roomId),
+        isRejoin: true
+      });
+      
+      console.log(`✅ User ${username} silently rejoined room ${roomId}`);
+      
+    } catch (error) {
+      console.error('Error rejoining room:', error);
+      socket.emit('error', { message: 'Failed to rejoin room' });
+    }
+  };
+
   socket.on('join_room', joinRoom);
+  socket.on('rejoin_room', rejoinRoom);
   socket.on('leave_room', leaveRoom);
   socket.on('room:leave', leaveRoom);
   socket.on('room:users:get', getRoomUsers);
@@ -718,112 +793,73 @@ module.exports = (io, socket) => {
       console.log(`⚠️ Socket disconnected: ${socket.id}`);
       
       const username = socket.username;
+      const userId = socket.userId || 'unknown';
       
-      // Handle disconnect with participants system (MIG33 style)
       if (username) {
         const { getUserCurrentRoom, removeRoomParticipant, getRoomParticipants } = require('../utils/redisUtils');
         const currentRoomId = await getUserCurrentRoom(username);
         
         if (currentRoomId) {
-          console.log(`🚪 Disconnect - removing ${username} from room ${currentRoomId}`);
+          const timerKey = `${userId}-${currentRoomId}`;
           
-          // Remove from participants
-          await removeRoomParticipant(currentRoomId, username);
+          console.log(`⏳ Starting 15s disconnect timer for ${username} in room ${currentRoomId}`);
           
-          // Remove from presence
-          await removeUserFromRoom(currentRoomId, username);
-          await removeUserRoom(username, currentRoomId);
-          
-          const room = await roomService.getRoomById(currentRoomId);
-          const userCount = await getRoomUserCount(currentRoomId);
-          
-          // Send leave message
-          const leftMsg = `${username} [${userCount}] has left`;
-          const leftMessage = {
-            roomId: currentRoomId,
-            username: room?.name || 'Room',
-            message: leftMsg,
-            timestamp: new Date().toISOString(),
-            type: 'system',
-            messageType: 'system'
-          };
+          const timer = setTimeout(async () => {
+            try {
+              console.log(`🚪 Disconnect timer expired - removing ${username} from room ${currentRoomId}`);
+              
+              disconnectTimers.delete(timerKey);
+              
+              await removeRoomParticipant(currentRoomId, username);
+              await removeUserFromRoom(currentRoomId, username);
+              await removeUserRoom(username, currentRoomId);
+              
+              const room = await roomService.getRoomById(currentRoomId);
+              const userCount = await getRoomUserCount(currentRoomId);
+              
+              const leftMsg = `${username} [${userCount}] has left`;
+              const leftMessage = {
+                roomId: currentRoomId,
+                username: room?.name || 'Room',
+                message: leftMsg,
+                timestamp: new Date().toISOString(),
+                type: 'system',
+                messageType: 'system'
+              };
 
-          io.to(`room:${currentRoomId}`).emit('chat:message', leftMessage);
-          await addSystemMessage(currentRoomId, `${room?.name || 'Room'} : ${leftMsg}`);
+              io.to(`room:${currentRoomId}`).emit('chat:message', leftMessage);
+              await addSystemMessage(currentRoomId, `${room?.name || 'Room'} : ${leftMsg}`);
 
-          const updatedUsers = await getRoomPresenceUsers(currentRoomId);
-          io.to(`room:${currentRoomId}`).emit('room:user:left', {
-            roomId: currentRoomId,
-            username,
-            users: updatedUsers
-          });
+              const updatedUsers = await getRoomPresenceUsers(currentRoomId);
+              io.to(`room:${currentRoomId}`).emit('room:user:left', {
+                roomId: currentRoomId,
+                username,
+                users: updatedUsers
+              });
+              
+              const participants = await getRoomParticipants(currentRoomId);
+              io.to(`room:${currentRoomId}`).emit('room:participantsUpdated', {
+                roomId: currentRoomId,
+                participants,
+                count: participants.length
+              });
+
+              await decrementRoomActive(currentRoomId);
+
+              io.emit('rooms:updateCount', {
+                roomId: currentRoomId,
+                userCount,
+                maxUsers: room?.max_users || 25
+              });
+            } catch (timerError) {
+              console.error('Error in disconnect timer:', timerError);
+            }
+          }, 15000);
           
-          // Broadcast participants update
-          const participants = await getRoomParticipants(currentRoomId);
-          io.to(`room:${currentRoomId}`).emit('room:participantsUpdated', {
-            roomId: currentRoomId,
-            participants,
-            count: participants.length
-          });
-
-          await decrementRoomActive(currentRoomId);
-
-          io.emit('rooms:updateCount', {
-            roomId: currentRoomId,
-            userCount,
-            maxUsers: room?.max_users || 25
-          });
+          disconnectTimers.set(timerKey, timer);
         }
       }
 
-      // Fallback: Remove user from ALL rooms immediately on disconnect
-      const rooms = Array.from(socket.rooms).filter(room => room !== socket.id);
-
-      for (const roomId of rooms) {
-        if (!roomId.startsWith('room:')) continue;
-        
-        const actualRoomId = roomId.replace('room:', '');
-        const roomUsers = await getRoomPresenceUsers(actualRoomId);
-        
-        for (const username of roomUsers) {
-          console.log(`🚪 Disconnect fallback - removing user from room: ${username}`);
-          
-          await removeUserFromRoom(actualRoomId, username);
-          await removeUserRoom(username, actualRoomId);
-
-          const room = await roomService.getRoomById(actualRoomId);
-          const userCount = await getRoomUserCount(actualRoomId);
-          
-          // Send leave message
-          const leftMsg = `${username} [${userCount}] has left`;
-          const leftMessage = {
-            roomId: actualRoomId,
-            username: room?.name || 'Room',
-            message: leftMsg,
-            timestamp: new Date().toISOString(),
-            type: 'system',
-            messageType: 'system'
-          };
-
-          io.to(`room:${actualRoomId}`).emit('chat:message', leftMessage);
-          await addSystemMessage(actualRoomId, `${room?.name || 'Room'} : ${leftMsg}`);
-
-          const updatedUsers = await getRoomPresenceUsers(actualRoomId);
-          io.to(`room:${actualRoomId}`).emit('room:user:left', {
-            roomId: actualRoomId,
-            username,
-            users: updatedUsers
-          });
-
-          await decrementRoomActive(actualRoomId);
-
-          io.emit('rooms:updateCount', {
-            roomId: actualRoomId,
-            userCount,
-            maxUsers: room?.max_users || 25
-          });
-        }
-      }
     } catch (error) {
       console.error('Error handling disconnect:', error);
     }

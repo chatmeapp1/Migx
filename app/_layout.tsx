@@ -4,6 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useFonts } from "expo-font";
 import { ThemeProviderCustom, useThemeCustom } from "@/theme/provider";
+import { TabRoomProvider } from "@/contexts/TabRoomContext";
 import "react-native-reanimated";
 import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -74,7 +75,9 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProviderCustom>
-        <RootLayoutNav />
+        <TabRoomProvider>
+          <RootLayoutNav />
+        </TabRoomProvider>
       </ThemeProviderCustom>
     </GestureHandlerRootView>
   );

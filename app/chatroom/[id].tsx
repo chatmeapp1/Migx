@@ -283,7 +283,7 @@ export default function ChatRoomScreen() {
 
     if (!hasTab(roomId)) {
       openTab(roomId, roomName);
-    } else {
+    } else if (activeRoomId !== roomId) {
       switchTab(roomId);
     }
 
@@ -301,7 +301,7 @@ export default function ChatRoomScreen() {
         socket.emit('room:users:get', { roomId });
       }, 500);
     }
-  }, [roomId, roomName, socket, isConnected, currentUsername, currentUserId, hasTab, openTab, switchTab]);
+  }, [roomId, roomName, socket, isConnected, currentUsername, currentUserId, hasTab, openTab, switchTab, activeRoomId]);
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';

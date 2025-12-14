@@ -9,6 +9,7 @@ import {
   Dimensions,
   BackHandler,
   Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -322,11 +323,6 @@ export default function ChatRoomScreen() {
     };
   }, []);
 
-  const inputWrapperAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      bottom: keyboardHeightValue.value,
-    };
-  });
 
   useEffect(() => {
     const backAction = () => {
@@ -597,42 +593,50 @@ export default function ChatRoomScreen() {
         onBack={handleHeaderBack}
       />
 
-      <GestureDetector gesture={contentGesture}>
-        <Animated.View style={[styles.contentContainer, { backgroundColor: theme.background }, contentAnimatedStyle]}>
-          {activeVote && (
-            <VoteKickButton
-              target={activeVote.target}
-              remainingVotes={activeVote.remainingVotes}
-              remainingSeconds={activeVote.remainingSeconds}
-              hasVoted={hasVoted}
-              onVote={handleVoteKick}
-            />
-          )}
-          {currentTab && (
-            <ChatRoomContent 
-              messages={currentTab.messages} 
-              roomInfo={roomInfo}
-              bottomPadding={70 + (keyboardVisible ? 0 : insets.bottom)}
-            />
-          )}
-        </Animated.View>
-      </GestureDetector>
-
-      <Animated.View 
-        style={[
-          styles.inputWrapper, 
-          { backgroundColor: HEADER_COLOR },
-          inputWrapperAnimatedStyle,
-        ]}
+      <KeyboardAvoidingView 
+        style={styles.keyboardAvoidingContainer}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
-        <ChatRoomInput 
-          onSend={handleSendMessage} 
-          onMenuItemPress={handleMenuItemPress}
-          onMenuPress={() => setMenuVisible(true)}
-          onOpenParticipants={handleOpenParticipants}
-          bottomInset={keyboardVisible ? 0 : insets.bottom}
-        />
-      </Animated.View>
+        <GestureDetector gesture={contentGesture}>
+          <Animated.View style={[styles.contentContainer, { backgroundColor: theme.background }, contentAnimatedStyle]}>
+            {activeVote && (
+              <VoteKickButton
+                target={activeVote.target}
+                remainingVotes={activeVote.remainingVotes}
+                remainingSeconds={activeVote.remainingSeconds}
+                hasVoted={hasVoted}
+                onVote={handleVoteKick}
+              />
+            )}
+            {currentTab && (
+              <ChatRoomContent 
+                messages={currentTab.messages} 
+                roomInfo={roomInfo}
+                bottomPadding={70 + (keyboardVisible ? 0 : insets.bottom)}
+              />
+            )}
+          </Animated.View>
+        </GestureDetector>
+
+        <View 
+          style={[
+            styles.inputWrapper, 
+            { 
+              backgroundColor: HEADER_COLOR,
+              paddingBottom: keyboardVisible ? 0 : insets.bottom,
+            },
+          ]}
+        >
+          <ChatRoomInput 
+            onSend={handleSendMessage} 
+            onMenuItemPress={handleMenuItemPress}
+            onMenuPress={() => setMenuVisible(true)}
+            onOpenParticipants={handleOpenParticipants}
+            bottomInset={0}
+          />
+        </View>
+      </KeyboardAvoidingView>
 
       <MenuKickModal
         visible={kickModalVisible}
@@ -670,14 +674,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  keyboardAvoidingContainer: {
+    flex: 1,
+  },
   contentContainer: {
     flex: 1,
   },
   inputWrapper: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
     paddingTop: 4,
   },
 });

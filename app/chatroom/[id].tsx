@@ -63,6 +63,7 @@ export default function ChatRoomScreen() {
   } = useTabRoom();
 
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [isAdmin, setIsAdmin] = useState(false);
   const [roomUsers, setRoomUsers] = useState<string[]>([]);
   const [roomInfo, setRoomInfo] = useState<{
@@ -306,8 +307,14 @@ export default function ChatRoomScreen() {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
-    const showSub = Keyboard.addListener(showEvent, () => setKeyboardVisible(true));
-    const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardVisible(false));
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      setKeyboardVisible(true);
+      setKeyboardHeight(e.endCoordinates.height);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardVisible(false);
+      setKeyboardHeight(0);
+    });
 
     return () => {
       showSub.remove();
@@ -606,6 +613,7 @@ export default function ChatRoomScreen() {
           styles.inputWrapper, 
           { 
             backgroundColor: HEADER_COLOR,
+            marginBottom: keyboardHeight > 0 ? keyboardHeight : 0,
           }
         ]}
       >
@@ -614,7 +622,7 @@ export default function ChatRoomScreen() {
           onMenuItemPress={handleMenuItemPress}
           onMenuPress={() => setMenuVisible(true)}
           onOpenParticipants={handleOpenParticipants}
-          bottomInset={insets.bottom}
+          bottomInset={keyboardHeight > 0 ? 0 : insets.bottom}
         />
       </View>
 

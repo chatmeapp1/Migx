@@ -2,6 +2,7 @@ import { DarkTheme as NavigationDarkTheme, DefaultTheme as NavigationDefaultThem
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useFonts } from "expo-font";
 import { ThemeProviderCustom, useThemeCustom } from "@/theme/provider";
 import { TabRoomProvider } from "@/contexts/TabRoomContext";
@@ -74,11 +75,13 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProviderCustom>
-        <TabRoomProvider>
-          <RootLayoutNav />
-        </TabRoomProvider>
-      </ThemeProviderCustom>
+      <SafeAreaProvider>
+        <ThemeProviderCustom>
+          <TabRoomProvider>
+            <RootLayoutNav />
+          </TabRoomProvider>
+        </ThemeProviderCustom>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }

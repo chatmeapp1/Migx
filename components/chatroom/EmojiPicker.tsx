@@ -1,6 +1,5 @@
-
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Image } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Animated } from 'react-native';
 import { useThemeCustom } from '@/theme/provider';
 import { emojiList } from '@/utils/emojiMapping';
 
@@ -10,94 +9,104 @@ interface EmojiPickerProps {
   onEmojiSelect: (emojiCode: string) => void;
 }
 
+const PICKER_HEIGHT = 260;
+
 export function EmojiPicker({ visible, onClose, onEmojiSelect }: EmojiPickerProps) {
   const { theme } = useThemeCustom();
+  const translateY = useRef(new Animated.Value(PICKER_HEIGHT)).current;
+
+  useEffect(() => {
+    Animated.timing(translateY, {
+      toValue: visible ? 0 : PICKER_HEIGHT,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  }, [visible, translateY]);
 
   const handleEmojiPress = (emojiCode: string) => {
     onEmojiSelect(emojiCode);
   };
 
-  return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <TouchableOpacity 
-        style={styles.overlay} 
-        activeOpacity={1} 
-        onPress={onClose}
-      >
-        <TouchableOpacity 
-          style={[styles.container, { backgroundColor: theme.card + 'E6' }]}
-          activeOpacity={1}
-        >
-          <View style={[styles.header, { borderBottomColor: theme.border }]}>
-            <Text style={[styles.title, { color: theme.text }]}>Emoticons</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Text style={[styles.closeText, { color: theme.secondary }]}>✕</Text>
-            </TouchableOpacity>
-          </View>
+  if (!visible) {
+    return null;
+  }
 
-          <ScrollView 
-            style={styles.scrollView}
-            showsVerticalScrollIndicator={false}
-          >
-            <View style={styles.emojiGrid}>
-              {emojiList.map((emoji, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={[styles.emojiButton, { backgroundColor: theme.background }]}
-                  onPress={() => handleEmojiPress(emoji.code)}
-                >
-                  <Image
-                    source={emoji.image}
-                    style={styles.emojiImage}
-                    resizeMode="contain"
-                  />
-                </TouchableOpacity>
-              ))}
-            </View>
-          </ScrollView>
+  return (
+    <Animated.View 
+      style={[
+        styles.container, 
+        { 
+          backgroundColor: theme.card,
+          transform: [{ translateY }],
+        }
+      ]}
+    >
+      <View style={[styles.header, { borderBottomColor: theme.border }]}>
+        <Text style={[styles.title, { color: theme.text }]}>Emoticons</Text>
+        <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+          <Text style={[styles.closeText, { color: theme.secondary }]}>✕</Text>
         </TouchableOpacity>
-      </TouchableOpacity>
-    </Modal>
+      </View>
+
+      <ScrollView 
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.emojiGrid}>
+          {emojiList.map((emoji, index) => (
+            <TouchableOpacity
+              key={index}
+              style={[styles.emojiButton, { backgroundColor: theme.background }]}
+              onPress={() => handleEmojiPress(emoji.code)}
+            >
+              <Image
+                source={emoji.image}
+                style={styles.emojiImage}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
+    </Animated.View>
   );
 }
 
+export const EMOJI_PICKER_HEIGHT = PICKER_HEIGHT;
+
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    justifyContent: 'flex-end',
-  },
   container: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '40%',
-    paddingBottom: 16,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: PICKER_HEIGHT,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    zIndex: 5,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderBottomWidth: 1,
   },
   title: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
   },
   closeButton: {
     padding: 4,
   },
   closeText: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
   },
   scrollView: {
+    flex: 1,
     paddingHorizontal: 8,
   },
   emojiGrid: {
@@ -107,14 +116,14 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   emojiButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 4,
+    width: 36,
+    height: 36,
+    borderRadius: 6,
     justifyContent: 'center',
     alignItems: 'center',
   },
   emojiImage: {
-    width: 18,
-    height: 18,
+    width: 22,
+    height: 22,
   },
 });

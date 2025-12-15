@@ -26,6 +26,7 @@ const VELOCITY_THRESHOLD = 300;
 import { ChatRoomHeader } from '@/components/chatroom/ChatRoomHeader';
 import { ChatRoomContent } from '@/components/chatroom/ChatRoomContent';
 import { ChatRoomInput } from '@/components/chatroom/ChatRoomInput';
+import { EmojiPicker, EMOJI_PICKER_HEIGHT } from '@/components/chatroom/EmojiPicker';
 import { MenuKickModal } from '@/components/chatroom/MenuKickModal';
 import { MenuParticipantsModal } from '@/components/chatroom/MenuParticipantsModal';
 import { RoomInfoModal } from '@/components/chatroom/RoomInfoModal';
@@ -63,6 +64,8 @@ export default function ChatRoomScreen() {
   } = useTabRoom();
 
   const [isAdmin, setIsAdmin] = useState(false);
+  const [emojiVisible, setEmojiVisible] = useState(false);
+  const inputRef = useRef<{ insertEmoji: (code: string) => void } | null>(null);
   const [roomUsers, setRoomUsers] = useState<string[]>([]);
   const [roomInfo, setRoomInfo] = useState<{
     name: string;
@@ -591,11 +594,25 @@ export default function ChatRoomScreen() {
         </Animated.View>
       </GestureDetector>
 
+      <EmojiPicker
+        visible={emojiVisible}
+        onClose={() => setEmojiVisible(false)}
+        onEmojiSelect={(code) => {
+          if (inputRef.current?.insertEmoji) {
+            inputRef.current.insertEmoji(code);
+          }
+        }}
+      />
+
       <ChatRoomInput 
+        ref={inputRef}
         onSend={handleSendMessage} 
         onMenuItemPress={handleMenuItemPress}
         onMenuPress={() => setMenuVisible(true)}
         onOpenParticipants={handleOpenParticipants}
+        onEmojiPress={() => setEmojiVisible(!emojiVisible)}
+        emojiPickerVisible={emojiVisible}
+        emojiPickerHeight={EMOJI_PICKER_HEIGHT}
       />
 
       <MenuKickModal

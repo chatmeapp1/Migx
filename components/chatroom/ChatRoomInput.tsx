@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import {
   View,
   TextInput,
@@ -16,7 +16,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Svg, { Path, Circle } from 'react-native-svg';
 import { ChatRoomMenu } from './ChatRoomMenu';
-import { EmojiPicker } from './EmojiPicker';
 import { CmdList } from './CmdList';
 import { GiftModal } from './GiftModal';
 
@@ -25,6 +24,13 @@ interface ChatRoomInputProps {
   onMenuItemPress?: (action: string) => void;
   onMenuPress?: () => void;
   onOpenParticipants?: () => void;
+  onEmojiPress?: () => void;
+  emojiPickerVisible?: boolean;
+  emojiPickerHeight?: number;
+}
+
+export interface ChatRoomInputRef {
+  insertEmoji: (code: string) => void;
 }
 
 const MenuIcon = ({ size = 20, color = '#666' }) => (
@@ -59,18 +65,31 @@ const SendIcon = ({ size = 22, color = '#8B5CF6' }) => (
   </Svg>
 );
 
-export function ChatRoomInput({ onSend, onMenuItemPress: externalMenuItemPress, onOpenParticipants }: ChatRoomInputProps) {
+export const ChatRoomInput = forwardRef<ChatRoomInputRef, ChatRoomInputProps>(({ 
+  onSend, 
+  onMenuItemPress: externalMenuItemPress, 
+  onOpenParticipants,
+  onEmojiPress,
+  emojiPickerVisible = false,
+  emojiPickerHeight = 0,
+}, ref) => {
   const [message, setMessage] = useState('');
   const [menuVisible, setMenuVisible] = useState(false);
-  const [emojiVisible, setEmojiVisible] = useState(false);
   const [cmdListVisible, setCmdListVisible] = useState(false);
   const [giftModalVisible, setGiftModalVisible] = useState(false);
   const [inputHeight, setInputHeight] = useState(42);
   const { theme } = useThemeCustom();
-  const inputRef = useRef<TextInputType>(null);
+  const textInputRef = useRef<TextInputType>(null);
   const insets = useSafeAreaInsets();
 
   const keyboardOffset = useRef(new Animated.Value(0)).current;
+  const emojiOffset = useRef(new Animated.Value(0)).current;
+
+  useImperativeHandle(ref, () => ({
+    insertEmoji: (code: string) => {
+      setMessage((prev) => prev + code);
+    },
+  }));
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
@@ -101,14 +120,29 @@ export function ChatRoomInput({ onSend, onMenuItemPress: externalMenuItemPress, 
     };
   }, [keyboardOffset]);
 
+  useEffect(() => {
+    Animated.timing(emojiOffset, {
+      toValue: emojiPickerVisible ? -emojiPickerHeight : 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  }, [emojiPickerVisible, emojiPickerHeight, emojiOffset]);
+
   const animatedStyle = {
     transform: [
       {
-        translateY: keyboardOffset.interpolate({
-          inputRange: [-1000, 0],
-          outputRange: [-1000, 0],
-          extrapolate: 'clamp',
-        }),
+        translateY: Animated.add(
+          keyboardOffset.interpolate({
+            inputRange: [-1000, 0],
+            outputRange: [-1000, 0],
+            extrapolate: 'clamp',
+          }),
+          emojiOffset.interpolate({
+            inputRange: [-500, 0],
+            outputRange: [-500, 0],
+            extrapolate: 'clamp',
+          })
+        ),
       },
     ],
   };
@@ -124,14 +158,10 @@ export function ChatRoomInput({ onSend, onMenuItemPress: externalMenuItemPress, 
     setMessage('');
   };
 
-  const handleEmojiSelect = (emoji: string) => {
-    setMessage((prev) => prev + emoji);
-  };
-
   const handleSelectCmd = (cmdKey: string, requiresTarget: boolean) => {
     const ready = requiresTarget ? `/${cmdKey} ` : `/${cmdKey}`;
     setMessage(ready);
-    setTimeout(() => inputRef.current?.focus(), 50);
+    setTimeout(() => textInputRef.current?.focus(), 50);
   };
 
   const handleMenuItemPress = (action: string) => {
@@ -151,6 +181,13 @@ export function ChatRoomInput({ onSend, onMenuItemPress: externalMenuItemPress, 
     console.log('Sending gift:', gift);
   };
 
+  const handleEmojiButtonPress = () => {
+    Keyboard.dismiss();
+    if (onEmojiPress) {
+      onEmojiPress();
+    }
+  };
+
   return (
     <Animated.View 
       style={[
@@ -166,7 +203,7 @@ export function ChatRoomInput({ onSend, onMenuItemPress: externalMenuItemPress, 
 
         <View style={[styles.inputContainer, { backgroundColor: theme.card }]}>
           <TextInput
-            ref={inputRef}
+            ref={textInputRef}
             style={[styles.input, { color: theme.text, height: inputHeight }]}
             placeholder="Type a message..."
             placeholderTextColor={theme.secondary}
@@ -182,8 +219,8 @@ export function ChatRoomInput({ onSend, onMenuItemPress: externalMenuItemPress, 
           <CoinIcon />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.iconButton} onPress={() => setEmojiVisible(true)}>
-          <EmojiIcon color={theme.secondary} />
+        <TouchableOpacity style={styles.iconButton} onPress={handleEmojiButtonPress}>
+          <EmojiIcon color={emojiPickerVisible ? theme.primary : theme.secondary} />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -202,12 +239,6 @@ export function ChatRoomInput({ onSend, onMenuItemPress: externalMenuItemPress, 
         onOpenParticipants={onOpenParticipants}
       />
 
-      <EmojiPicker
-        visible={emojiVisible}
-        onClose={() => setEmojiVisible(false)}
-        onEmojiSelect={handleEmojiSelect}
-      />
-
       <CmdList
         visible={cmdListVisible}
         onClose={() => setCmdListVisible(false)}
@@ -221,7 +252,7 @@ export function ChatRoomInput({ onSend, onMenuItemPress: externalMenuItemPress, 
       />
     </Animated.View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   wrapper: {
@@ -229,6 +260,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+    zIndex: 10,
   },
   container: {
     flexDirection: 'row',

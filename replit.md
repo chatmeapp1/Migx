@@ -1,8 +1,6 @@
 # Overview
 
-This is a mobile chat application built with React Native and Expo, recreating a classic chat experience similar to mig33. The app features real-time messaging, chat rooms, private conversations, user profiles, and a social networking component with friends lists and online status indicators.
-
-The application is designed for cross-platform deployment (iOS, Android, and Web) and includes features like room browsing, favorites management, email notifications, user levels, theme switching, and credit transfer functionality.
+This project is a cross-platform mobile chat application, built with React Native and Expo, designed to replicate a classic chat experience. It offers real-time messaging, chat rooms, private conversations, user profiles, and social networking features like friends lists and online status. The application supports iOS, Android, and Web deployment, incorporating features such as room browsing, favorite management, user leveling, theme customization, and a credit transfer system. The overarching vision is to create a dynamic and engaging social platform reminiscent of early chat services, fostering community and interaction.
 
 # User Preferences
 
@@ -12,300 +10,90 @@ Preferred communication style: Simple, everyday language.
 
 ## Frontend Architecture
 
-### Framework & Routing
-- **Expo SDK 54** with React Native 0.81.4 and React 19.1.0
-- **Expo Router 6.x** for file-based navigation with typed routes
-- Tab-based navigation with custom swipeable implementation using `PagerView`
-- Support for new React Native architecture enabled (`newArchEnabled: true`)
+### Core Technologies
+The frontend is built using **Expo SDK 54**, **React Native 0.81.4**, and **React 19.1.0**, leveraging **Expo Router 6.x** for file-based navigation. It supports the new React Native architecture and is designed for cross-platform consistency.
 
-### UI Components & Styling
-- **Custom component library** with themed components (`ThemedView`, `ThemedText`)
-- **SVG-based icons** using `react-native-svg` for cross-platform consistency
-- **Custom gestures** via `react-native-gesture-handler` and animations with `react-native-reanimated`
-- **Native platform differentiation** - SF Symbols on iOS, Material Icons elsewhere
-- Responsive layouts using React Native StyleSheet API
+### UI/UX Design
+A **custom component library** with themed components (`ThemedView`, `ThemedText`) and **SVG-based icons** ensures a consistent look. **React Native Gesture Handler** and **Reanimated** provide custom gestures and animations. The app features responsive layouts and platform-specific UI elements (SF Symbols on iOS, Material Icons elsewhere). A comprehensive **theming system** supports light, dark, and system-auto modes, with persistent storage via AsyncStorage and predefined color schemes. The current active theme incorporates an emerald gradient.
 
-### Theming System
-- **Global theme provider** (`theme/provider.tsx`) with context-based state management
-- **Light and dark mode** support with system preference detection
-- **Persistent theme storage** using AsyncStorage
-- Three theme modes: light, dark, and system-auto
-- Predefined color schemes in `theme/index.ts` with type safety
+### Navigation and Features
+The application uses tab-based navigation with a custom swipeable implementation via `PagerView`. Key features include:
+- **Chat System**: Multi-tab interface supporting concurrent conversations, message rendering, emoji support, and a real-time ready architecture.
+- **Room Management**: Collapsible categories, capacity indicators, search, and dynamic room creation.
+- **User Profile**: Role-based features, a level system with badge display, and account management options.
+- **Credit System**: In-app credit transfer with PIN authentication and transaction history.
+- **Authentication**: Login and signup screens with teal/cyan gradients, "remember me" functionality, and email validation.
+- **Splash Screen**: Custom animated splash screen with a gradient background and dynamic elements.
 
 ### State Management
-- React hooks (`useState`, `useEffect`, `useContext`) for local and global state
-- Custom hooks for theme management (`useThemeCustom`)
-- No external state management library - uses React Context API
-
-### Navigation Structure
-```
-app/
-├── (tabs)/          # Main tab navigation
-│   ├── index.tsx    # Home/Friends screen
-│   ├── room.tsx     # Chat rooms browser
-│   ├── chat.tsx     # Private chats list
-│   └── profile.tsx  # User profile
-├── chatroom/[id].tsx    # Dynamic chat room view
-├── transfer-credit.tsx  # Credit transfer feature
-├── transfer-history.tsx # Transaction history
-└── official-comment.tsx # Announcements
-```
-
-### Key Features Implementation
-
-**Chat System:**
-- Tab-based chat interface with support for multiple concurrent conversations
-- Message rendering with system messages, timestamps, and user roles
-- Chat input with emoji and menu support
-- Real-time-ready architecture (currently using mock data)
-
-**Room Management:**
-- Collapsible room categories (Favorites, Recent, What's Hot)
-- Room capacity indicators
-- Search and refresh functionality
-- Dynamic room creation support
-
-**User Profile:**
-- Role-based features (merchant vs. regular user)
-- Level system with badge display
-- Dark mode toggle with persistence
-- Menu items for account management, announcements, gift store, leaderboard
-
-**Credit System:**
-- Transfer functionality with PIN authentication
-- Transaction history with sent/received tracking
-- Mock balance display (extensible for real backend)
-
-## External Dependencies
-
-### Core Expo Modules
-- **expo-router**: File-based routing and navigation
-- **expo-font**: Custom font loading (SpaceMono)
-- **expo-splash-screen**: Splash screen management
-- **expo-status-bar**: Status bar styling
-- **expo-constants**: App configuration access
-- **expo-system-ui**: System UI customization
-- **expo-linking**: Deep linking support
-- **expo-web-browser**: In-app browser for external links
-- **expo-image**: Optimized image component
-- **expo-blur**: Blur effects for iOS tab bar
-- **expo-haptics**: Haptic feedback for iOS interactions
-
-### React Navigation
-- **@react-navigation/native**: Core navigation library
-- **@react-navigation/bottom-tabs**: Tab navigation implementation
-- **@react-navigation/elements**: Navigation UI components
-- Navigation theme integration with custom theme system
-
-### UI & Animation
-- **react-native-reanimated**: Advanced animations and worklets
-- **react-native-gesture-handler**: Touch gesture handling
-- **react-native-pager-view**: Swipeable page views for tabs
-- **react-native-svg**: Vector graphics rendering
-- **react-native-safe-area-context**: Safe area handling
-- **react-native-screens**: Native screen optimization
-
-### Storage & Data
-- **@react-native-async-storage/async-storage**: Persistent local storage for theme preferences and potentially user data
-
-### Web Support
-- **react-dom**: React web rendering
-- **react-native-web**: Web compatibility layer
-- **metro-runtime**: Metro bundler runtime for web output
-
-### Development Tools
-- **TypeScript**: Type safety with strict mode enabled
-- **ESLint**: Code linting with Expo configuration
-- **Jest**: Testing framework with jest-expo preset
-- **Babel**: JavaScript transpilation
-
-### Additional Integrations
-- **@expo/ngrok**: Development tunneling for testing
-- **react-native-webview**: Embedded web content support (for potential future features)
-
-### Platform-Specific Considerations
-- iOS: Uses SF Symbols, haptic feedback, and blur effects
-- Android: Material Icons, edge-to-edge display enabled
-- Web: Static output with Metro bundler, favicon support
-
-### Extensibility Points
-- Chat system ready for WebSocket or real-time database integration
-- Credit system prepared for backend API integration
-- Authentication system placeholder (currently no auth implementation)
-- User roles system in place for future permission management
-
-### API Configuration
-- **Centralized API utility** at `utils/api.ts` with base URL and endpoints
-- **API Base URL**: `https://c1a0709e-b20d-4687-ab11-e0584b9914f2-00-pfaqheie55z6.pike.replit.dev`
-- All API calls should use `API_ENDPOINTS` from `utils/api.ts`
-- Socket.IO connection also uses `API_BASE_URL` (default export from `utils/api.ts`)
-
-### Socket.IO Configuration
-- **Server**: Backend runs Socket.IO on port 3000
-- **Namespace**: `/chat` for chat events (also supports main namespace `/`)
-- **Client**: Import `API_BASE_URL` from `@/utils/api` for socket connections
-- **Events**: join_room, leave_room, chat:message, pm:send, credit:transfer, game:play
-
-### Authentication Screens
-- **Login screen** (`app/login.tsx`) with teal/cyan gradient, remember me, invisible mode, show/hide password
-- **Signup screen** (`app/signup.tsx`) with matching design, email validation (Gmail, Yahoo, Zoho only)
-- **Remember Me** saves username and password in AsyncStorage for auto-fill on app restart
-
-### Splash Screen
-- **Custom splash screen** (`components/SplashScreen.tsx`) with gradient background
-- Animated logo with fade-in and scale effects
-- Floating dice and gift icons with blur animation
-- Displays for 2.5 seconds before transitioning to login/main app
-- Tagline: "MigX — The World Chat Community"
+React's built-in hooks (`useState`, `useEffect`, `useContext`) and the Context API are used for both local and global state management, without external state libraries.
 
 ## Backend Architecture
 
 ### Server Stack
-- **Node.js** with Express.js framework
-- **Socket.IO** for real-time communication
-- **PostgreSQL (Neon DB)** for persistent data storage
-- **Redis Cloud** for presence, rate limiting, and caching
+The backend is powered by **Node.js** with **Express.js** for RESTful APIs and **Socket.IO** for real-time communication. **PostgreSQL (Neon DB)** is used for persistent data storage, and **Redis Cloud** handles presence, rate limiting, and caching.
 
-### Backend Structure
-```
-backend/
-├── server/
-│   ├── server.js          # Main Express + Socket.IO server
-│   ├── redis.js           # Redis Cloud connection
-│   ├── events/            # Socket.IO event handlers
-│   │   ├── roomEvents.js      # Join/leave room, kick/ban
-│   │   ├── chatEvents.js      # Chat messages
-│   │   ├── pmEvents.js        # Private messages
-│   │   ├── systemEvents.js    # Auth, presence, user info
-│   │   ├── creditEvents.js    # Credit transfer
-│   │   ├── merchantEvents.js  # Merchant management
-│   │   └── gameEvents.js      # Game system
-│   ├── services/          # Business logic
-│   │   ├── userService.js
-│   │   ├── roomService.js
-│   │   ├── messageService.js
-│   │   ├── banService.js
-│   │   ├── creditService.js
-│   │   ├── merchantService.js
-│   │   └── gameService.js
-│   └── utils/             # Utility functions
-│       ├── idGenerator.js
-│       ├── presence.js
-│       ├── floodControl.js
-│       ├── xpLeveling.js
-│       └── merchantTags.js
-├── api/                   # REST API routes
-│   ├── auth.route.js
-│   ├── user.route.js
-│   ├── room.route.js
-│   ├── message.route.js
-│   ├── credit.route.js
-│   └── merchant.route.js
-└── db/
-    ├── db.js              # PostgreSQL connection
-    └── schema.sql         # Database schema
-```
+### Backend Structure and Services
+The backend is organized into services for users, rooms, messages, bans, credits, merchants, and games. It includes dedicated Socket.IO event handlers for various functionalities such as room events, chat messages, private messages, system events, credit transfers, merchant management, and games.
 
-### Database Schema (PostgreSQL)
-- **users**: User accounts with role (user/mentor/merchant/admin)
-- **rooms**: Chat rooms with owner and capacity
-- **room_admins**: Room administrators
-- **messages**: Chat messages with room reference
-- **private_messages**: PM between users
-- **credit_logs**: Transaction history
-- **merchants**: Merchant profiles (created by mentors)
-- **merchant_spend_logs**: Game spend with 30% commission
-- **user_levels**: XP and level tracking
-- **room_bans**: Persistent ban records
-- **game_history**: Game play records
+### Database Schema
+The PostgreSQL database includes tables for `users`, `rooms`, `messages`, `private_messages`, `credit_logs`, `merchants`, `merchant_spend_logs`, `user_levels`, `room_bans`, and `game_history`.
 
-### Redis Cloud Usage
-- **Presence**: `room:{roomId}:users` - Online users in room
-- **Banned**: `room:{roomId}:banned` - Banned users
-- **Flood Control**: `flood:{userId}:{roomId}` - 700ms rate limit
-- **Rate Limit**: `rate:global:{userId}` - 30 msgs/min
-- **Merchant Income**: `merchant:{id}:income` - Cached earnings
-- **User Socket**: `user:{userId}:socket` - Socket mapping
+### Redis Usage
+Redis is utilized for managing online user presence in rooms, banned user lists, flood control, global rate limiting, caching merchant income, and mapping user IDs to socket connections.
 
-### Socket.IO Events (Namespace: /chat)
-**Room Events:**
-- `join_room`, `leave_room` - Room participation
-- `room:admin:kick`, `room:admin:ban`, `room:admin:unban`
-- `room:users`, `room:info`
-
-**Chat Events:**
-- `chat:message` - Send message (700ms anti-flood)
-- `chat:messages:get` - Get room history
-
-**PM Events:**
-- `pm:send`, `pm:receive` - Private messages
-- `pm:unread:get`, `pm:conversations:get`
-
-**Credit Events:**
-- `credit:transfer` - Transfer credits
-- `credit:balance:get`, `credit:history:get`
-
-**Game Events:**
-- `game:play` - Play game (coin_flip, dice_roll, slots, etc.)
-- `game:result` - Game outcome
-- `game:spend` - Merchant commission (30%)
-
-**Merchant Events:**
-- `merchant:create` - Create merchant (mentor only)
-- `merchant:disable`, `merchant:enable`
-- `merchant:income:get`, `merchant:withdraw`
+### Real-time Communication (Socket.IO)
+The `/chat` namespace handles a wide array of real-time events, including joining/leaving rooms, sending/receiving chat messages, private messages, credit transfers, and game interactions.
 
 ### REST API Endpoints
-- **POST /api/auth/login** - Simple login/register
-- **GET /api/users/:id** - User profile with XP/level
-- **GET /api/rooms** - List all rooms with user counts
-- **GET /api/messages/:roomId** - Room message history
-- **POST /api/credits/transfer** - Transfer credits
-- **POST /api/merchants/create** - Create merchant (mentor only)
-- **GET /api/merchants/income/:id** - Merchant earnings
+Key API endpoints include `/api/auth/login`, `/api/users/:id`, `/api/rooms`, `/api/messages/:roomId`, `/api/credits/transfer`, and `/api/merchants/create`.
 
-### XP & Level System
-- **Send message**: +1 XP
-- **Join room**: +5 XP
-- **Play game**: +3 XP
-- **Win game**: +10 XP
-- **Transfer credit**: +2 XP
-- Level thresholds: 100, 300, 600, 1000, 1500... XP
+### Game and Economy Systems
+- **XP & Level System**: Users gain XP for various actions (sending messages, joining rooms, playing/winning games, transferring credits) to progress through levels.
+- **Merchant Commission System**: Mentors can create merchants who earn a 30% commission from game spend.
 
-### Merchant Commission System
-- Only 30% commission from **game spend**
-- No commission from gifts, chat, or transfers
-- Only mentors can create/disable merchants
-- Earnings cached in Redis, persisted in PostgreSQL
+# External Dependencies
 
-### Environment Variables
-- `DATABASE_URL` - PostgreSQL connection string
-- `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD` - Redis Cloud
-- `BACKEND_PORT` - Server port (default: 3001)
+## Core Expo Modules
+- `expo-router`: Navigation and routing.
+- `expo-font`: Custom font loading.
+- `expo-splash-screen`: Splash screen management.
+- `expo-status-bar`: Status bar styling.
+- `expo-constants`: App configuration.
+- `expo-system-ui`: System UI customization.
+- `expo-linking`: Deep linking.
+- `expo-web-browser`: In-app browser.
+- `expo-image`: Optimized image component.
+- `expo-blur`: Blur effects (iOS).
+- `expo-haptics`: Haptic feedback (iOS).
+- `expo-linear-gradient`: Gradient styling.
 
-## Recent Changes (Dec 9, 2025)
+## UI & Animation Libraries
+- `react-native-reanimated`: Advanced animations.
+- `react-native-gesture-handler`: Touch gestures.
+- `react-native-pager-view`: Swipeable page views.
+- `react-native-svg`: Vector graphics.
+- `react-native-safe-area-context`: Safe area handling.
+- `react-native-screens`: Native screen optimization.
 
-### Emerald Gradient Theme Implementation ✅
-- Applied emerald gradient (#0D5E32 → #0A4726) to all screen headers using LinearGradient
-- Headers updated: Home, Chat, Feed, Room, Profile
-- Tab bar navigation also features the same emerald gradient
-- Fixed modal header backgrounds for People and Leaderboard screens by changing backgroundColor from solid '#0a5229' to 'transparent' so gradients display properly
+## Storage
+- `@react-native-async-storage/async-storage`: Persistent local storage.
 
-### Files Modified:
-1. **app/(tabs)/_layout.tsx** - Tab bar now uses LinearGradient with emerald colors
-2. **components/home/Header.tsx** - Fixed API_BASE_URL import (default export), gradient styling
-3. **components/chat/ChatHeader.tsx** - Added LinearGradient emerald theme
-4. **components/room/RoomHeader.tsx** - Added LinearGradient emerald theme
-5. **components/profile/ProfileHeader.tsx** - Fixed API_BASE_URL import, gradient styling
-6. **app/(tabs)/feed.tsx** - Added LinearGradient for post creation header
-7. **app/people.tsx** - Changed modal header backgroundColor to 'transparent' (line 311)
-8. **app/leaderboard.tsx** - Changed modal header backgroundColor to 'transparent' (lines 318, 343)
+## Development Tools & Integrations
+- `TypeScript`: For type safety.
+- `ESLint`: Code linting.
+- `Jest`: Testing framework.
+- `Babel`: JavaScript transpilation.
+- `@expo/ngrok`: Development tunneling.
+- `react-native-webview`: Embedded web content (for future use).
 
-### API Import Fixes:
-- Fixed Header.tsx import: `API_BASE_URL, { createSocket }` (was destructured incorrectly)
-- Fixed ProfileHeader.tsx import: default import `API_BASE_URL` (was destructured incorrectly)
+## Backend Specific Dependencies
+- `Node.js`: Runtime environment.
+- `Express.js`: Web framework.
+- `Socket.IO`: Real-time communication library.
+- `PostgreSQL (Neon DB)`: Primary database.
+- `Redis Cloud`: Caching and real-time data store.
 
-### Theme System Updates:
-- Gradient colors (#0D5E32 → #0A4726) defined in theme/index.ts
-- All header components properly styled with LinearGradient from expo-linear-gradient
-- StatusBar configured with emerald color (#0D5E32) for visual consistency
+## API Configuration
+- **API Base URL**: `https://c1a0709e-b20d-4687-ab11-e0584b9914f2-00-pfaqheie55z6.pike.replit.dev`
+- Socket.IO connection also uses `API_BASE_URL`.

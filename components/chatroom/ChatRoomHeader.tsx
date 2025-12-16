@@ -1,42 +1,27 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useThemeCustom } from '@/theme/provider';
 import { BackIcon, MenuGridIcon } from '@/components/ui/SvgIcons';
 import { RoomIndicatorDots } from './RoomIndicatorDots';
+import { useActiveIndex, useActiveRoom, useOpenRooms } from '@/stores/useRoomTabsStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-interface OpenRoom {
-  roomId: string;
-  name: string;
-  unread: number;
-}
-
 interface ChatRoomHeaderProps {
-  openRooms: OpenRoom[];
-  activeIndex: number;
-  activeRoomName: string;
   onBack?: () => void;
   onMenuPress?: () => void;
-  roomInfo?: {
-    name: string;
-    description: string;
-    creatorName: string;
-    currentUsers: string[];
-  } | null;
 }
 
 export function ChatRoomHeader({ 
-  openRooms, 
-  activeIndex, 
-  activeRoomName,
   onBack, 
   onMenuPress,
-  roomInfo 
 }: ChatRoomHeaderProps) {
   const router = useRouter();
-  const { theme } = useThemeCustom();
+  const activeIndex = useActiveIndex();
+  const activeRoom = useActiveRoom();
+  const openRooms = useOpenRooms();
+  
+  const roomName = activeRoom?.name || 'Room';
 
   return (
     <View style={[styles.container, { backgroundColor: '#0a5229' }]}>
@@ -51,7 +36,7 @@ export function ChatRoomHeader({
         
         <View style={styles.centerContent}>
           <Text style={styles.roomName} numberOfLines={1}>
-            {activeRoomName || 'Room'}
+            {roomName}
           </Text>
           <Text style={styles.subtitle}>Chatroom</Text>
           

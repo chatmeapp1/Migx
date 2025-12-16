@@ -10,7 +10,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeCustom } from '@/theme/provider';
-import { io, Socket } from 'socket.io-client';
+import { io } from 'socket.io-client';
 import API_BASE_URL from '@/utils/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -23,9 +23,7 @@ import { MenuParticipantsModal } from '@/components/chatroom/MenuParticipantsMod
 import { RoomInfoModal } from '@/components/chatroom/RoomInfoModal';
 import { VoteKickButton } from '@/components/chatroom/VoteKickButton';
 import { ChatRoomMenu } from '@/components/chatroom/ChatRoomMenu';
-import { useRoomTabsStore, useRoomTabsData, useActiveRoom, useActiveIndex } from '@/stores/useRoomTabsStore';
-import { useShallow } from 'zustand/react/shallow';
-import { useMemo } from 'react';
+import { useRoomTabsStore, useActiveRoom, useActiveRoomId, useOpenRooms } from '@/stores/useRoomTabsStore';
 
 const HEADER_COLOR = '#0a5229';
 
@@ -38,15 +36,10 @@ export default function ChatRoomScreen() {
   const roomId = params.id as string;
   const roomName = (params.name as string) || 'Mobile fun';
 
-  const { openRoomIds, openRoomsById, activeRoomId: storeActiveRoomId } = useRoomTabsData();
   const activeRoom = useActiveRoom();
-  const activeIndex = useActiveIndex();
+  const activeRoomId = useActiveRoomId();
+  const openRooms = useOpenRooms();
   
-  const openRooms = useMemo(() => {
-    return openRoomIds
-      .map(id => openRoomsById[id])
-      .filter(Boolean);
-  }, [openRoomIds, openRoomsById]);
   const socket = useRoomTabsStore(state => state.socket);
   const currentUsername = useRoomTabsStore(state => state.currentUsername);
   const currentUserId = useRoomTabsStore(state => state.currentUserId);
@@ -54,24 +47,13 @@ export default function ChatRoomScreen() {
   const setUserInfo = useRoomTabsStore(state => state.setUserInfo);
   const openRoom = useRoomTabsStore(state => state.openRoom);
   const closeRoom = useRoomTabsStore(state => state.closeRoom);
-  const setActiveRoom = useRoomTabsStore(state => state.setActiveRoom);
+  const setActiveRoomById = useRoomTabsStore(state => state.setActiveRoomById);
   const clearAllRooms = useRoomTabsStore(state => state.clearAllRooms);
   const markRoomLeft = useRoomTabsStore(state => state.markRoomLeft);
 
   const [emojiVisible, setEmojiVisible] = useState(false);
   const inputRef = useRef<{ insertEmoji: (code: string) => void } | null>(null);
   const [roomUsers, setRoomUsers] = useState<string[]>([]);
-  const [roomInfo, setRoomInfo] = useState<{
-    name: string;
-    description: string;
-    creatorName: string;
-    currentUsers: string[];
-  } | null>({
-    name: roomName,
-    description: '',
-    creatorName: '',
-    currentUsers: []
-  });
   const [kickModalVisible, setKickModalVisible] = useState(false);
   const [participantsModalVisible, setParticipantsModalVisible] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
@@ -87,9 +69,9 @@ export default function ChatRoomScreen() {
 
   const [isConnected, setIsConnected] = useState(() => socket?.connected || false);
   const socketInitialized = useRef(false);
+  const roomInitialized = useRef(false);
 
-  const activeRoomName = activeRoom?.name || roomName;
-  const activeRoomId = activeRoom?.roomId || roomId;
+  const currentActiveRoomId = activeRoomId || roomId;
 
   useEffect(() => {
     if (socket?.connected && !isConnected) {
@@ -103,14 +85,11 @@ export default function ChatRoomScreen() {
         const userDataStr = await AsyncStorage.getItem('user_data');
         if (userDataStr) {
           const userData = JSON.parse(userDataStr);
-          console.log('👤 User data loaded:', userData);
           setUserInfo(userData.username || 'guest', userData.id || 'guest-id');
         } else {
-          console.log('⚠️ No user data found - using guest');
           setUserInfo('guest', 'guest-id');
         }
       } catch (error) {
-        console.error('❌ Error loading user data:', error);
         setUserInfo('guest', 'guest-id');
       }
     };
@@ -124,7 +103,6 @@ export default function ChatRoomScreen() {
 
     if (!socket && !socketInitialized.current) {
       socketInitialized.current = true;
-      console.log('🔌 Creating new socket connection:', API_BASE_URL);
       
       const newSocket = io(API_BASE_URL, {
         transports: ['websocket'],
@@ -137,17 +115,14 @@ export default function ChatRoomScreen() {
       });
 
       newSocket.on('connect', () => {
-        console.log('✅ Socket connected:', newSocket.id);
         setIsConnected(true);
       });
 
       newSocket.on('disconnect', () => {
-        console.log('⚠️ Socket disconnected');
         setIsConnected(false);
       });
 
       newSocket.on('reconnect', () => {
-        console.log('🔄 Socket reconnected');
         setIsConnected(true);
       });
 
@@ -178,35 +153,26 @@ export default function ChatRoomScreen() {
   }, [currentUsername, currentUserId, socket, setSocket, router]);
 
   useEffect(() => {
-    console.log('🔍 Room tab check:', { 
-      roomId, 
-      hasSocket: !!socket, 
-      isConnected, 
-      currentUsername,
-      openRoomCount: openRooms.length,
-      openRoomIds: openRooms.map(r => r.roomId),
-    });
-    
     if (!socket || !isConnected || !currentUsername || !currentUserId) {
-      console.log('⏳ Waiting for connection...', { hasSocket: !!socket, isConnected, currentUsername, currentUserId });
+      return;
+    }
+
+    if (roomInitialized.current) {
       return;
     }
 
     const existingRoom = openRooms.find(r => r.roomId === roomId);
     if (!existingRoom) {
-      console.log('📑 Opening new room tab:', roomId, roomName);
+      roomInitialized.current = true;
       openRoom(roomId, roomName);
-    } else if (storeActiveRoomId !== roomId) {
-      console.log('📑 Switching to existing room tab:', roomId);
-      setActiveRoom(roomId);
-    } else {
-      console.log('📑 Room already active:', roomId);
+    } else if (activeRoomId !== roomId) {
+      roomInitialized.current = true;
+      setActiveRoomById(roomId);
     }
-  }, [roomId, roomName, socket, isConnected, currentUsername, currentUserId, openRooms, openRoom, setActiveRoom, storeActiveRoomId]);
+  }, [roomId, roomName, socket, isConnected, currentUsername, currentUserId, openRooms.length, activeRoomId, openRoom, setActiveRoomById]);
 
   useEffect(() => {
     const backAction = () => {
-      console.log('📱 Back button pressed - navigating back (keeping socket alive)');
       router.back();
       return true;
     };
@@ -218,7 +184,6 @@ export default function ChatRoomScreen() {
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextAppState) => {
       if (nextAppState === 'active') {
-        console.log('📱 App came to foreground');
         if (socket && !socket.connected) {
           socket.connect();
         }
@@ -230,16 +195,14 @@ export default function ChatRoomScreen() {
 
   const handleSendMessage = useCallback((message: string) => {
     if (!socket || !message.trim() || !currentUserId) return;
-
-    console.log('📤 Sending message to room:', activeRoomId);
     
     socket.emit('chat:message', {
-      roomId: activeRoomId,
+      roomId: currentActiveRoomId,
       userId: currentUserId,
       username: currentUsername,
       message: message.trim(),
     });
-  }, [socket, currentUserId, currentUsername, activeRoomId]);
+  }, [socket, currentUserId, currentUsername, currentActiveRoomId]);
 
   const handleSelectUserToKick = (target: string) => {
     Alert.alert('Start Vote Kick', `Kick ${target} for 500 IDR?`, [
@@ -250,40 +213,34 @@ export default function ChatRoomScreen() {
 
   const handleStartKick = (target: string) => {
     if (!socket) return;
-    socket.emit('kick-start', { roomId: activeRoomId, startedBy: currentUsername, target });
+    socket.emit('kick-start', { roomId: currentActiveRoomId, startedBy: currentUsername, target });
   };
 
   const handleVoteKick = () => {
     if (!socket || !activeVote || hasVoted) return;
-    socket.emit('kick-vote', { roomId: activeRoomId, username: currentUsername, target: activeVote.target });
+    socket.emit('kick-vote', { roomId: currentActiveRoomId, username: currentUsername, target: activeVote.target });
     setHasVoted(true);
   };
 
   const handleOpenRoomInfo = useCallback(() => {
-    console.log('Opening RoomInfoModal...');
     setRoomInfoModalVisible(true);
     
-    fetch(`${API_BASE_URL}/api/rooms/${activeRoomId}/info`)
+    fetch(`${API_BASE_URL}/api/rooms/${currentActiveRoomId}/info`)
       .then(response => response.json())
       .then(data => {
-        console.log('Room info loaded:', data);
         if (data.success) {
           setRoomInfoData(data.roomInfo);
         }
       })
-      .catch(err => {
-        console.log('Error loading room info:', err);
-      });
-  }, [activeRoomId]);
+      .catch(() => {});
+  }, [currentActiveRoomId]);
 
   const handleCloseRoomInfo = useCallback(() => {
-    console.log('Closing RoomInfoModal');
     setRoomInfoModalVisible(false);
     setRoomInfoData(null);
   }, []);
 
   const handleMenuAction = useCallback((action: string) => {
-    console.log('Menu action received:', action);
     const trimmedAction = action?.trim?.() || action;
     
     if (trimmedAction === 'room-info') {
@@ -295,7 +252,7 @@ export default function ChatRoomScreen() {
       fetch(`${API_BASE_URL}/api/rooms/favorites/add`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: currentUsername, roomId: activeRoomId }),
+        body: JSON.stringify({ username: currentUsername, roomId: currentActiveRoomId }),
       })
         .then(response => response.json())
         .then(data => {
@@ -325,7 +282,7 @@ export default function ChatRoomScreen() {
         { text: 'Leave', style: 'destructive', onPress: handleLeaveRoom },
       ]);
     }
-  }, [handleOpenRoomInfo, currentUsername, activeRoomId]);
+  }, [handleOpenRoomInfo, currentUsername, currentActiveRoomId]);
 
   const handleOpenParticipants = () => setParticipantsModalVisible(!participantsModalVisible);
 
@@ -338,29 +295,28 @@ export default function ChatRoomScreen() {
   };
 
   const handleLeaveRoom = useCallback(async () => {
-    if (socket) {
-      console.log('🚪 User explicitly leaving room:', activeRoomId);
+    if (socket && currentActiveRoomId) {
       socket.emit('leave_room', { 
-        roomId: activeRoomId, 
+        roomId: currentActiveRoomId, 
         username: currentUsername, 
         userId: currentUserId 
       });
     }
     
-    markRoomLeft(activeRoomId);
-    closeRoom(activeRoomId);
+    if (currentActiveRoomId) {
+      markRoomLeft(currentActiveRoomId);
+      closeRoom(currentActiveRoomId);
+    }
     
-    const remainingRooms = openRooms.filter(r => r.roomId !== activeRoomId);
+    const remainingRooms = openRooms.filter(r => r.roomId !== currentActiveRoomId);
     
     if (remainingRooms.length === 0) {
-      console.log('🚪 Last tab closed - navigating to room menu');
       clearAllRooms();
       router.replace('/(tabs)/room');
     }
-  }, [socket, activeRoomId, currentUsername, currentUserId, openRooms, closeRoom, clearAllRooms, markRoomLeft, router]);
+  }, [socket, currentActiveRoomId, currentUsername, currentUserId, openRooms, closeRoom, clearAllRooms, markRoomLeft, router]);
 
   const handleHeaderBack = useCallback(() => {
-    console.log('📱 Header back pressed - navigating back (keeping socket alive)');
     router.back();
   }, [router]);
 
@@ -382,12 +338,8 @@ export default function ChatRoomScreen() {
       <StatusBar backgroundColor={HEADER_COLOR} barStyle="light-content" />
       
       <ChatRoomHeader
-        openRooms={openRooms}
-        activeIndex={activeIndex}
-        activeRoomName={activeRoomName}
         onBack={handleHeaderBack}
         onMenuPress={() => setMenuVisible(true)}
-        roomInfo={roomInfo}
       />
 
       <ChatRoomTabs
@@ -435,7 +387,7 @@ export default function ChatRoomScreen() {
         visible={roomInfoModalVisible}
         onClose={handleCloseRoomInfo}
         info={roomInfoData}
-        roomId={activeRoomId}
+        roomId={currentActiveRoomId}
       />
 
       <ChatRoomMenu

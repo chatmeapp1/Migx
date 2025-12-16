@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { useShallow } from 'zustand/react/shallow';
 import { Socket } from 'socket.io-client';
 
 export interface Message {
@@ -22,7 +21,7 @@ export interface OpenRoom {
 interface RoomTabsState {
   openRoomsById: Record<string, OpenRoom>;
   openRoomIds: string[];
-  activeRoomId: string | null;
+  activeIndex: number;
   messagesByRoom: Record<string, Message[]>;
   socket: Socket | null;
   currentUsername: string;
@@ -33,7 +32,8 @@ interface RoomTabsState {
 interface RoomTabsActions {
   openRoom: (roomId: string, name: string) => void;
   closeRoom: (roomId: string) => void;
-  setActiveRoom: (roomId: string) => void;
+  setActiveIndex: (index: number) => void;
+  setActiveRoomById: (roomId: string) => void;
   addMessage: (roomId: string, message: Message) => void;
   markUnread: (roomId: string) => void;
   clearUnread: (roomId: string) => void;
@@ -44,6 +44,8 @@ interface RoomTabsActions {
   markRoomJoined: (roomId: string) => void;
   markRoomLeft: (roomId: string) => void;
   isRoomJoined: (roomId: string) => boolean;
+  getActiveRoom: () => OpenRoom | null;
+  getActiveRoomId: () => string | null;
 }
 
 type RoomTabsStore = RoomTabsState & RoomTabsActions;
@@ -51,7 +53,7 @@ type RoomTabsStore = RoomTabsState & RoomTabsActions;
 export const useRoomTabsStore = create<RoomTabsStore>((set, get) => ({
   openRoomsById: {},
   openRoomIds: [],
-  activeRoomId: null,
+  activeIndex: 0,
   messagesByRoom: {},
   socket: null,
   currentUsername: '',
@@ -61,17 +63,19 @@ export const useRoomTabsStore = create<RoomTabsStore>((set, get) => ({
   openRoom: (roomId: string, name: string) => {
     const state = get();
     
-    if (state.openRoomsById[roomId]) {
-      set({ activeRoomId: roomId });
+    const existingIndex = state.openRoomIds.indexOf(roomId);
+    if (existingIndex >= 0) {
+      set({ activeIndex: existingIndex });
       return;
     }
 
     const newRoom: OpenRoom = { roomId, name, unread: 0 };
+    const newOpenRoomIds = [...state.openRoomIds, roomId];
     
     set({
       openRoomsById: { ...state.openRoomsById, [roomId]: newRoom },
-      openRoomIds: [...state.openRoomIds, roomId],
-      activeRoomId: roomId,
+      openRoomIds: newOpenRoomIds,
+      activeIndex: newOpenRoomIds.length - 1,
       messagesByRoom: { ...state.messagesByRoom, [roomId]: state.messagesByRoom[roomId] || [] },
     });
   },
@@ -81,18 +85,19 @@ export const useRoomTabsStore = create<RoomTabsStore>((set, get) => ({
     const newOpenRoomsById = { ...state.openRoomsById };
     delete newOpenRoomsById[roomId];
     
+    const currentIndex = state.openRoomIds.indexOf(roomId);
     const newOpenRoomIds = state.openRoomIds.filter(id => id !== roomId);
     const newMessagesByRoom = { ...state.messagesByRoom };
     delete newMessagesByRoom[roomId];
     
-    let newActiveRoomId = state.activeRoomId;
-    if (state.activeRoomId === roomId) {
-      const currentIndex = state.openRoomIds.indexOf(roomId);
-      if (newOpenRoomIds.length > 0) {
-        newActiveRoomId = newOpenRoomIds[Math.min(currentIndex, newOpenRoomIds.length - 1)];
-      } else {
-        newActiveRoomId = null;
-      }
+    let newActiveIndex = state.activeIndex;
+    if (currentIndex <= state.activeIndex) {
+      newActiveIndex = Math.max(0, state.activeIndex - 1);
+    }
+    if (newOpenRoomIds.length === 0) {
+      newActiveIndex = 0;
+    } else {
+      newActiveIndex = Math.min(newActiveIndex, newOpenRoomIds.length - 1);
     }
     
     const newJoinedRoomIds = new Set(state.joinedRoomIds);
@@ -101,24 +106,39 @@ export const useRoomTabsStore = create<RoomTabsStore>((set, get) => ({
     set({
       openRoomsById: newOpenRoomsById,
       openRoomIds: newOpenRoomIds,
-      activeRoomId: newActiveRoomId,
+      activeIndex: newActiveIndex,
       messagesByRoom: newMessagesByRoom,
       joinedRoomIds: newJoinedRoomIds,
     });
   },
 
-  setActiveRoom: (roomId: string) => {
+  setActiveIndex: (index: number) => {
     const state = get();
-    if (!state.openRoomsById[roomId]) return;
+    if (index < 0 || index >= state.openRoomIds.length) return;
+    if (index === state.activeIndex) return;
     
+    const roomId = state.openRoomIds[index];
     const room = state.openRoomsById[roomId];
-    set({
-      activeRoomId: roomId,
-      openRoomsById: {
-        ...state.openRoomsById,
-        [roomId]: { ...room, unread: 0 },
-      },
-    });
+    
+    if (room && room.unread > 0) {
+      set({
+        activeIndex: index,
+        openRoomsById: {
+          ...state.openRoomsById,
+          [roomId]: { ...room, unread: 0 },
+        },
+      });
+    } else {
+      set({ activeIndex: index });
+    }
+  },
+
+  setActiveRoomById: (roomId: string) => {
+    const state = get();
+    const index = state.openRoomIds.indexOf(roomId);
+    if (index >= 0) {
+      get().setActiveIndex(index);
+    }
   },
 
   addMessage: (roomId: string, message: Message) => {
@@ -130,7 +150,8 @@ export const useRoomTabsStore = create<RoomTabsStore>((set, get) => ({
     }
     
     const newMessages = [...existingMessages, message];
-    const isActiveRoom = state.activeRoomId === roomId;
+    const activeRoomId = state.openRoomIds[state.activeIndex];
+    const isActiveRoom = activeRoomId === roomId;
     
     let newOpenRoomsById = state.openRoomsById;
     if (state.openRoomsById[roomId] && !isActiveRoom && !message.isOwnMessage) {
@@ -150,7 +171,8 @@ export const useRoomTabsStore = create<RoomTabsStore>((set, get) => ({
   markUnread: (roomId: string) => {
     const state = get();
     const room = state.openRoomsById[roomId];
-    if (!room || state.activeRoomId === roomId) return;
+    const activeRoomId = state.openRoomIds[state.activeIndex];
+    if (!room || activeRoomId === roomId) return;
     
     set({
       openRoomsById: {
@@ -177,7 +199,7 @@ export const useRoomTabsStore = create<RoomTabsStore>((set, get) => ({
     set({
       openRoomsById: {},
       openRoomIds: [],
-      activeRoomId: null,
+      activeIndex: 0,
       messagesByRoom: {},
       joinedRoomIds: new Set(),
     });
@@ -221,44 +243,63 @@ export const useRoomTabsStore = create<RoomTabsStore>((set, get) => ({
   isRoomJoined: (roomId: string) => {
     return get().joinedRoomIds.has(roomId);
   },
+
+  getActiveRoom: () => {
+    const state = get();
+    if (state.openRoomIds.length === 0) return null;
+    const roomId = state.openRoomIds[state.activeIndex];
+    return state.openRoomsById[roomId] || null;
+  },
+
+  getActiveRoomId: () => {
+    const state = get();
+    if (state.openRoomIds.length === 0) return null;
+    return state.openRoomIds[state.activeIndex] || null;
+  },
 }));
 
-export const useRoomTabsData = () => useRoomTabsStore(
-  useShallow((state) => ({
-    openRoomIds: state.openRoomIds,
-    openRoomsById: state.openRoomsById,
-    activeRoomId: state.activeRoomId,
-  }))
-);
-
-export const useRoomTabsActions = () => useRoomTabsStore(
-  useShallow((state) => ({
-    setActiveRoom: state.setActiveRoom,
-    openRoom: state.openRoom,
-    closeRoom: state.closeRoom,
-  }))
-);
-
-export const useActiveRoomId = () => useRoomTabsStore(state => state.activeRoomId);
+export const useActiveIndex = () => useRoomTabsStore(state => state.activeIndex);
+export const useOpenRoomIds = () => useRoomTabsStore(state => state.openRoomIds);
+export const useOpenRoomsById = () => useRoomTabsStore(state => state.openRoomsById);
 
 export const useActiveRoom = () => {
-  const activeRoomId = useRoomTabsStore(state => state.activeRoomId);
+  const activeIndex = useRoomTabsStore(state => state.activeIndex);
+  const openRoomIds = useRoomTabsStore(state => state.openRoomIds);
   const openRoomsById = useRoomTabsStore(state => state.openRoomsById);
   
-  if (!activeRoomId) return null;
-  return openRoomsById[activeRoomId] || null;
+  if (openRoomIds.length === 0) return null;
+  const roomId = openRoomIds[activeIndex];
+  return openRoomsById[roomId] || null;
+};
+
+export const useActiveRoomId = () => {
+  const activeIndex = useRoomTabsStore(state => state.activeIndex);
+  const openRoomIds = useRoomTabsStore(state => state.openRoomIds);
+  
+  if (openRoomIds.length === 0) return null;
+  return openRoomIds[activeIndex] || null;
+};
+
+export const useOpenRooms = () => {
+  const openRoomIds = useRoomTabsStore(state => state.openRoomIds);
+  const openRoomsById = useRoomTabsStore(state => state.openRoomsById);
+  
+  const rooms: OpenRoom[] = [];
+  for (let i = 0; i < openRoomIds.length; i++) {
+    const room = openRoomsById[openRoomIds[i]];
+    if (room) rooms.push(room);
+  }
+  return rooms;
 };
 
 export const useRoomMessagesData = (roomId: string) => {
-  const messagesByRoom = useRoomTabsStore(state => state.messagesByRoom);
-  return messagesByRoom[roomId];
+  return useRoomTabsStore(state => state.messagesByRoom[roomId] || []);
 };
 
-export const useActiveIndex = () => {
-  const activeRoomId = useRoomTabsStore(state => state.activeRoomId);
+export const useRoomTabsData = () => {
   const openRoomIds = useRoomTabsStore(state => state.openRoomIds);
+  const openRoomsById = useRoomTabsStore(state => state.openRoomsById);
+  const activeIndex = useRoomTabsStore(state => state.activeIndex);
   
-  if (!activeRoomId || openRoomIds.length === 0) return 0;
-  const index = openRoomIds.indexOf(activeRoomId);
-  return Math.max(0, index);
+  return { openRoomIds, openRoomsById, activeIndex };
 };

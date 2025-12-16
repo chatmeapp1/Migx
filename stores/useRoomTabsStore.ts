@@ -242,12 +242,8 @@ export const useRoomTabsActions = () => useRoomTabsStore(
 export const useActiveRoomId = () => useRoomTabsStore(state => state.activeRoomId);
 
 export const useActiveRoom = () => {
-  const { activeRoomId, openRoomsById } = useRoomTabsStore(
-    useShallow((state) => ({
-      activeRoomId: state.activeRoomId,
-      openRoomsById: state.openRoomsById,
-    }))
-  );
+  const activeRoomId = useRoomTabsStore(state => state.activeRoomId);
+  const openRoomsById = useRoomTabsStore(state => state.openRoomsById);
   
   if (!activeRoomId) return null;
   return openRoomsById[activeRoomId] || null;
@@ -259,12 +255,8 @@ export const useRoomMessagesData = (roomId: string) => {
 };
 
 export const useActiveIndex = () => {
-  const { activeRoomId, openRoomIds } = useRoomTabsStore(
-    useShallow((state) => ({
-      activeRoomId: state.activeRoomId,
-      openRoomIds: state.openRoomIds,
-    }))
-  );
+  const activeRoomId = useRoomTabsStore(state => state.activeRoomId);
+  const openRoomIds = useRoomTabsStore(state => state.openRoomIds);
   
   if (!activeRoomId || openRoomIds.length === 0) return 0;
   const index = openRoomIds.indexOf(activeRoomId);

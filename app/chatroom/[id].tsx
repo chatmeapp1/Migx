@@ -23,7 +23,7 @@ import { MenuParticipantsModal } from '@/components/chatroom/MenuParticipantsMod
 import { RoomInfoModal } from '@/components/chatroom/RoomInfoModal';
 import { VoteKickButton } from '@/components/chatroom/VoteKickButton';
 import { ChatRoomMenu } from '@/components/chatroom/ChatRoomMenu';
-import { useRoomTabsStore, useRoomTabsData, useActiveRoom } from '@/stores/useRoomTabsStore';
+import { useRoomTabsStore, useRoomTabsData, useActiveRoom, useActiveIndex } from '@/stores/useRoomTabsStore';
 import { useShallow } from 'zustand/react/shallow';
 import { useMemo } from 'react';
 
@@ -40,18 +40,13 @@ export default function ChatRoomScreen() {
 
   const { openRoomIds, openRoomsById, activeRoomId: storeActiveRoomId } = useRoomTabsData();
   const activeRoom = useActiveRoom();
+  const activeIndex = useActiveIndex();
   
   const openRooms = useMemo(() => {
     return openRoomIds
       .map(id => openRoomsById[id])
       .filter(Boolean);
   }, [openRoomIds, openRoomsById]);
-  
-  const activeIndex = useMemo(() => {
-    if (!storeActiveRoomId || openRoomIds.length === 0) return 0;
-    const index = openRoomIds.indexOf(storeActiveRoomId);
-    return Math.max(0, index);
-  }, [storeActiveRoomId, openRoomIds]);
   const socket = useRoomTabsStore(state => state.socket);
   const currentUsername = useRoomTabsStore(state => state.currentUsername);
   const currentUserId = useRoomTabsStore(state => state.currentUserId);

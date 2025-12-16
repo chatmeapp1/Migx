@@ -39,9 +39,12 @@ export function ChatRoomTabs({
     return null;
   }
   
+  const pagerKey = openRooms.map(r => r.roomId).join('-');
+  
   return (
     <View style={styles.container}>
       <PagerView
+        key={pagerKey}
         ref={pagerRef}
         style={styles.pager}
         initialPage={activeIndex}

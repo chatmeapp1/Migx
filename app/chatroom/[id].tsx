@@ -282,7 +282,7 @@ export default function ChatRoomScreen() {
         { text: 'Leave', style: 'destructive', onPress: handleLeaveRoom },
       ]);
     }
-  }, [handleOpenRoomInfo, currentUsername, currentActiveRoomId]);
+  }, [handleOpenRoomInfo, currentUsername, currentActiveRoomId, handleLeaveRoom]);
 
   const handleOpenParticipants = () => setParticipantsModalVisible(!participantsModalVisible);
 
@@ -294,27 +294,33 @@ export default function ChatRoomScreen() {
     if (action === 'kick') setKickModalVisible(true);
   };
 
-  const handleLeaveRoom = useCallback(async () => {
-    if (socket && currentActiveRoomId) {
+  const handleLeaveRoom = useCallback(() => {
+    setMenuVisible(false);
+    
+    const roomToLeave = currentActiveRoomId;
+    if (!roomToLeave) return;
+    
+    const currentOpenRoomIds = useRoomTabsStore.getState().openRoomIds;
+    const remainingCount = currentOpenRoomIds.length - 1;
+    
+    if (socket) {
+      console.log('🚪 Leaving room:', roomToLeave);
       socket.emit('leave_room', { 
-        roomId: currentActiveRoomId, 
+        roomId: roomToLeave, 
         username: currentUsername, 
         userId: currentUserId 
       });
     }
     
-    if (currentActiveRoomId) {
-      markRoomLeft(currentActiveRoomId);
-      closeRoom(currentActiveRoomId);
-    }
+    markRoomLeft(roomToLeave);
+    closeRoom(roomToLeave);
     
-    const remainingRooms = openRooms.filter(r => r.roomId !== currentActiveRoomId);
-    
-    if (remainingRooms.length === 0) {
+    if (remainingCount === 0) {
+      console.log('🚪 Last tab closed - navigating to room menu');
       clearAllRooms();
       router.replace('/(tabs)/room');
     }
-  }, [socket, currentActiveRoomId, currentUsername, currentUserId, openRooms, closeRoom, clearAllRooms, markRoomLeft, router]);
+  }, [socket, currentActiveRoomId, currentUsername, currentUserId, closeRoom, clearAllRooms, markRoomLeft, router]);
 
   const handleHeaderBack = useCallback(() => {
     router.back();

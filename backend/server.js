@@ -232,6 +232,7 @@ app.get('/api', (req, res) => {
 });
 
 const chatRoutes = require('./api/chat.route');
+const chatroomRoutes = require('./api/chatroom.route');
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -240,6 +241,7 @@ app.use('/api/profile', profileRouter);
 app.use('/api/viewprofile', viewProfileRouter);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/rooms', roomInfoRoutes);
+app.use('/api/chatroom', chatroomRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/credit', creditRoutes);
 app.use('/api/merchant', merchantRoutes);

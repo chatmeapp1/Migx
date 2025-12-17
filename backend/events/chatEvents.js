@@ -4,6 +4,7 @@ const { generateMessageId } = require('../utils/idGenerator');
 const { addXp, XP_REWARDS } = require('../utils/xpLeveling');
 const { MIG33_CMD } = require('../utils/cmdMapping');
 const claimService = require('../services/claimService');
+const voucherService = require('../services/voucherService');
 
 module.exports = (io, socket) => {
   const sendMessage = async (data) => {
@@ -117,15 +118,15 @@ module.exports = (io, socket) => {
           return;
         }
 
-        // Handle /c <code> command for Free Credit Claim
+        // Handle /c <code> command for Free Credit Claim (Voucher)
         if (cmdKey === 'c') {
           const code = parts[1] || null;
           
-          if (!code || !/^\d{6}$/.test(code)) {
+          if (!code || !/^\d{6,7}$/.test(code)) {
             socket.emit('chat:message', {
               id: generateMessageId(),
               roomId,
-              message: '❌ Invalid code format. Use: /c <6-digit-code>',
+              message: '❌ Invalid code format. Use: /c <code>',
               messageType: 'cmdClaim',
               type: 'notice',
               timestamp: new Date().toISOString()
@@ -133,7 +134,7 @@ module.exports = (io, socket) => {
             return;
           }
           
-          const result = await claimService.processClaim(userId, code);
+          const result = await voucherService.claimVoucher(userId, code);
           
           if (result.success) {
             socket.emit('chat:message', {
@@ -153,6 +154,24 @@ module.exports = (io, socket) => {
               id: generateMessageId(),
               roomId,
               message: `⏳ Please wait ${result.remainingMinutes} minutes before next claim.`,
+              messageType: 'cmdClaim',
+              type: 'notice',
+              timestamp: new Date().toISOString()
+            });
+          } else if (result.type === 'already_claimed') {
+            socket.emit('chat:message', {
+              id: generateMessageId(),
+              roomId,
+              message: '❌ You already claimed this voucher.',
+              messageType: 'cmdClaim',
+              type: 'notice',
+              timestamp: new Date().toISOString()
+            });
+          } else if (result.type === 'expired') {
+            socket.emit('chat:message', {
+              id: generateMessageId(),
+              roomId,
+              message: '❌ No active voucher or voucher has expired.',
               messageType: 'cmdClaim',
               type: 'notice',
               timestamp: new Date().toISOString()

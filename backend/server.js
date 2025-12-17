@@ -31,6 +31,7 @@ const merchantEvents = require('./events/merchantEvents');
 const gameEvents = require('./events/gameEvents');
 const notificationEvents = require('./events/notificationEvents');
 const chatListEvents = require('./events/chatListEvents');
+const voucherService = require('./services/voucherService');
 
 const app = express();
 const server = http.createServer(app);
@@ -448,6 +449,8 @@ const startServer = async () => {
 
     server.listen(PORT, '0.0.0.0', () => {
       console.log(`Server running on 0.0.0.0:${PORT}`);
+      
+      voucherService.startVoucherGenerator(io);
       console.log(`
 ╔═══════════════════════════════════════════════════════╗
 ║           MIG33 Clone Backend Server                  ║

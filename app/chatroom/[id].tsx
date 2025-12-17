@@ -241,6 +241,39 @@ export default function ChatRoomScreen() {
     setRoomInfoData(null);
   }, []);
 
+  const handleLeaveRoom = useCallback(() => {
+    setMenuVisible(false);
+    
+    const roomToLeave = currentActiveRoomId;
+    if (!roomToLeave) return;
+    
+    const currentOpenRoomIds = useRoomTabsStore.getState().openRoomIds;
+    const remainingCount = currentOpenRoomIds.length - 1;
+    
+    console.log('🚪 [Leave Room] Starting leave process for:', roomToLeave);
+    console.log('🚪 [Leave Room] Current tabs:', currentOpenRoomIds.length, 'Remaining after leave:', remainingCount);
+    
+    if (socket) {
+      console.log('🚪 [Leave Room] Emitting leave_room socket event');
+      socket.emit('leave_room', { 
+        roomId: roomToLeave, 
+        username: currentUsername, 
+        userId: currentUserId 
+      });
+    }
+    
+    markRoomLeft(roomToLeave);
+    closeRoom(roomToLeave);
+    
+    console.log('🚪 [Leave Room] Tab closed, remaining tabs:', remainingCount);
+    
+    if (remainingCount === 0) {
+      console.log('🚪 [Leave Room] Last tab closed - navigating to room menu');
+      clearAllRooms();
+      router.replace('/(tabs)/room');
+    }
+  }, [socket, currentActiveRoomId, currentUsername, currentUserId, closeRoom, clearAllRooms, markRoomLeft, router]);
+
   const handleMenuAction = useCallback((action: string) => {
     const trimmedAction = action?.trim?.() || action;
     
@@ -294,34 +327,6 @@ export default function ChatRoomScreen() {
   const handleMenuItemPress = (action: string) => {
     if (action === 'kick') setKickModalVisible(true);
   };
-
-  const handleLeaveRoom = useCallback(() => {
-    setMenuVisible(false);
-    
-    const roomToLeave = currentActiveRoomId;
-    if (!roomToLeave) return;
-    
-    const currentOpenRoomIds = useRoomTabsStore.getState().openRoomIds;
-    const remainingCount = currentOpenRoomIds.length - 1;
-    
-    if (socket) {
-      console.log('🚪 Leaving room:', roomToLeave);
-      socket.emit('leave_room', { 
-        roomId: roomToLeave, 
-        username: currentUsername, 
-        userId: currentUserId 
-      });
-    }
-    
-    markRoomLeft(roomToLeave);
-    closeRoom(roomToLeave);
-    
-    if (remainingCount === 0) {
-      console.log('🚪 Last tab closed - navigating to room menu');
-      clearAllRooms();
-      router.replace('/(tabs)/room');
-    }
-  }, [socket, currentActiveRoomId, currentUsername, currentUserId, closeRoom, clearAllRooms, markRoomLeft, router]);
 
   const handleHeaderBack = useCallback(() => {
     router.back();

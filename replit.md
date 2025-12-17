@@ -39,6 +39,8 @@ The backend is organized into services for users, rooms, messages, bans, credits
 ### Database Schema
 The PostgreSQL database includes tables for `users`, `rooms`, `messages`, `private_messages`, `credit_logs`, `merchants`, `merchant_spend_logs`, `user_levels`, `room_bans`, and `game_history`.
 
+The `rooms` table includes a `category` column with values: 'general' (default), 'official', and 'game'.
+
 ### Redis Usage
 Redis is utilized for managing online user presence in rooms, banned user lists, flood control, global rate limiting, caching merchant income, and mapping user IDs to socket connections.
 
@@ -50,6 +52,10 @@ Key API endpoints include:
 - `/api/auth/login` - User authentication
 - `/api/users/:id` - User data
 - `/api/rooms` - Room listing, details, favorites, recent (READ operations)
+- `/api/rooms/official` - Get official rooms (category='official')
+- `/api/rooms/game` - Get game rooms (category='game')
+- `/api/rooms/recent/:username` - Get user's recent rooms
+- `/api/rooms/favorites/:username` - Get user's favorite rooms
 - `/api/chatroom/:roomId/join` - Join chatroom (lifecycle)
 - `/api/chatroom/:roomId/leave` - Leave chatroom (lifecycle)
 - `/api/chatroom/:roomId/participants` - Get room participants

@@ -10,7 +10,7 @@ interface EmojiPickerProps {
   bottomOffset?: number;
 }
 
-const PICKER_HEIGHT = 260;
+const PICKER_HEIGHT = 400;
 const INPUT_HEIGHT = 55;
 
 export function EmojiPicker({ visible, onClose, onEmojiSelect, bottomOffset = 0 }: EmojiPickerProps) {

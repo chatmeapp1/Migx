@@ -92,6 +92,11 @@ export const ChatRoomInput = forwardRef<ChatRoomInputRef, ChatRoomInputProps>(({
   }));
 
   useEffect(() => {
+    if (emojiPickerVisible) {
+      keyboardOffset.setValue(0);
+      return;
+    }
+
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
@@ -118,7 +123,7 @@ export const ChatRoomInput = forwardRef<ChatRoomInputRef, ChatRoomInputProps>(({
       showSub.remove();
       hideSub.remove();
     };
-  }, [keyboardOffset]);
+  }, [keyboardOffset, emojiPickerVisible]);
 
   useEffect(() => {
     Animated.timing(emojiOffset, {

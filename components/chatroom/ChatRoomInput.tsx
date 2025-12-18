@@ -161,6 +161,10 @@ export const ChatRoomInput = forwardRef<ChatRoomInputRef, ChatRoomInputProps>(({
     if (!message.trim()) return;
     onSend(message.trim());
     setMessage('');
+    Keyboard.dismiss();
+    if (emojiPickerVisible && onEmojiPress) {
+      onEmojiPress();
+    }
   };
 
   const handleSelectCmd = (cmdKey: string, requiresTarget: boolean) => {

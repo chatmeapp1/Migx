@@ -451,15 +451,22 @@ export default function SignupScreen() {
                 </Picker>
               </View>
 
-              <TouchableOpacity
-                style={[styles.signupButton, loading && styles.buttonDisabled]}
-                onPress={handleSignup}
-                disabled={loading}
+              <LinearGradient
+                colors={['#1B5E20', '#0D3B1F']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[styles.signupButtonGradient, loading && styles.buttonDisabled]}
               >
-                <Text style={styles.signupButtonText}>
-                  {loading ? 'Creating Account...' : 'Create Account'}
-                </Text>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.signupButton}
+                  onPress={handleSignup}
+                  disabled={loading}
+                >
+                  <Text style={styles.signupButtonText}>
+                    {loading ? 'Creating Account...' : 'Create Account'}
+                  </Text>
+                </TouchableOpacity>
+              </LinearGradient>
 
               <TouchableOpacity
                 style={styles.loginLink}
@@ -551,14 +558,16 @@ const styles = StyleSheet.create({
     borderRadius: 0,
   },
   picker: { color: '#333', borderRadius: 0 },
-  signupButton: {
-    backgroundColor: '#06B6D4',
+  signupButtonGradient: {
     borderRadius: 25,
+    overflow: 'hidden',
+    marginTop: 20,
+    marginBottom: 16,
+  },
+  signupButton: {
     paddingVertical: 14,
     paddingHorizontal: 32,
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 16,
   },
   buttonDisabled: { opacity: 0.7 },
   signupButtonText: {

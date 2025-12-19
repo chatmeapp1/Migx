@@ -3,6 +3,7 @@ const { getRedisClient } = require('../redis');
 async function checkJoinAllowed(username, roomId, userId) {
   const redis = getRedisClient();
 
+  // Check if USER is globally banned
   const globalBanKey = `ban:global:${username}`;
   const isGlobalBanned = await redis.get(globalBanKey);
   if (isGlobalBanned === 'true') {
@@ -11,6 +12,19 @@ async function checkJoinAllowed(username, roomId, userId) {
       reason: 'You are globally banned from all rooms.',
       type: 'globalBan'
     };
+  }
+
+  // Check if ADMIN is globally banned due to excessive kicking
+  if (userId) {
+    const adminGlobalBanKey = `admin:global:banned:${userId}`;
+    const isAdminBanned = await redis.get(adminGlobalBanKey);
+    if (isAdminBanned === 'true') {
+      return {
+        allowed: false,
+        reason: 'You are banned from all rooms due to excessive kicking.',
+        type: 'adminGlobalBan'
+      };
+    }
   }
 
   // Check if user was kicked (admin kick cooldown)

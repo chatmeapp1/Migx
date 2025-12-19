@@ -18,7 +18,7 @@ const {
   isUserInRoom,
   addSystemMessage
 } = require('../utils/redisPresence');
-const { adminKick: executeAdminKick, isGloballyBanned } = require('../utils/adminKick');
+const { adminKick: executeAdminKick, isGloballyBanned, isAdminGloballyBanned } = require('../utils/adminKick');
 const { startVoteKick, addVote, hasActiveVote } = require('../utils/voteKick');
 const { checkJoinAllowed } = require('../utils/roomCooldown');
 
@@ -628,16 +628,37 @@ module.exports = (io, socket) => {
         }
 
         // Send SYSTEM message to other users in room
+        const systemMsg = result.adminBanned 
+          ? `${targetUsername} has been kicked by administrator ${kickerUsername} (Admin banned for excessive kicking)`
+          : `${targetUsername} has been kicked by administrator ${kickerUsername}`;
+
         io.to(`room:${roomId}`).emit('chat:message', {
           id: `kick-system-${Date.now()}`,
           roomId,
           username: room.name,
-          message: `${targetUsername} has been kicked by administrator ${kickerUsername}`,
+          message: systemMsg,
           timestamp: new Date().toISOString(),
           type: 'system',
           messageType: 'kick',
           isSystem: true
         });
+
+        // If admin was banned, send message to admin
+        if (result.adminBanned) {
+          const adminSockets = await io.in(`user:${kickerUsername}`).fetchSockets();
+          for (const adminSocket of adminSockets) {
+            adminSocket.emit('chat:message', {
+              id: `ban-admin-${Date.now()}`,
+              roomId,
+              username: 'System',
+              message: `You are banned from all rooms due to excessive kicking (${result.adminKickCount} kicks).`,
+              timestamp: new Date().toISOString(),
+              type: 'system',
+              messageType: 'ban',
+              isSystem: true
+            });
+          }
+        }
 
         // Remove from presence
         await removeUserFromRoom(roomId, targetUsername);

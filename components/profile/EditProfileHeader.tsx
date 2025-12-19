@@ -82,7 +82,7 @@ export function EditProfileHeader({
         {backgroundImage ? (
           <Image source={{ uri: backgroundImage }} style={styles.backgroundImage} />
         ) : (
-          <View style={[styles.backgroundPlaceholder, { backgroundColor: theme.primary }]} />
+          <View style={[styles.backgroundPlaceholder, { backgroundColor: '#1B5E20' }]} />
         )}
         
         {/* Background Camera Icon */}

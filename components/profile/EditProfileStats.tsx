@@ -170,7 +170,7 @@ export function EditProfileStats({
   }
 
   return (
-    <View style={styles.wrapper}>
+    <View style={[styles.wrapper, { backgroundColor: theme.background }]}>
       {/* First Row: Follow, Stats, Chat */}
       <View style={[styles.topRow, { backgroundColor: theme.card }]}>
         {/* Follow Button */}
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    backgroundColor: 'rgba(0, 0, 0, 0.08)',
   },
   menuRow: {
     flexDirection: 'row',

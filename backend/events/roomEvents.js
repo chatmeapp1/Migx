@@ -598,19 +598,46 @@ module.exports = (io, socket) => {
         // Admin kick - immediate, no vote needed
         const result = await executeAdminKick(io, roomId, kickerUsername, targetUsername);
 
-        // Find target socket and force leave
+        // Send PRIVATE message to kicked user
         const roomSockets = await io.in(`room:${roomId}`).fetchSockets();
         for (const targetSocket of roomSockets) {
           if (targetSocket.username === targetUsername || targetSocket.handshake?.auth?.username === targetUsername) {
-            targetSocket.leave(`room:${roomId}`);
-            targetSocket.emit('room:kicked', {
+            // Private message to kicked user
+            targetSocket.emit('chat:message', {
+              id: `kick-private-${Date.now()}`,
               roomId,
-              reason: 'You have been kicked by admin.',
-              type: 'adminKick',
-              isGlobalBanned: result.isGlobalBanned
+              username: room.name,
+              message: `You have been kicked by administrator ${kickerUsername}`,
+              timestamp: new Date().toISOString(),
+              type: 'system',
+              messageType: 'kick',
+              isPrivate: true
             });
+
+            // Force leave after showing message
+            setTimeout(() => {
+              targetSocket.leave(`room:${roomId}`);
+              targetSocket.emit('room:kicked', {
+                roomId,
+                reason: `You have been kicked by administrator ${kickerUsername}`,
+                type: 'adminKick',
+                isGlobalBanned: result.isGlobalBanned
+              });
+            }, 500);
           }
         }
+
+        // Send SYSTEM message to other users in room
+        io.to(`room:${roomId}`).emit('chat:message', {
+          id: `kick-system-${Date.now()}`,
+          roomId,
+          username: room.name,
+          message: `${targetUsername} has been kicked by administrator ${kickerUsername}`,
+          timestamp: new Date().toISOString(),
+          type: 'system',
+          messageType: 'kick',
+          isSystem: true
+        });
 
         // Remove from presence
         await removeUserFromRoom(roomId, targetUsername);

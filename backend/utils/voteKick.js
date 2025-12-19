@@ -148,11 +148,37 @@ async function executeVoteKick(io, roomId, targetUsername) {
 
   await redis.set(cooldownKey, '1', { EX: VOTE_KICK_COOLDOWN });
 
-  io.to(`room:${roomId}`).emit('system:message', {
+  // Get room info for room name
+  const roomService = require('../services/roomService');
+  const room = await roomService.getRoomById(roomId);
+
+  // Send private message to kicked user
+  const allSockets = await io.in(`room:${roomId}`).fetchSockets();
+  for (const targetSocket of allSockets) {
+    if (targetSocket.username === targetUsername || targetSocket.handshake?.auth?.username === targetUsername) {
+      targetSocket.emit('chat:message', {
+        id: `kick-private-votekick-${Date.now()}`,
+        roomId,
+        username: room?.name || 'System',
+        message: `You have been vote-kicked from the room`,
+        timestamp: new Date().toISOString(),
+        type: 'system',
+        messageType: 'kick',
+        isPrivate: true
+      });
+    }
+  }
+
+  // Send system message to room
+  io.to(`room:${roomId}`).emit('chat:message', {
+    id: `kick-system-votekick-${Date.now()}`,
     roomId,
-    message: `${targetUsername} has been kicked.`,
+    username: room?.name || 'System',
+    message: `${targetUsername} has been vote-kicked from the room`,
     timestamp: new Date().toISOString(),
-    type: 'kick'
+    type: 'system',
+    messageType: 'kick',
+    isSystem: true
   });
 
   await redis.del(voteKey);

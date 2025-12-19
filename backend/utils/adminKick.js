@@ -16,23 +16,15 @@ async function adminKick(io, roomId, adminUsername, targetUsername) {
 
   if (kickCount >= MAX_ADMIN_KICKS) {
     await redis.set(globalBanKey, 'true');
-    
-    io.to(`room:${roomId}`).emit('system:message', {
-      roomId,
-      message: `${targetUsername} has been kicked by admin and is now globally banned.`,
-      timestamp: new Date().toISOString(),
-      type: 'kick'
-    });
-  } else {
-    io.to(`room:${roomId}`).emit('system:message', {
-      roomId,
-      message: `${targetUsername} has been kicked by admin.`,
-      timestamp: new Date().toISOString(),
-      type: 'kick'
-    });
   }
 
-  return { success: true, kickCount, isGlobalBanned: kickCount >= MAX_ADMIN_KICKS };
+  return { 
+    success: true, 
+    kickCount, 
+    isGlobalBanned: kickCount >= MAX_ADMIN_KICKS,
+    adminUsername,
+    targetUsername
+  };
 }
 
 async function isGloballyBanned(username) {

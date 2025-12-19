@@ -8,9 +8,11 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  useColorScheme,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import API_BASE_URL from '@/utils/api';
+import { Colors } from '@/constants/Colors';
 
 interface RoomInfoModalProps {
   visible: boolean;
@@ -36,6 +38,9 @@ interface RoomInfo {
 export function RoomInfoModal({ visible, onClose, roomId, info }: RoomInfoModalProps) {
   const [roomInfo, setRoomInfo] = useState<RoomInfo | null>(null);
   const [loading, setLoading] = useState(false);
+  const colorScheme = useColorScheme();
+  const colors = colorScheme === 'dark' ? Colors.dark : Colors.light;
+  const dynamicStyles = getDynamicStyles(colors);
 
   useEffect(() => {
     if (!visible) return;
@@ -82,11 +87,11 @@ export function RoomInfoModal({ visible, onClose, roomId, info }: RoomInfoModalP
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>Room Info</Text>
+        <View style={[styles.container, dynamicStyles.container]}>
+          <View style={[styles.header, dynamicStyles.header]}>
+            <Text style={[styles.headerTitle, dynamicStyles.headerTitle]}>Room Info</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Ionicons name="close" size={24} color="#333" />
+              <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
 
@@ -97,53 +102,53 @@ export function RoomInfoModal({ visible, onClose, roomId, info }: RoomInfoModalP
           ) : roomInfo ? (
             <ScrollView style={styles.content}>
               <View style={styles.infoSection}>
-                <Text style={styles.roomName}>{roomInfo.name}</Text>
-                <Text style={styles.roomCode}>Code: {roomInfo.roomCode}</Text>
+                <Text style={[styles.roomName, dynamicStyles.roomName]}>{roomInfo.name}</Text>
+                <Text style={[styles.roomCode, dynamicStyles.roomCode]}>Code: {roomInfo.roomCode}</Text>
               </View>
 
-              <View style={styles.divider} />
+              <View style={[styles.divider, dynamicStyles.divider]} />
 
               <View style={styles.infoRow}>
-                <Ionicons name="information-circle-outline" size={20} color="#666" />
+                <Ionicons name="information-circle-outline" size={20} color={colors.icon} />
                 <View style={styles.infoTextContainer}>
-                  <Text style={styles.infoLabel}>Description</Text>
-                  <Text style={styles.infoValue}>{roomInfo.description}</Text>
+                  <Text style={[styles.infoLabel, dynamicStyles.infoLabel]}>Description</Text>
+                  <Text style={[styles.infoValue, dynamicStyles.infoValue]}>{roomInfo.description}</Text>
                 </View>
               </View>
 
               <View style={styles.infoRow}>
-                <Ionicons name="person-outline" size={20} color="#666" />
+                <Ionicons name="person-outline" size={20} color={colors.icon} />
                 <View style={styles.infoTextContainer}>
-                  <Text style={styles.infoLabel}>Owner</Text>
-                  <Text style={styles.infoValue}>{roomInfo.ownerName}</Text>
+                  <Text style={[styles.infoLabel, dynamicStyles.infoLabel]}>Owner</Text>
+                  <Text style={[styles.infoValue, dynamicStyles.infoValue]}>{roomInfo.ownerName}</Text>
                 </View>
               </View>
 
               <View style={styles.infoRow}>
-                <Ionicons name="people-outline" size={20} color="#666" />
+                <Ionicons name="people-outline" size={20} color={colors.icon} />
                 <View style={styles.infoTextContainer}>
-                  <Text style={styles.infoLabel}>Participants</Text>
-                  <Text style={styles.infoValue}>
+                  <Text style={[styles.infoLabel, dynamicStyles.infoLabel]}>Participants</Text>
+                  <Text style={[styles.infoValue, dynamicStyles.infoValue]}>
                     {roomInfo.currentUsers} / {roomInfo.maxUsers}
                   </Text>
                 </View>
               </View>
 
               <View style={styles.infoRow}>
-                <Ionicons name="lock-closed-outline" size={20} color="#666" />
+                <Ionicons name="lock-closed-outline" size={20} color={colors.icon} />
                 <View style={styles.infoTextContainer}>
-                  <Text style={styles.infoLabel}>Privacy</Text>
-                  <Text style={styles.infoValue}>
+                  <Text style={[styles.infoLabel, dynamicStyles.infoLabel]}>Privacy</Text>
+                  <Text style={[styles.infoValue, dynamicStyles.infoValue]}>
                     {roomInfo.isPrivate ? 'Private' : 'Public'}
                   </Text>
                 </View>
               </View>
 
               <View style={styles.infoRow}>
-                <Ionicons name="calendar-outline" size={20} color="#666" />
+                <Ionicons name="calendar-outline" size={20} color={colors.icon} />
                 <View style={styles.infoTextContainer}>
-                  <Text style={styles.infoLabel}>Created</Text>
-                  <Text style={styles.infoValue}>{formatDate(roomInfo.createdAt)}</Text>
+                  <Text style={[styles.infoLabel, dynamicStyles.infoLabel]}>Created</Text>
+                  <Text style={[styles.infoValue, dynamicStyles.infoValue]}>{formatDate(roomInfo.createdAt)}</Text>
                 </View>
               </View>
 
@@ -151,11 +156,11 @@ export function RoomInfoModal({ visible, onClose, roomId, info }: RoomInfoModalP
                 <>
                   <View style={styles.divider} />
                   <View style={styles.participantsSection}>
-                    <Text style={styles.participantsTitle}>Online Users</Text>
+                    <Text style={[styles.participantsTitle, dynamicStyles.participantsTitle]}>Online Users</Text>
                     {roomInfo.participants.map((username, index) => (
                       <View key={index} style={styles.participantItem}>
                         <View style={styles.onlineDot} />
-                        <Text style={styles.participantName}>{username}</Text>
+                        <Text style={[styles.participantName, dynamicStyles.participantName]}>{username}</Text>
                       </View>
                     ))}
                   </View>
@@ -171,6 +176,41 @@ export function RoomInfoModal({ visible, onClose, roomId, info }: RoomInfoModalP
       </View>
     </Modal>
   );
+}
+
+function getDynamicStyles(colors: typeof Colors.light) {
+  return StyleSheet.create({
+    container: {
+      backgroundColor: colors.background,
+    },
+    header: {
+      borderBottomColor: colors === Colors.dark ? '#333' : '#eee',
+    },
+    headerTitle: {
+      color: colors.text,
+    },
+    roomName: {
+      color: colors.tint,
+    },
+    roomCode: {
+      color: colors.icon,
+    },
+    divider: {
+      backgroundColor: colors === Colors.dark ? '#333' : '#eee',
+    },
+    infoLabel: {
+      color: colors.icon,
+    },
+    infoValue: {
+      color: colors.text,
+    },
+    participantsTitle: {
+      color: colors.text,
+    },
+    participantName: {
+      color: colors.text,
+    },
+  });
 }
 
 const styles = StyleSheet.create({

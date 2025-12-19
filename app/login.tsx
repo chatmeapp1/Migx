@@ -10,13 +10,16 @@ import {
   Platform,
   ScrollView,
   Animated,
-  Alert
+  Alert,
+  Dimensions
 } from 'react-native';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { API_ENDPOINTS } from '@/utils/api';
+
+const { height, width } = Dimensions.get('window');
 
 export default function LoginScreen() {
   const fadeAnim = useState(new Animated.Value(0))[0];
@@ -28,6 +31,7 @@ export default function LoginScreen() {
   const [invisible, setInvisible] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(false);
 
   useEffect(() => {
     loadSavedCredentials();
@@ -127,9 +131,27 @@ export default function LoginScreen() {
 
   return (
     <LinearGradient
-      colors={['#082919', '#082919', '#082919']}
+      colors={['#9D4EDD', '#5A189A', '#3A0CA3', '#3F37C9', '#4361EE', '#4CC9F0', '#06FFA5']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
       style={styles.gradient}
     >
+      {/* Decorative Elements */}
+      <View style={styles.decorativeContainer}>
+        {/* Large circles */}
+        <View style={[styles.circle, styles.circleLarge, { top: -100, left: -100 }]} />
+        <View style={[styles.circle, styles.circleSmall, { top: 100, right: -50 }]} />
+        <View style={[styles.circle, styles.circleMedium, { bottom: -80, right: 50 }]} />
+        
+        {/* Dots pattern */}
+        <View style={[styles.dotPattern, { top: '25%', right: '15%' }]} />
+        <View style={[styles.dotPattern, { bottom: '30%', left: '10%' }]} />
+        
+        {/* Plus signs */}
+        <Text style={[styles.plus, { top: '20%', right: '10%' }]}>+</Text>
+        <Text style={[styles.plus, { bottom: '25%', right: '5%' }]}>+</Text>
+      </View>
+
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -139,110 +161,142 @@ export default function LoginScreen() {
           style={{ flex: 1 }}
           contentContainerStyle={[styles.scrollContent, { flexGrow: 1 }]}
           keyboardShouldPersistTaps="handled"
+          scrollEnabled={true}
         >
+          {/* Logo/Brand */}
+          <View style={styles.logoSection}>
+            <Text style={styles.brandText}>miggi</Text>
+          </View>
+
           <Animated.View
             style={[
               styles.content,
               {
-                flex: 1,
                 opacity: fadeAnim,
                 transform: [{ translateY: slideAnim }]
               }
             ]}
           >
-            <Image
-              source={require('@/assets/logo/logo_migx.png')}
-              style={styles.logo}
-              resizeMode="contain"
-            />
+            {/* Card Container */}
+            <View style={styles.card}>
+              <Text style={styles.title}>Login</Text>
 
-            <Text style={styles.title}>Login</Text>
-
-            <View style={styles.form}>
-              <TextInput
-                style={styles.input}
-                placeholder="Username"
-                placeholderTextColor="#666"
-                value={username}
-                onChangeText={(text) => setUsername(text.toLowerCase())}
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-
-              <View style={styles.passwordContainer}>
-                <TextInput
-                  style={styles.passwordInput}
-                  placeholder="Password"
-                  placeholderTextColor="#666"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                />
-                <TouchableOpacity
-                  style={styles.eyeButton}
-                  onPress={() => setShowPassword(!showPassword)}
-                >
-                  <Ionicons
-                    name={showPassword ? 'eye-off' : 'eye'}
-                    size={22}
-                    color="#666"
+              <View style={styles.form}>
+                {/* Username Input */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Username</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="replit"
+                    placeholderTextColor="#999"
+                    value={username}
+                    onChangeText={(text) => setUsername(text.toLowerCase())}
+                    autoCapitalize="none"
+                    autoCorrect={false}
                   />
-                </TouchableOpacity>
-              </View>
+                </View>
 
-              <View style={styles.optionsRow}>
-                <TouchableOpacity
-                  style={styles.checkbox}
-                  onPress={() => setRememberMe(!rememberMe)}
-                >
-                  <View style={[styles.checkboxBox, rememberMe && styles.checkboxChecked]}>
-                    {rememberMe && <Ionicons name="checkmark" size={16} color="#fff" />}
+                {/* Password Input */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Password</Text>
+                  <View style={styles.passwordContainer}>
+                    <TextInput
+                      style={styles.passwordInput}
+                      placeholder="••••••••"
+                      placeholderTextColor="#999"
+                      value={password}
+                      onChangeText={setPassword}
+                      secureTextEntry={!showPassword}
+                    />
+                    <TouchableOpacity
+                      style={styles.eyeButton}
+                      onPress={() => setShowPassword(!showPassword)}
+                    >
+                      <Ionicons
+                        name={showPassword ? 'eye-off' : 'eye'}
+                        size={20}
+                        color="#999"
+                      />
+                    </TouchableOpacity>
                   </View>
-                  <Text style={styles.checkboxLabel}>Remember me</Text>
-                </TouchableOpacity>
+                </View>
 
-                <TouchableOpacity onPress={() => router.push('/forgot-password')}>
-                  <Text style={styles.forgotPassword}>Forgot password?</Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.invisibleRow}>
+                {/* Invisible Checkbox */}
                 <TouchableOpacity
-                  style={styles.checkbox}
+                  style={styles.checkboxRow}
                   onPress={() => setInvisible(!invisible)}
                 >
-                  <View style={[styles.checkboxBox, invisible && styles.checkboxChecked]}>
-                    {invisible && <Ionicons name="checkmark" size={16} color="#fff" />}
+                  <View style={[styles.checkbox, invisible && styles.checkboxChecked]}>
+                    {invisible && <Ionicons name="checkmark" size={14} color="#fff" />}
                   </View>
-                  <Text style={styles.checkboxLabel}>Invisible</Text>
+                  <Text style={styles.checkboxLabel}>Login as Invisible</Text>
+                </TouchableOpacity>
+
+                {/* Remember Me Checkbox */}
+                <TouchableOpacity
+                  style={styles.checkboxRow}
+                  onPress={() => setRememberMe(!rememberMe)}
+                >
+                  <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
+                    {rememberMe && <Ionicons name="checkmark" size={14} color="#fff" />}
+                  </View>
+                  <Text style={styles.checkboxLabel}>Remember Me</Text>
+                </TouchableOpacity>
+
+                {/* Forgot Password Link */}
+                <TouchableOpacity onPress={() => router.push('/forgot-password')}>
+                  <Text style={styles.forgotPassword}>Forgot Password?</Text>
+                </TouchableOpacity>
+
+                {/* Login Button */}
+                <LinearGradient
+                  colors={['#06B6D4', '#0891B2']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={[styles.loginButtonGradient, loading && styles.buttonDisabled]}
+                >
+                  <TouchableOpacity
+                    style={styles.loginButton}
+                    onPress={handleLogin}
+                    disabled={loading}
+                  >
+                    <Text style={styles.loginButtonText}>
+                      {loading ? 'LOGGING IN...' : 'LOGIN'}
+                    </Text>
+                  </TouchableOpacity>
+                </LinearGradient>
+
+                {/* Terms Agreement */}
+                <TouchableOpacity
+                  style={styles.termsCheckboxRow}
+                  onPress={() => setAgreeTerms(!agreeTerms)}
+                >
+                  <View style={[styles.checkbox, agreeTerms && styles.checkboxChecked]}>
+                    {agreeTerms && <Ionicons name="checkmark" size={14} color="#fff" />}
+                  </View>
+                  <Text style={styles.termsText}>
+                    By clicking Login or Register, you agree to our{' '}
+                    <Text style={styles.termsLink}>Terms of Service</Text>
+                    {' '}and{' '}
+                    <Text style={styles.termsLink}>Privacy Policy</Text>
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Sign Up Link */}
+                <TouchableOpacity
+                  onPress={() => router.push('/signup')}
+                >
+                  <Text style={styles.signupText}>Don't have an account? Sign Up</Text>
                 </TouchableOpacity>
               </View>
-
-              <TouchableOpacity
-                style={[styles.loginButton, loading && styles.buttonDisabled]}
-                onPress={handleLogin}
-                disabled={loading}
-              >
-                <Text style={styles.loginButtonText}>
-                  {loading ? 'Logging in...' : 'Log in'}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.signupLink}
-                onPress={() => router.push('/signup')}
-              >
-                <Text style={styles.signupText}>Sign up</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.privacyLink}
-                onPress={() => router.push('/privacy-policy')}
-              >
-                <Text style={styles.privacyText}>Privacy Policy</Text>
-              </TouchableOpacity>
             </View>
           </Animated.View>
+
+          {/* Permission Banner */}
+          <View style={styles.permissionBanner}>
+            <Ionicons name="location" size={18} color="#fff" style={{ marginRight: 8 }} />
+            <Text style={styles.permissionText}>Location permission required.</Text>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </LinearGradient>
@@ -250,110 +304,217 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  gradient: { flex: 1 },
+  gradient: {
+    flex: 1,
+    backgroundColor: '#4CC9F0',
+  },
+  decorativeContainer: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    overflow: 'hidden',
+  },
+  circle: {
+    position: 'absolute',
+    borderRadius: 500,
+    opacity: 0.15,
+  },
+  circleLarge: {
+    width: 300,
+    height: 300,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  circleMedium: {
+    width: 200,
+    height: 200,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  circleSmall: {
+    width: 150,
+    height: 150,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  dotPattern: {
+    position: 'absolute',
+    width: 80,
+    height: 80,
+    opacity: 0.3,
+    backgroundColor: 'transparent',
+  },
+  plus: {
+    position: 'absolute',
+    fontSize: 48,
+    color: 'rgba(255, 255, 255, 0.4)',
+    fontWeight: 'bold',
+  },
   scrollContent: {
     justifyContent: 'center',
-    padding: 20,
-    paddingBottom: 40,
+    paddingHorizontal: 20,
+    paddingVertical: 40,
+  },
+  logoSection: {
+    alignItems: 'center',
+    marginBottom: 20,
+    marginTop: 20,
+  },
+  brandText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#fff',
+    letterSpacing: 2,
   },
   content: {
     alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
   },
-  logo: {
-    width: 120,
-    height: 120,
-    marginBottom: 20,
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 30,
+    padding: 30,
+    width: '100%',
+    maxWidth: 340,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 10,
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
-    fontStyle: 'italic',
-    color: '#2C5F6E',
-    marginBottom: 30,
+    color: '#06B6D4',
+    textAlign: 'center',
+    marginBottom: 24,
   },
   form: {
     width: '100%',
-    maxWidth: 350,
+  },
+  inputGroup: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 6,
   },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 25,
-    padding: 16,
-    marginBottom: 15,
-    fontSize: 16,
+    backgroundColor: '#f5f5f5',
+    borderBottomWidth: 2,
+    borderBottomColor: '#ccc',
+    padding: 12,
+    fontSize: 14,
     color: '#333',
-    elevation: 3,
+    borderRadius: 0,
   },
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 25,
-    marginBottom: 15,
-    elevation: 3,
+    backgroundColor: '#f5f5f5',
+    borderBottomWidth: 2,
+    borderBottomColor: '#ccc',
   },
   passwordInput: {
     flex: 1,
-    padding: 16,
-    fontSize: 16,
+    padding: 12,
+    fontSize: 14,
     color: '#333',
   },
-  eyeButton: { padding: 16 },
-  optionsRow: {
+  eyeButton: {
+    padding: 10,
+  },
+  checkboxRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
+    alignItems: 'center',
+    marginBottom: 12,
   },
-  invisibleRow: {
-    marginBottom: 20,
+  termsCheckboxRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 16,
   },
-  checkbox: { flexDirection: 'row', alignItems: 'center' },
-  checkboxBox: {
-    width: 22,
-    height: 22,
+  checkbox: {
+    width: 20,
+    height: 20,
     borderRadius: 4,
     borderWidth: 2,
-    borderColor: '#3B98B8',
-    marginRight: 8,
+    borderColor: '#06B6D4',
+    marginRight: 10,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#fff',
   },
   checkboxChecked: {
-    backgroundColor: '#3B98B8',
-    borderColor: '#3B98B8',
+    backgroundColor: '#06B6D4',
+    borderColor: '#06B6D4',
   },
   checkboxLabel: {
-    color: '#2C5F6E',
+    color: '#06B6D4',
     fontSize: 14,
+    fontWeight: '500',
+  },
+  termsText: {
+    color: '#666',
+    fontSize: 12,
+    lineHeight: 18,
+    flex: 1,
+    marginLeft: 4,
+  },
+  termsLink: {
+    color: '#06B6D4',
+    fontWeight: '600',
   },
   forgotPassword: {
-    color: '#3B98B8',
-    fontSize: 14,
+    color: '#06B6D4',
+    fontSize: 13,
+    fontWeight: '500',
+    textAlign: 'right',
+    marginBottom: 20,
+    marginTop: -8,
+  },
+  loginButtonGradient: {
+    borderRadius: 25,
+    overflow: 'hidden',
+    marginBottom: 16,
   },
   loginButton: {
-    backgroundColor: '#4BA3C3',
-    borderRadius: 25,
-    padding: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 32,
     alignItems: 'center',
-    marginBottom: 20,
-    elevation: 5,
+    justifyContent: 'center',
   },
-  buttonDisabled: { opacity: 0.6 },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
   loginButtonText: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  signupLink: { alignItems: 'center', marginBottom: 15 },
-  signupText: {
-    color: '#2C5F6E',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
+    letterSpacing: 1,
   },
-  privacyLink: { alignItems: 'center' },
-  privacyText: {
-    color: '#2C5F6E',
+  signupText: {
+    color: '#06B6D4',
     fontSize: 14,
     fontWeight: '600',
+    textAlign: 'center',
+  },
+  permissionBanner: {
+    backgroundColor: '#333',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginHorizontal: 20,
+    marginBottom: 20,
+  },
+  permissionText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });

@@ -7,6 +7,11 @@ const VOTE_UPDATE_INTERVALS = [60, 40, 20, 0];
 const activeVotes = new Map();
 
 function getVotesNeeded(roomUserCount) {
+  // If 10 or more users: need 10 votes
+  // Otherwise: need majority (ceil(online / 2))
+  if (roomUserCount >= 10) {
+    return 10;
+  }
   return Math.ceil(roomUserCount / 2);
 }
 
@@ -33,11 +38,19 @@ async function startVoteKick(io, roomId, starterUsername, targetUsername, roomUs
   await redis.sAdd(votesKey, starterUsername);
   await redis.expire(votesKey, VOTE_KICK_DURATION);
 
-  io.to(`room:${roomId}`).emit('system:message', {
+  // Get room info for proper formatting
+  const roomService = require('../services/roomService');
+  const room = await roomService.getRoomById(roomId);
+
+  io.to(`room:${roomId}`).emit('chat:message', {
+    id: `votekick-start-${Date.now()}`,
     roomId,
+    username: room?.name || 'System',
     message: `A vote to kick ${targetUsername} has been started by ${starterUsername}, ${votesNeeded - 1} more votes needed. ${VOTE_KICK_DURATION}s remaining.`,
     timestamp: new Date().toISOString(),
-    type: 'voteKick'
+    type: 'system',
+    messageType: 'voteKick',
+    isSystem: true
   });
 
   const voteId = `${roomId}:${targetUsername}`;
@@ -58,11 +71,18 @@ async function startVoteKick(io, roomId, starterUsername, targetUsername, roomUs
     const currentVotes = await redis.sCard(votesKey);
     const neededMore = votesNeeded - currentVotes;
 
-    io.to(`room:${roomId}`).emit('system:message', {
+    const roomService = require('../services/roomService');
+    const room = await roomService.getRoomById(roomId);
+
+    io.to(`room:${roomId}`).emit('chat:message', {
+      id: `votekick-update-${Date.now()}`,
       roomId,
+      username: room?.name || 'System',
       message: `Vote to kick ${targetUsername}: ${currentVotes} vote${currentVotes > 1 ? 's' : ''}, ${neededMore > 0 ? neededMore + ' more needed' : 'enough votes'}. ${remainingTime}s remaining.`,
       timestamp: new Date().toISOString(),
-      type: 'voteKick'
+      type: 'system',
+      messageType: 'voteKick',
+      isSystem: true
     });
 
     intervalIndex++;
@@ -102,11 +122,18 @@ async function addVote(io, roomId, voterUsername, targetUsername) {
 
   const ttl = await redis.ttl(voteKey);
 
-  io.to(`room:${roomId}`).emit('system:message', {
+  const roomService = require('../services/roomService');
+  const room = await roomService.getRoomById(roomId);
+
+  io.to(`room:${roomId}`).emit('chat:message', {
+    id: `votekick-vote-${Date.now()}`,
     roomId,
+    username: room?.name || 'System',
     message: `Vote to kick ${targetUsername}: ${currentVotes} vote${currentVotes > 1 ? 's' : ''}, ${neededMore > 0 ? neededMore + ' more needed' : 'enough votes'}. ${ttl}s remaining.`,
     timestamp: new Date().toISOString(),
-    type: 'voteKick'
+    type: 'system',
+    messageType: 'voteKick',
+    isSystem: true
   });
 
   if (currentVotes >= votesNeeded) {
@@ -127,11 +154,18 @@ async function finalizeVote(io, roomId, targetUsername, votesNeeded) {
   if (currentVotes >= votesNeeded) {
     await executeVoteKick(io, roomId, targetUsername);
   } else {
-    io.to(`room:${roomId}`).emit('system:message', {
+    const roomService = require('../services/roomService');
+    const room = await roomService.getRoomById(roomId);
+
+    io.to(`room:${roomId}`).emit('chat:message', {
+      id: `votekick-failed-${Date.now()}`,
       roomId,
+      username: room?.name || 'System',
       message: `Failed to kick ${targetUsername}`,
       timestamp: new Date().toISOString(),
-      type: 'voteKick'
+      type: 'system',
+      messageType: 'voteKick',
+      isSystem: true
     });
   }
 

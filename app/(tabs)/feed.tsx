@@ -24,6 +24,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import {
   PlusCircleIcon,
   CameraIcon,
+  VideoIcon,
   SendIcon,
   LikeIcon,
   CommentIcon,
@@ -70,6 +71,7 @@ export default function FeedScreen() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [postContent, setPostContent] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [posting, setPosting] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
@@ -156,12 +158,32 @@ export default function FeedScreen() {
 
     if (!result.canceled) {
       setSelectedImage(result.assets[0].uri);
+      setSelectedVideo(null);
+    }
+  };
+
+  const pickVideo = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Please allow access to your videos');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+      allowsEditing: false,
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setSelectedVideo(result.assets[0].uri);
+      setSelectedImage(null);
     }
   };
 
   const handleCreatePost = async () => {
-    if (!postContent.trim() && !selectedImage) {
-      Alert.alert('Error', 'Please add some content or image');
+    if (!postContent.trim() && !selectedImage && !selectedVideo) {
+      Alert.alert('Error', 'Please add some content, image, or video');
       return;
     }
 
@@ -185,6 +207,18 @@ export default function FeedScreen() {
         } as any);
       }
 
+      if (selectedVideo) {
+        const filename = selectedVideo.split('/').pop() || 'video.mp4';
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `video/${match[1]}` : 'video/mp4';
+
+        formData.append('video', {
+          uri: selectedVideo,
+          name: filename,
+          type,
+        } as any);
+      }
+
       const response = await fetch(API_ENDPOINTS.FEED.CREATE, {
         method: 'POST',
         headers: {
@@ -198,6 +232,7 @@ export default function FeedScreen() {
         setShowCreateModal(false);
         setPostContent('');
         setSelectedImage(null);
+        setSelectedVideo(null);
         fetchPosts(1, true);
       } else {
         Alert.alert('Error', data.error || 'Failed to create post');
@@ -461,9 +496,28 @@ export default function FeedScreen() {
                   </View>
                 )}
 
+                {selectedVideo && (
+                  <View style={styles.videoPreview}>
+                    <View style={styles.videoPlaceholder}>
+                      <VideoIcon color="#1B5E20" size={40} />
+                      <Text style={styles.videoFileName}>{selectedVideo.split('/').pop()}</Text>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.removeImageButton}
+                      onPress={() => setSelectedVideo(null)}
+                    >
+                      <CloseIcon color="#FFF" size={16} />
+                    </TouchableOpacity>
+                  </View>
+                )}
+
                 <View style={styles.modalActions}>
                   <TouchableOpacity style={styles.iconButton} onPress={pickImage}>
                     <CameraIcon color={theme.primary} size={28} />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity style={styles.iconButton} onPress={pickVideo}>
+                    <VideoIcon color={theme.primary} size={28} />
                   </TouchableOpacity>
 
                   <TouchableOpacity onPress={handleCreatePost} disabled={posting}>
@@ -700,6 +754,25 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     padding: 10,
+  },
+  videoPreview: {
+    position: 'relative',
+    marginBottom: 15,
+  },
+  videoPlaceholder: {
+    width: '100%',
+    height: 150,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'column',
+  },
+  videoFileName: {
+    marginTop: 8,
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
   },
   sendButton: {
     paddingHorizontal: 30,

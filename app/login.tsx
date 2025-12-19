@@ -131,7 +131,7 @@ export default function LoginScreen() {
 
   return (
     <LinearGradient
-      colors={['#9D4EDD', '#5A189A', '#3A0CA3', '#3F37C9', '#4361EE', '#4CC9F0', '#06FFA5']}
+      colors={['#072909', '#0D3B1F', '#072909']}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={styles.gradient}
@@ -166,7 +166,7 @@ export default function LoginScreen() {
           {/* Logo/Brand */}
           <View style={styles.logoSection}>
             <Image
-              source={require('@/assets/logo/logo_migx.png')}
+              source={require('@/assets/logo/ic_migx.png')}
               style={styles.logoImage}
               resizeMode="contain"
             />

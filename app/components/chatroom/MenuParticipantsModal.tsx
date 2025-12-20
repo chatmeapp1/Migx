@@ -48,26 +48,40 @@ export function MenuParticipantsModal({
   const loadParticipants = async () => {
     try {
       setLoading(true);
+      console.log(`📍 Loading participants for room: ${roomId}`);
       const response = await fetch(`${API_BASE_URL}/api/rooms/${roomId}/participants`);
       const data = await response.json();
       if (data.success && data.participants) {
+        console.log(`✅ Loaded ${data.participants.length} participants`);
         setParticipants(data.participants);
+      } else {
+        console.warn('⚠️ No participants returned:', data);
       }
     } catch (error) {
-      console.error('Error loading participants:', error);
+      console.error('❌ Error loading participants:', error);
     } finally {
       setLoading(false);
     }
   };
 
   const handleViewProfile = (userId: string, username: string) => {
+    console.log(`📱 Navigating to profile: userId=${userId}, username=${username}`);
     setUserMenuVisible(false);
     setSelectedUser(null);
     onClose();
-    router.push(`/view-profile?userId=${userId}`);
+    
+    // Use setTimeout to ensure modals are closed before navigation
+    setTimeout(() => {
+      console.log(`🔗 Router push: /view-profile?userId=${userId}`);
+      router.push({
+        pathname: '/view-profile',
+        params: { userId: userId }
+      });
+    }, 100);
   };
 
   const handleUserOptionsPress = (username: string, userId: string) => {
+    console.log(`👥 User menu pressed: ${username} (${userId})`);
     setSelectedUser(userId);
     setUserMenuVisible(true);
     if (onUserMenuPress) {

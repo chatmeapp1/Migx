@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/SvgIcons';
 import Svg, { Path } from 'react-native-svg';
 import { SwipeableScreen } from '@/components/navigation/SwipeableScreen';
+import FeedMedia from '@/components/feed/FeedMedia';
 
 const CloseIcon = ({ size = 24, color = '#000' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -41,14 +42,17 @@ const CloseIcon = ({ size = 24, color = '#000' }: { size?: number; color?: strin
 
 interface Post {
   id: number;
-  user_id: number;
+  user_id?: number;
+  userId?: number;
   username: string;
   avatar_url?: string;
   content: string;
   image_url?: string;
-  likes_count: number;
-  comments_count: number;
-  is_liked: boolean;
+  mediaUrl?: string;
+  mediaType?: 'image' | 'video';
+  likes_count?: number;
+  comments_count?: number;
+  is_liked?: boolean;
   created_at: string;
 }
 
@@ -376,7 +380,21 @@ export default function FeedScreen() {
     return `${Math.floor(diff / 86400)}d ago`;
   };
 
-  const renderPost = ({ item }: { item: Post }) => (
+  const renderPost = ({ item }: { item: Post }) => {
+    const mediaUrl = item.image_url || item.mediaUrl;
+    const mediaType = item.mediaType;
+    
+    console.log('🎬 FEED ITEM DEBUG:', {
+      id: item.id,
+      username: item.username,
+      content: item.content,
+      mediaType,
+      mediaUrl,
+      hasImage: !!item.image_url,
+      hasMediaType: !!item.mediaType,
+    });
+
+    return (
     <View style={[styles.postCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
       <View style={styles.postHeader}>
         <Image
@@ -391,9 +409,7 @@ export default function FeedScreen() {
 
       <Text style={[styles.postContent, { color: theme.text }]}>{item.content}</Text>
 
-      {item.image_url && (
-        <Image source={{ uri: item.image_url }} style={styles.postImage} />
-      )}
+      <FeedMedia mediaType={mediaType} mediaUrl={mediaUrl} />
 
       <View style={styles.postActions}>
         <TouchableOpacity style={styles.actionButton} onPress={() => handleLike(item.id)}>
@@ -412,7 +428,8 @@ export default function FeedScreen() {
         </TouchableOpacity>
       </View>
     </View>
-  );
+    );
+  };
 
   return (
     <SwipeableScreen>

@@ -27,7 +27,7 @@ router.get('/users', authMiddleware, superAdminMiddleware, async (req, res) => {
   try {
     const pool = getPool();
     const result = await pool.query(
-      'SELECT id, username, email, role, status, created_at, is_banned FROM users ORDER BY created_at DESC LIMIT 100'
+      'SELECT id, username, email, role, status, is_active, created_at FROM users ORDER BY created_at DESC LIMIT 100'
     );
     
     res.json({ users: result.rows });
@@ -66,7 +66,7 @@ router.put('/users/:userId/ban', authMiddleware, superAdminMiddleware, async (re
     
     const pool = getPool();
     await pool.query(
-      'UPDATE users SET is_banned = true WHERE id = $1',
+      'UPDATE users SET is_active = false WHERE id = $1',
       [userId]
     );
     
@@ -83,7 +83,7 @@ router.put('/users/:userId/unban', authMiddleware, superAdminMiddleware, async (
     
     const pool = getPool();
     await pool.query(
-      'UPDATE users SET is_banned = false WHERE id = $1',
+      'UPDATE users SET is_active = true WHERE id = $1',
       [userId]
     );
     
@@ -122,9 +122,9 @@ router.post('/add-coin', authMiddleware, superAdminMiddleware, async (req, res) 
     );
     
     await pool.query(
-      `INSERT INTO transactions (sender_id, receiver_id, amount, type, description, created_at) 
+      `INSERT INTO credit_logs (to_user_id, to_username, amount, transaction_type, description, created_at) 
        VALUES ($1, $2, $3, $4, $5, NOW())`,
-      [null, user.id, amount, 'admin_add', 'System coin addition (IDR transfer)']
+      [user.id, username, amount, 'admin_add', 'System coin addition by admin']
     );
     
     console.log(`✅ Admin added ${amount} coins to ${username}`);
@@ -171,7 +171,7 @@ router.post('/create-account', authMiddleware, superAdminMiddleware, async (req,
     const hashedPassword = await bcrypt.hash(password, 10);
     
     const result = await pool.query(
-      `INSERT INTO users (username, email, password, role, credits, created_at) 
+      `INSERT INTO users (username, email, password_hash, role, credits, created_at) 
        VALUES ($1, $2, $3, 'user', 0, NOW()) RETURNING id, username, email`,
       [username, email, hashedPassword]
     );

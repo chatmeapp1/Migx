@@ -159,10 +159,10 @@ module.exports = (io, socket) => {
 
         // MIG33-style welcome messages - send to the joining user only
         const welcomeMsg1 = `Welcome to ${room.name}...`;
-        const welcomeMsg2 = `Currently users in the room: ${userListString}`;
-        const welcomeMsg3 = `This room is managed by ${room.owner_name || room.creator_name || 'admin'}`;
+        const welcomeMsg2 = `This room is managed by ${room.owner_name || room.creator_name || 'admin'}`;
+        const welcomeMsg3 = `Currently users in the room: ${userListString}`;
 
-        // Send welcome messages immediately
+        // Send welcome messages in correct order
         socket.emit('chat:message', {
           id: Date.now().toString() + '-1',
           roomId,
@@ -185,12 +185,18 @@ module.exports = (io, socket) => {
           });
         }, 100);
 
-        setTimeout(() => {
+        setTimeout(async () => {
+          // Fetch fresh user list from Redis TTL keys at the last moment
+          const freshUsersList = await getRoomPresenceUsers(roomId);
+          const freshUserListString = freshUsersList.length > 0
+            ? freshUsersList.join(', ')
+            : username;
+          
           socket.emit('chat:message', {
             id: Date.now().toString() + '-3',
             roomId,
             username: room.name,
-            message: welcomeMsg3,
+            message: `Currently users in the room: ${freshUserListString}`,
             timestamp: new Date().toISOString(),
             type: 'system',
             messageType: 'system'

@@ -50,8 +50,17 @@ export default function AdminPanelScreen() {
 
   const fetchUsers = async () => {
     try {
-      const token = await AsyncStorage.getItem('auth_token');
+      const userData = await AsyncStorage.getItem('user_data');
       
+      if (!userData) {
+        Alert.alert('Error', 'Session expired. Please log in again.');
+        setLoading(false);
+        return;
+      }
+
+      const parsedData = JSON.parse(userData);
+      const token = parsedData?.token;
+
       if (!token) {
         Alert.alert('Error', 'Session expired. Please log in again.');
         setLoading(false);
@@ -77,8 +86,16 @@ export default function AdminPanelScreen() {
 
   const handleChangeRole = async (userId: number, newRole: string) => {
     try {
-      const token = await AsyncStorage.getItem('auth_token');
+      const userData = await AsyncStorage.getItem('user_data');
       
+      if (!userData) {
+        Alert.alert('Error', 'Session expired. Please log in again.');
+        return;
+      }
+
+      const parsedData = JSON.parse(userData);
+      const token = parsedData?.token;
+
       if (!token) {
         Alert.alert('Error', 'Session expired. Please log in again.');
         return;
@@ -116,8 +133,16 @@ export default function AdminPanelScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              const token = await AsyncStorage.getItem('auth_token');
+              const userData = await AsyncStorage.getItem('user_data');
               
+              if (!userData) {
+                Alert.alert('Error', 'Session expired. Please log in again.');
+                return;
+              }
+
+              const parsedData = JSON.parse(userData);
+              const token = parsedData?.token;
+
               if (!token) {
                 Alert.alert('Error', 'Session expired. Please log in again.');
                 return;
@@ -170,8 +195,17 @@ export default function AdminPanelScreen() {
 
     setCoinLoading(true);
     try {
-      const token = await AsyncStorage.getItem('auth_token');
+      const userData = await AsyncStorage.getItem('user_data');
       
+      if (!userData) {
+        Alert.alert('Error', 'Session expired. Please log in again.');
+        setCoinLoading(false);
+        return;
+      }
+
+      const parsedData = JSON.parse(userData);
+      const token = parsedData?.token;
+
       if (!token) {
         Alert.alert('Error', 'Session expired. Please log in again.');
         setCoinLoading(false);
@@ -230,8 +264,17 @@ export default function AdminPanelScreen() {
 
     setCreateLoading(true);
     try {
-      const token = await AsyncStorage.getItem('auth_token');
+      const userData = await AsyncStorage.getItem('user_data');
       
+      if (!userData) {
+        Alert.alert('Error', 'Session expired. Please log in again.');
+        setCreateLoading(false);
+        return;
+      }
+
+      const parsedData = JSON.parse(userData);
+      const token = parsedData?.token;
+
       if (!token) {
         Alert.alert('Error', 'Session expired. Please log in again.');
         setCreateLoading(false);

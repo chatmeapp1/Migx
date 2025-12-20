@@ -330,9 +330,9 @@ module.exports = (io, socket) => {
       await removeUserFromRoom(roomId, username);
       
       // Step 4️⃣: Remove TTL-based presence (cleanup)
-      const userId = socket.userId;
-      if (userId) {
-        await removeUserPresence(roomId, userId);
+      const presenceUserId = userId || socket.userId;
+      if (presenceUserId) {
+        await removeUserPresence(roomId, presenceUserId);
       }
       
       // Remove from participants (MIG33 style)

@@ -124,7 +124,7 @@ router.post('/add-coin', authMiddleware, superAdminMiddleware, async (req, res) 
     await pool.query(
       `INSERT INTO credit_logs (to_user_id, to_username, amount, transaction_type, description, created_at) 
        VALUES ($1, $2, $3, $4, $5, NOW())`,
-      [user.id, username, amount, 'admin_add', 'System coin addition by admin']
+      [user.id, username, amount, 'reward', 'System coin addition by admin']
     );
     
     console.log(`✅ Admin added ${amount} coins to ${username}`);

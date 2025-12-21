@@ -3,7 +3,6 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useThemeCustom } from '@/theme/provider';
-import Svg, { Circle, Path } from 'react-native-svg';
 
 interface ChatItemProps {
   type: 'user' | 'room' | 'group';
@@ -32,10 +31,11 @@ const UserAvatar = ({ avatar, isOnline, theme }: { avatar?: string; isOnline?: b
 };
 
 const RoomIcon = ({ size = 50, theme }: { size?: number; theme: any }) => (
-  <View style={[styles.roomIconContainer, { width: size, height: size, backgroundColor: theme.primary }]}>
-    <Svg width={30} height={30} viewBox="0 0 24 24" fill="none">
-      <Path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill={theme.background} stroke={theme.background} strokeWidth="2" />
-    </Svg>
+  <View style={[styles.roomIconContainer, { width: size, height: size }]}>
+    <Image
+      source={require('../../assets/icons/ic_chat.png')}
+      style={{ width: size, height: size, resizeMode: 'contain' }}
+    />
   </View>
 );
 

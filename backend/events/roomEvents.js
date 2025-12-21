@@ -867,10 +867,52 @@ module.exports = (io, socket) => {
     }
   };
 
+  // Logout handler - immediately remove user from room and cleanup Redis
+  const logout = async (data) => {
+    try {
+      const username = socket.username;
+      const userId = socket.userId;
+      const currentRoomId = socket.currentRoomId;
+      
+      if (username && currentRoomId && userId) {
+        console.log(`🚪 User ${username} logging out from room ${currentRoomId}`);
+        
+        // Cancel any pending disconnect timer
+        const timerKey = `${userId}-${currentRoomId}`;
+        if (disconnectTimers.has(timerKey)) {
+          clearTimeout(disconnectTimers.get(timerKey));
+          disconnectTimers.delete(timerKey);
+        }
+        
+        // Immediately remove from TTL system
+        await removeUserPresence(currentRoomId, userId);
+        
+        // Remove from participants
+        const { removeRoomParticipant } = require('../utils/redisUtils');
+        await removeRoomParticipant(currentRoomId, username);
+        
+        // Remove from legacy set
+        await removeUserFromRoom(currentRoomId, username);
+        const { removeUserRoom } = require('../utils/redisUtils');
+        await removeUserRoom(username, currentRoomId);
+        
+        // Clear from legacy room:users set
+        const { getRedisClient } = require('../redis');
+        const redis = getRedisClient();
+        await redis.sRem(`room:users:${currentRoomId}`, username);
+        
+        console.log(`✅ User ${username} successfully logged out from room ${currentRoomId}`);
+      }
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
+  };
+
   socket.on('join_room', joinRoom);
   socket.on('rejoin_room', rejoinRoom);
   socket.on('leave_room', leaveRoom);
   socket.on('room:leave', leaveRoom);
+  socket.on('user:logout', logout);
   socket.on('room:users:get', getRoomUsers);
   socket.on('room:kick', kickUser);
   socket.on('room:voteKick', voteKickUser);
@@ -903,7 +945,7 @@ module.exports = (io, socket) => {
               
               disconnectTimers.delete(timerKey);
               
-              // Step 4️⃣: Remove presence on timeout
+              // Step 4️⃣: Remove presence on timeout - CLEAN BOTH OLD AND NEW SYSTEMS
               if (userId && userId !== 'unknown') {
                 await removeUserPresence(currentRoomId, userId);
               }
@@ -911,6 +953,13 @@ module.exports = (io, socket) => {
               await removeRoomParticipant(currentRoomId, username);
               await removeUserFromRoom(currentRoomId, username);
               await removeUserRoom(username, currentRoomId);
+              
+              // Also clear from legacy room:users:{roomId} set to avoid stale data
+              const { getRedisClient } = require('../redis');
+              const redis = getRedisClient();
+              const roomUsersKey = `room:users:${currentRoomId}`;
+              await redis.sRem(roomUsersKey, username);
+              console.log(`✅ Removed ${username} from legacy Redis set: ${roomUsersKey}`);
               
               const room = await roomService.getRoomById(currentRoomId);
               const userCount = await getRoomUserCount(currentRoomId);

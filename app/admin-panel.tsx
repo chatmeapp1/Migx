@@ -246,12 +246,8 @@ export default function AdminPanelScreen() {
       Alert.alert('Error', 'Please enter username');
       return;
     }
-    if (newUsername.length < 1 || newUsername.length > 12) {
-      Alert.alert('Error', 'Username must be 1-12 characters');
-      return;
-    }
-    if (!/^[a-zA-Z0-9]+$/.test(newUsername)) {
-      Alert.alert('Error', 'Username can only contain letters and numbers');
+    if (!/^[a-zA-Z0-9._-]{1,12}$/.test(newUsername)) {
+      Alert.alert('Error', 'Username: letters, numbers, ".", "_", "-" only (1-12 chars)');
       return;
     }
     if (!newEmail.trim() || !newEmail.includes('@')) {
@@ -431,12 +427,12 @@ export default function AdminPanelScreen() {
           <View style={[styles.formModal, { backgroundColor: theme.card }]}>
             <Text style={[styles.modalTitle, { color: theme.text }]}>Create Account</Text>
             <Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>
-              Create new user account (username 1-12 characters)
+              Username: letters, numbers, ".", "_", "-" (1-12 chars)
             </Text>
             
             <TextInput
               style={[styles.modalInput, { backgroundColor: theme.background, color: theme.text }]}
-              placeholder="Username (1-12 characters)"
+              placeholder='Username (e.g. user.name_123)'
               placeholderTextColor={theme.textSecondary}
               value={newUsername}
               onChangeText={setNewUsername}

@@ -141,12 +141,8 @@ router.post('/create-account', authMiddleware, superAdminMiddleware, async (req,
   try {
     const { username, email, password } = req.body;
     
-    if (!username || username.length < 1 || username.length > 12) {
-      return res.status(400).json({ error: 'Username must be 1-12 characters' });
-    }
-    
-    if (!/^[a-zA-Z0-9]+$/.test(username)) {
-      return res.status(400).json({ error: 'Username can only contain letters and numbers' });
+    if (!username || !/^[a-zA-Z0-9._-]{1,12}$/.test(username)) {
+      return res.status(400).json({ error: 'Username: letters, numbers, ".", "_", "-" only (1-12 chars)' });
     }
     
     if (!email || !email.includes('@')) {

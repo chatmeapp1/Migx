@@ -447,7 +447,7 @@ export default function FeedScreen() {
       <FlatList
         data={posts}
         renderItem={renderPost}
-        keyExtractor={item => item.id.toString()}
+        keyExtractor={(item, index) => item.id?.toString() ?? `post-${index}`}
         contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />

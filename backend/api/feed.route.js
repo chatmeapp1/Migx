@@ -35,6 +35,43 @@ const handleUpload = (req, res, next) => {
   });
 };
 
+// Normalize feed item with proper defaults
+const normalizeFeedItem = async (feedData, feedId, redis) => {
+  if (!feedData) return null;
+  
+  try {
+    const feed = typeof feedData === 'string' ? JSON.parse(feedData) : feedData;
+    
+    // Get like count from Redis
+    const likeKey = `feed:${feedId}:likes`;
+    const likesCount = await redis.get(likeKey);
+    
+    // Get comments count from Redis
+    const commentsKey = `feed:${feedId}:comments`;
+    const commentsData = await redis.get(commentsKey);
+    const commentsArray = commentsData ? JSON.parse(commentsData) : [];
+    
+    return {
+      id: feed.id ?? feedId ?? '',
+      username: feed.username ?? 'Anonymous',
+      content: feed.content ?? '',
+      mediaType: feed.mediaType ?? null,
+      mediaUrl: feed.image_url ?? null,
+      image_url: feed.image_url ?? null,
+      likes_count: Number(likesCount ?? 0),
+      comments_count: commentsArray.length ?? 0,
+      is_liked: false,
+      created_at: feed.created_at ?? feed.createdAt ?? new Date().toISOString(),
+      avatar_url: 'https://via.placeholder.com/40',
+      userId: feed.userId ?? feed.user_id,
+      user_id: feed.userId ?? feed.user_id,
+    };
+  } catch (e) {
+    console.error(`❌ Error normalizing feed item:`, e.message);
+    return null;
+  }
+};
+
 // Get feed posts from Redis (real-time, with TTL)
 router.get('/', authMiddleware, async (req, res) => {
   try {
@@ -53,21 +90,25 @@ router.get('/', authMiddleware, async (req, res) => {
       });
     }
 
-    // Get all feed data from Redis
+    // Get all feed data from Redis with normalized fields
     const feeds = [];
     for (const key of keys) {
+      const feedId = key.replace('feed:', '');
       const feedData = await redis.get(key);
       if (feedData) {
         try {
-          feeds.push(JSON.parse(feedData));
+          const normalized = await normalizeFeedItem(feedData, feedId, redis);
+          if (normalized) {
+            feeds.push(normalized);
+          }
         } catch (e) {
           console.error(`❌ Error parsing feed data for ${key}:`, e.message);
         }
       }
     }
 
-    // Sort by createdAt DESC (most recent first)
-    feeds.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    // Sort by created_at DESC (most recent first)
+    feeds.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
     // Apply pagination
     const { page = 1, limit = 10 } = req.query;
@@ -182,16 +223,20 @@ router.post('/create', authMiddleware, handleUpload, async (req, res) => {
     const feedId = crypto.randomBytes(8).toString('hex');
     const createdAt = new Date().toISOString();
 
-    // Create feed metadata object (with image_url for frontend compatibility)
+    // Create feed metadata object (with all required fields and defaults)
     const feedData = {
       id: feedId,
       userId,
-      username,
+      username: username || 'Anonymous',
       content: content || '',
       image_url: mediaUrl || null,
+      mediaUrl: mediaUrl || null,
       mediaType: mediaType || null,
       cloudinaryPublicId: publicId || null,
-      created_at: createdAt
+      created_at: createdAt,
+      likes_count: 0,
+      comments_count: 0,
+      is_liked: false,
     };
 
     // Save to Redis with 1 hour TTL (3600 seconds)
@@ -204,9 +249,24 @@ router.post('/create', authMiddleware, handleUpload, async (req, res) => {
 
     console.log(`📌 Feed saved to Redis with 1 hour TTL: feed:${feedId}`);
 
+    // Return normalized response with proper counts
+    const response = {
+      id: feedId,
+      username: username || 'Anonymous',
+      content: content || '',
+      mediaType: mediaType || null,
+      mediaUrl: mediaUrl || null,
+      image_url: mediaUrl || null,
+      likes_count: 0,
+      comments_count: 0,
+      is_liked: false,
+      created_at: createdAt,
+      avatar_url: 'https://via.placeholder.com/40',
+    };
+
     res.json({
       success: true,
-      post: feedData
+      post: response
     });
   } catch (error) {
     console.error('❌ Error creating post:', error);

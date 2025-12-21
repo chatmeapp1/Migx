@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { useThemeCustom } from '@/theme/provider';
 import { API_ENDPOINTS } from '@/utils/api';
+import { normalizeFeedArray } from '@/utils/feedNormalizer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -120,10 +121,13 @@ export default function FeedScreen() {
       const data = await response.json();
 
       if (data.success) {
+        // Normalize all posts to ensure proper field defaults
+        const normalizedPosts = normalizeFeedArray(data.posts);
+        
         if (isRefresh) {
-          setPosts(data.posts);
+          setPosts(normalizedPosts);
         } else {
-          setPosts(prev => pageNum === 1 ? data.posts : [...prev, ...data.posts]);
+          setPosts(prev => pageNum === 1 ? normalizedPosts : [...prev, ...normalizedPosts]);
         }
         setHasMore(data.hasMore);
         setPage(pageNum);
@@ -264,11 +268,21 @@ export default function FeedScreen() {
 
       const data = await response.json();
       if (data.success) {
-        setPosts(prev => prev.map(post => 
-          post.id === postId 
-            ? { ...post, is_liked: !post.is_liked, likes_count: post.is_liked ? post.likes_count - 1 : post.likes_count + 1 }
-            : post
-        ));
+        setPosts(prev => prev.map(post => {
+          if (post.id === postId) {
+            // Ensure likes_count is always a number, never undefined or NaN
+            const currentLikes = Number(post.likes_count ?? 0);
+            const isCurrentlyLiked = post.is_liked ?? false;
+            const newLikes = isCurrentlyLiked ? currentLikes - 1 : currentLikes + 1;
+            
+            return {
+              ...post,
+              is_liked: !isCurrentlyLiked,
+              likes_count: Math.max(0, newLikes), // Ensure never negative
+            };
+          }
+          return post;
+        }));
       }
     } catch (error) {
       console.error('Error liking post:', error);
@@ -323,7 +337,7 @@ export default function FeedScreen() {
         fetchComments(selectedPost.id);
         setPosts(prev => prev.map(post => 
           post.id === selectedPost.id 
-            ? { ...post, comments_count: post.comments_count + 1 }
+            ? { ...post, comments_count: Number(post.comments_count ?? 0) + 1 }
             : post
         ));
       }

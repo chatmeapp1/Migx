@@ -188,7 +188,7 @@ export default function TransferCreditScreen() {
               source={require('@/assets/icons/ic_coin.png')} 
               style={styles.coinIcon}
             />
-            <Text style={[styles.balanceAmount, { color: theme.text }]}>{coinBalance.toLocaleString()}</Text>
+            <Text style={[styles.balanceAmount, { color: theme.text }]}>Rp {coinBalance.toLocaleString('id-ID')}</Text>
           </View>
         </View>
 
@@ -221,11 +221,12 @@ export default function TransferCreditScreen() {
                 placeholder="0"
                 placeholderTextColor={theme.secondary}
                 value={amount ? parseInt(amount, 10).toLocaleString('id-ID') : ''}
-                onChangeText={(value) => {
-                  const numOnly = value.replace(/\D/g, '');
+                onChangeText={(newValue) => {
+                  const numOnly = newValue.replace(/\D/g, '');
                   setAmount(numOnly);
                 }}
                 keyboardType="numeric"
+                selectTextOnFocus
               />
             </View>
           </View>

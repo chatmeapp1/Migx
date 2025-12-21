@@ -524,7 +524,7 @@ export default function AdminPanelScreen() {
                 <View key={user.id} style={[styles.userCard, { backgroundColor: theme.card }]}>
                   <View style={styles.userInfo}>
                     <Text style={[styles.username, { color: theme.text }]}>{user.username}</Text>
-                    <Text style={[styles.email, { color: theme.textSecondary }]}>{user.email}</Text>
+                    <Text style={[styles.email, { color: '#ffffff' }]}>{user.email}</Text>
                     <View style={[styles.roleBadge, { backgroundColor: getRoleBadgeColor(user.role) }]}>
                       <Text style={styles.roleText}>{user.role || 'user'}</Text>
                     </View>

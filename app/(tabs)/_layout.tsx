@@ -117,13 +117,13 @@ function CustomTabBar({ state, descriptors, navigation }: CustomTabBarProps) {
 
       let targetIdx = currentVisualIdx;
 
-      // Swipe ke kiri (next tab) -> arahkan ke index + 1
-      if ((tx < -30 || vx < -200) && currentVisualIdx < MAX_TAB_INDEX) {
+      // Swipe ke kiri (jari geser ke kiri -> mau ke tab kanan/next)
+      if ((tx < -SCREEN_WIDTH * 0.15 || vx < -VELOCITY_THRESHOLD) && currentVisualIdx < MAX_TAB_INDEX) {
         targetIdx = currentVisualIdx + 1;
         runOnJS(navigateToTab)(targetIdx);
       } 
-      // Swipe ke kanan (prev tab) -> arahkan ke index - 1
-      else if ((tx > 30 || vx > 200) && currentVisualIdx > 0) {
+      // Swipe ke kanan (jari geser ke kanan -> mau ke tab kiri/prev)
+      else if ((tx > SCREEN_WIDTH * 0.15 || vx > VELOCITY_THRESHOLD) && currentVisualIdx > 0) {
         targetIdx = currentVisualIdx - 1;
         runOnJS(navigateToTab)(targetIdx);
       }

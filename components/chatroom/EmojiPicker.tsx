@@ -40,7 +40,7 @@ export function EmojiPicker({ visible, onClose, onEmojiSelect, bottomOffset = 0 
         { 
           backgroundColor: theme.card,
           transform: [{ translateY }],
-          bottom: INPUT_HEIGHT + bottomOffset + 5, // Added extra small offset to prevent overlap
+          bottom: INPUT_HEIGHT + bottomOffset + 15, // Increased offset further
         }
       ]}
     >
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     height: PICKER_HEIGHT,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
-    zIndex: 5,
+    zIndex: 10, // Higher zIndex than input
   },
   header: {
     flexDirection: 'row',

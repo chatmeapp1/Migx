@@ -101,15 +101,10 @@ export function MenuParticipantsModal({ visible, onClose, roomId, onUserMenuPres
           // Close modals and navigate to view-profile
           setShowUserMenu(false);
           setSelectedUser(null);
+          onClose(); // Close the participants modal
           
-          // Navigate to view-profile screen with userId parameter
-          router.push({
-            pathname: '/view-profile',
-            params: { userId: data.user.id.toString() }
-          });
-          
-          // Close the participants modal as well
-          onClose();
+          // Navigate to profile using the correct route
+          router.push(`/(tabs)/profile?userId=${data.user.id}`);
         }
       } catch (error) {
         console.error('Error fetching user ID:', error);

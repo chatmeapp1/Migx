@@ -57,12 +57,18 @@ async function runLoadTest() {
       // Tunggu sebentar setelah connect sebelum join
       setTimeout(() => {
         console.log(`[Bot ${i+1}] ${username} mencoba JOIN ke room ${ROOM_ID}...`);
+        // Gunakan nama event yang benar 'room:join' dan pastikan data sesuai
         socket.emit('room:join', { 
           roomId: parseInt(ROOM_ID), 
           userId: (1000 + i).toString(),
           username: username 
         });
-      }, 1000);
+      }, 2000); // Tambah jeda jadi 2 detik
+    });
+
+    // Tambah listener untuk 'error' umum
+    socket.on('error', (err) => {
+      console.error(`[Bot ${i+1}] ${username} SOCKET ERROR:`, err);
     });
 
     socket.on('room:joined', (data) => {

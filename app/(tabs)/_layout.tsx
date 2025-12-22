@@ -24,12 +24,12 @@ const VELOCITY_THRESHOLD = 300;
 
 const TAB_CONFIG: Record<string, { title: string; icon: (props: { color: string; size: number }) => React.ReactNode }> = {
   'index': { title: 'Home', icon: HomeIcon },
-  'feed': { title: 'Feed', icon: FeedIcon },
   'chat': { title: 'Chat', icon: ChatIcon },
+  'feed': { title: 'Feed', icon: FeedIcon },
   'room': { title: 'Room', icon: RoomIcon },
 };
 
-const VISIBLE_TABS = ['index', 'feed', 'chat', 'room'];
+const VISIBLE_TABS = ['index', 'chat', 'feed', 'room'];
 const TOTAL_TABS = VISIBLE_TABS.length;
 const MAX_TAB_INDEX = TOTAL_TABS - 1;
 
@@ -203,8 +203,8 @@ export default function TabLayout() {
       tabBar={(props) => <CustomTabBar {...props} />}
     >
       <Tabs.Screen name="index" options={{ title: 'Home' }} />
-      <Tabs.Screen name="feed" options={{ title: 'Feed' }} />
       <Tabs.Screen name="chat" options={{ title: 'Chat' }} />
+      <Tabs.Screen name="feed" options={{ title: 'Feed' }} />
       <Tabs.Screen name="room" options={{ title: 'Room' }} />
       <Tabs.Screen name="profile" options={{ href: null }} />
       <Tabs.Screen name="explore" options={{ href: null }} />

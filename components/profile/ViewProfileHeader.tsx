@@ -68,6 +68,7 @@ interface ViewProfileHeaderProps {
   followersCount?: number;
   onBackPress?: () => void;
   onFollowPress?: () => void;
+  onChatPress?: () => void;
 }
 
 export function ViewProfileHeader({
@@ -81,6 +82,7 @@ export function ViewProfileHeader({
   followersCount = 0,
   onBackPress,
   onFollowPress,
+  onChatPress,
 }: ViewProfileHeaderProps) {
   const { theme } = useThemeCustom();
   
@@ -90,6 +92,9 @@ export function ViewProfileHeader({
       ? `${API_BASE_URL}${avatarImage}` 
       : null;
 
+  console.log('ViewProfileHeader - Avatar URI:', avatarUri);
+  console.log('ViewProfileHeader - Raw avatarImage:', avatarImage);
+
   return (
     <View style={styles.container}>
       {/* Background Image Section */}
@@ -97,7 +102,7 @@ export function ViewProfileHeader({
         {backgroundImage ? (
           <Image source={{ uri: backgroundImage }} style={styles.backgroundImage} />
         ) : (
-          <View style={[styles.backgroundPlaceholder, { backgroundColor: '#4A90E2' }]} />
+          <View style={[styles.backgroundPlaceholder, { backgroundColor: '#2D5016' }]} />
         )}
 
         {/* Back Button */}
@@ -165,13 +170,16 @@ export function ViewProfileHeader({
           </View>
         </View>
 
-        <TouchableOpacity style={styles.chatButton}>
-          <Ionicons name="chatbubble" size={18} color="#999" />
+        <TouchableOpacity 
+          style={styles.chatButton}
+          onPress={onChatPress}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="chatbubble" size={18} color="#666" />
           <Text style={styles.chatButtonText}>Chat</Text>
         </TouchableOpacity>
       </View>
-
-      </View>
+    </View>
   );
 }
 
@@ -180,7 +188,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   backgroundContainer: {
-    height: 120,
+    height: 150,
     position: 'relative',
   },
   backgroundImage: {
@@ -193,19 +201,21 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: 12,
+    top: 40,
     left: 12,
     width: 40,
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 20,
   },
   profileSection: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     paddingHorizontal: 16,
     marginTop: -40,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   avatarWrapper: {
     position: 'relative',
@@ -220,7 +230,7 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     borderWidth: 3,
     borderColor: '#fff',
-    backgroundColor: '#fff',
+    backgroundColor: '#E0E0E0',
   },
   avatarPlaceholder: {
     width: 80,
@@ -250,14 +260,16 @@ const styles = StyleSheet.create({
   },
   userInfoContainer: {
     flex: 1,
+    justifyContent: 'flex-end',
+    paddingBottom: 4,
   },
   username: {
-    fontSize: 24,
-    fontWeight: 'normal',
+    fontSize: 18,
+    fontWeight: '600',
     color: '#000',
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#666',
     marginTop: 2,
   },
@@ -308,11 +320,11 @@ const styles = StyleSheet.create({
   chatButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 12,
     backgroundColor: '#f5f5f5',
     borderRadius: 12,
-    flex: 0.2,
+    flex: 0.3,
   },
   chatButtonText: {
     fontSize: 12,

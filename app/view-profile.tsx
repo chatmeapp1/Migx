@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Modal, Alert, ActivityIndicator } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -19,6 +20,7 @@ export default function ViewProfileScreen() {
   const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [followLoading, setFollowLoading] = useState(false);
+  const [followersCount, setFollowersCount] = useState(0);
 
   useEffect(() => {
     loadProfile();
@@ -38,9 +40,12 @@ export default function ViewProfileScreen() {
         const response = await fetch(API_ENDPOINTS.VIEW_PROFILE.GET(userId, userData.id));
         const data = await response.json();
 
+        console.log('View Profile Response:', data);
+
         if (response.ok) {
           setProfileData(data);
           setIsFollowing(data.isFollowing || false);
+          setFollowersCount(data.stats?.followersCount || 0);
         } else {
           Alert.alert('Error', data.error || 'Failed to load profile');
           router.back();
@@ -87,25 +92,30 @@ export default function ViewProfileScreen() {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        setIsFollowing(!isFollowing);
+        const newFollowingState = !isFollowing;
+        setIsFollowing(newFollowingState);
 
         // Update follower count
+        const newCount = newFollowingState 
+          ? followersCount + 1 
+          : followersCount - 1;
+        setFollowersCount(newCount);
+
+        // Update profileData
         setProfileData((prev: any) => ({
           ...prev,
           stats: {
             ...prev.stats,
-            followersCount: isFollowing
-              ? prev.stats.followersCount - 1
-              : prev.stats.followersCount + 1,
+            followersCount: newCount,
           },
         }));
 
         // Send notification to the followed user if following
-        if (!isFollowing) {
+        if (newFollowingState) {
           const socket = getSocket();
           if (socket) {
             socket.emit('notif:send', {
-              username: profileData.user.username, // The user being followed
+              username: profileData.user.username,
               notification: {
                 type: 'follow',
                 message: `${currentUser.username} started following you`,
@@ -126,34 +136,37 @@ export default function ViewProfileScreen() {
     }
   };
 
-
   const handlePostPress = () => {
-    // Navigate to user's posts
     Alert.alert('Posts', `Viewing ${profileData?.user?.username}'s posts`);
   };
 
   const handleGiftPress = () => {
-    // Navigate to gift store with target user
     Alert.alert('Gift', `Send gift to ${profileData?.user?.username}`);
   };
 
   const handleFollowersPress = () => {
-    // Navigate to followers list
     Alert.alert('Followers', `${profileData?.user?.username}'s followers`);
   };
 
   const handleFollowingPress = () => {
-    // Navigate to following list
     Alert.alert('Following', `${profileData?.user?.username}'s following`);
   };
 
   const handleChatPress = () => {
-    // Navigate to DM with this user
-    Alert.alert('Chat', `Start chat with ${profileData?.user?.username}`);
+    if (!profileData) return;
+    
+    // Navigate to chat tab with DM opened for this user
+    router.push({
+      pathname: '/(tabs)/chat',
+      params: {
+        openDM: 'true',
+        targetUser: profileData.user.username,
+        targetUserId: profileData.user.id,
+      },
+    });
   };
 
   const handleFootprintPress = () => {
-    // Navigate to footprint (visitors/views)
     Alert.alert('Footprint', `${profileData?.user?.username}'s footprint`);
   };
 
@@ -185,15 +198,17 @@ export default function ViewProfileScreen() {
                 gender={profileData.user.gender}
                 userId={profileData.user.id.toString()}
                 isFollowing={isFollowing}
+                followersCount={followersCount}
                 onBackPress={handleBackPress}
                 onFollowPress={handleFollowPress}
+                onChatPress={handleChatPress}
               />
 
               <EditProfileStats
                 userId={profileData.user.id}
                 postCount={profileData.stats.postCount}
                 giftCount={profileData.stats.giftCount}
-                followersCount={profileData.stats.followersCount}
+                followersCount={followersCount}
                 followingCount={profileData.stats.followingCount}
                 onPostPress={handlePostPress}
                 onGiftPress={handleGiftPress}

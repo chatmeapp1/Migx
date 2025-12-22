@@ -62,6 +62,8 @@ export function EmojiPicker({ visible, onClose, onEmojiSelect, bottomOffset = 0 
               key={index}
               style={[styles.emojiButton, { backgroundColor: theme.background }]}
               onPress={() => handleEmojiPress(emoji.code)}
+              activeOpacity={0.7}
+              hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
             >
               <Image
                 source={emoji.image}
@@ -114,12 +116,13 @@ const styles = StyleSheet.create({
   emojiGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingVertical: 8,
-    gap: 4,
+    paddingVertical: 12,
+    paddingHorizontal: 4,
   },
   emojiButton: {
     width: 36,
     height: 36,
+    margin: 2,
     borderRadius: 6,
     justifyContent: 'center',
     alignItems: 'center',

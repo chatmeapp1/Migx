@@ -251,31 +251,6 @@ const addRoomParticipant = async (roomId, userId, username) => {
   }
 };
 
-const getRoomParticipantsWithNames = async (roomId) => {
-  try {
-    const redis = getRedisClient();
-    const key = `room:${roomId}:participants`;
-    
-    // Check key type first and delete if wrong type
-    const keyType = await redis.type(key);
-    if (keyType === 'set' || keyType === 'string') {
-      await redis.del(key);
-      console.log(`🧹 Cleaned legacy key type (${keyType}): ${key}`);
-    }
-    
-    const participantsHash = await redis.hGetAll(key);
-    const participants = Object.keys(participantsHash).map(userId => ({
-      userId: parseInt(userId),
-      username: participantsHash[userId]
-    }));
-    
-    return participants;
-  } catch (error) {
-    console.error('Error getting room participants with names:', error);
-    return [];
-  }
-};
-
 const removeRoomParticipant = async (roomId, userId) => {
   try {
     const redis = getRedisClient();

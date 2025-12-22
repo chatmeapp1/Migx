@@ -148,9 +148,21 @@ export default function ChatRoomScreen() {
         }
       });
 
+      newSocket.on('room:participants:update', (data: { roomId: string; participants: Array<{ userId: number; username: string }> }) => {
+        if (data.roomId === currentActiveRoomId) {
+          setRoomUsers(data.participants.map(p => p.username));
+        }
+      });
+
+      newSocket.on('room:participants:list', (data: { roomId: string; participants: Array<{ userId: number; username: string }> }) => {
+        if (data.roomId === currentActiveRoomId) {
+          setRoomUsers(data.participants.map(p => p.username));
+        }
+      });
+
       setSocket(newSocket);
     }
-  }, [currentUsername, currentUserId, socket, setSocket, router]);
+  }, [currentUsername, currentUserId, socket, setSocket, router, currentActiveRoomId]);
 
   useEffect(() => {
     if (!socket || !isConnected || !currentUsername || !currentUserId) {
@@ -301,6 +313,9 @@ export default function ChatRoomScreen() {
     }
     
     if (trimmedAction === 'kick') {
+      if (socket) {
+        socket.emit('room:get-participants', { roomId: currentActiveRoomId });
+      }
       setKickModalVisible(true);
       return;
     }

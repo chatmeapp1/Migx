@@ -158,9 +158,9 @@ module.exports = (io, socket) => {
       // Save room history to DATABASE (for Chat menu)
       await roomService.saveRoomHistory(userId, roomId);
 
-      // Add to participants (MIG33 style - Redis only)
-      const { addRoomParticipant, getRoomParticipants } = require('../utils/redisUtils');
-      await addRoomParticipant(roomId, userId);
+      // Add to participants (MIG33 style - Redis only) with username
+      const { addRoomParticipant, getRoomParticipantsWithNames } = require('../utils/redisUtils');
+      await addRoomParticipant(roomId, userId, username);
 
       // Get updated count after adding user
       const newUserCount = await getRoomUserCount(roomId);
@@ -332,12 +332,11 @@ module.exports = (io, socket) => {
         maxUsers: room.max_users
       });
 
-      // Broadcast participants update (MIG33 style)
-      const participants = await getRoomParticipants(roomId);
-      io.to(`room:${roomId}`).emit('room:participantsUpdated', {
+      // Broadcast participants update (MIG33 style) - exclude current user
+      const allParticipants = await getRoomParticipantsWithNames(roomId);
+      io.to(`room:${roomId}`).emit('room:participants:update', {
         roomId,
-        participants,
-        count: participants.length
+        participants: allParticipants
       });
 
     } catch (error) {
@@ -393,7 +392,7 @@ module.exports = (io, socket) => {
       }
 
       // Remove from participants (MIG33 style)
-      const { removeRoomParticipant, getRoomParticipants } = require('../utils/redisUtils');
+      const { removeRoomParticipant, getRoomParticipantsWithNames } = require('../utils/redisUtils');
       if (presenceUserId) {
         await removeRoomParticipant(roomId, presenceUserId);
       }
@@ -460,12 +459,11 @@ module.exports = (io, socket) => {
         maxUsers: room?.max_users || 25
       });
 
-      // Broadcast participants update (MIG33 style)
-      const participants = await getRoomParticipants(roomId);
-      io.to(`room:${roomId}`).emit('room:participantsUpdated', {
+      // Broadcast participants update (MIG33 style) - exclude current user
+      const allParticipants = await getRoomParticipantsWithNames(roomId);
+      io.to(`room:${roomId}`).emit('room:participants:update', {
         roomId,
-        participants,
-        count: participants.length
+        participants: allParticipants
       });
 
     } catch (error) {
@@ -1060,12 +1058,28 @@ module.exports = (io, socket) => {
   };
 
 
+  const getParticipants = async (data) => {
+    try {
+      const { roomId } = data;
+      const { getRoomParticipantsWithNames } = require('../utils/redisUtils');
+      const participants = await getRoomParticipantsWithNames(roomId, socket.userId);
+      socket.emit('room:participants:list', {
+        roomId,
+        participants
+      });
+    } catch (error) {
+      console.error('Error getting participants:', error);
+      socket.emit('error', { message: 'Failed to get participants' });
+    }
+  };
+
   socket.on('join_room', joinRoom);
   socket.on('rejoin_room', rejoinRoom);
   socket.on('leave_room', leaveRoom);
   socket.on('room:leave', leaveRoom);
   socket.on('user:logout', logout);
   socket.on('room:users:get', getRoomUsers);
+  socket.on('room:get-participants', getParticipants);
   socket.on('room:kick', kickUser);
   socket.on('room:voteKick', voteKickUser);
   socket.on('room:admin:kick', adminKick);
@@ -1140,11 +1154,10 @@ module.exports = (io, socket) => {
                 users: updatedUsers
               });
 
-              const participants = await getRoomParticipants(currentRoomId);
-              io.to(`room:${currentRoomId}`).emit('room:participantsUpdated', {
+              const allParticipants = await getRoomParticipantsWithNames(currentRoomId);
+              io.to(`room:${currentRoomId}`).emit('room:participants:update', {
                 roomId: currentRoomId,
-                participants,
-                count: participants.length
+                participants: allParticipants
               });
 
               await decrementRoomActive(currentRoomId);

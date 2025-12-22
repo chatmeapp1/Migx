@@ -215,11 +215,11 @@ const getRoomParticipants = async (roomId) => {
   }
 };
 
-const addRoomParticipant = async (roomId, userId) => {
+const addRoomParticipant = async (roomId, userId, username) => {
   try {
     const redis = getRedisClient();
     const key = `room:${roomId}:participants`;
-    await redis.sAdd(key, userId.toString());
+    await redis.hSet(key, userId.toString(), username || 'Unknown');
     await redis.expire(key, 21600); // 6 hours
     return true;
   } catch (error) {
@@ -231,7 +231,7 @@ const addRoomParticipant = async (roomId, userId) => {
 const removeRoomParticipant = async (roomId, userId) => {
   try {
     const redis = getRedisClient();
-    await redis.sRem(`room:${roomId}:participants`, userId.toString());
+    await redis.hDel(`room:${roomId}:participants`, userId.toString());
     return true;
   } catch (error) {
     console.error('Error removing room participant:', error);
@@ -239,10 +239,37 @@ const removeRoomParticipant = async (roomId, userId) => {
   }
 };
 
+const getRoomParticipantsWithNames = async (roomId, excludeUserId = null) => {
+  try {
+    const redis = getRedisClient();
+    const key = `room:${roomId}:participants`;
+    const participants = await redis.hGetAll(key);
+    
+    if (!participants || Object.keys(participants).length === 0) {
+      return [];
+    }
+    
+    const list = Object.entries(participants).map(([userId, username]) => ({
+      userId: parseInt(userId),
+      username
+    }));
+    
+    // Filter out excluded user if provided
+    if (excludeUserId) {
+      return list.filter(p => p.userId !== excludeUserId);
+    }
+    
+    return list;
+  } catch (error) {
+    console.error('Error getting room participants with names:', error);
+    return [];
+  }
+};
+
 const clearRoomParticipants = async (roomId) => {
   try {
     const redis = getRedisClient();
-    await redis.del(`room:participants:${roomId}`);
+    await redis.del(`room:${roomId}:participants`);
     return true;
   } catch (error) {
     console.error('Error clearing room participants:', error);
@@ -668,6 +695,7 @@ module.exports = {
   removeUserFromRoom,
   getRoomUsersList,
   getRoomParticipants,
+  getRoomParticipantsWithNames,
   addRoomParticipant,
   removeRoomParticipant,
   getUserCurrentRoom,

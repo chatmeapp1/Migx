@@ -2,9 +2,9 @@ const { io } = require('socket.io-client');
 const axios = require('axios');
 
 // Konfigurasi
-const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = process.env.API_BASE_URL || 'https://d1a7ddfc-5415-44f9-92c0-a278e94f8f08-00-1i8qhqy6zm7hx.sisko.replit.dev';
 const NUM_BOTS = 10;
-const ROOM_ID = 1; // ID room target untuk tes
+const ROOM_ID = 386; // ID room target untuk tes (Indonesia)
 const JOIN_DELAY = 2000; // Jeda antar bot masuk (2 detik)
 const MSG_DELAY_MIN = 5000; // Jeda pesan minimal (5 detik)
 const MSG_DELAY_MAX = 15000; // Jeda pesan maksimal (15 detik)

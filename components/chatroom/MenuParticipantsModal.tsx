@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, ActivityIndicator } from 'react-native';
 import { useThemeCustom } from '@/theme/provider';
+import { router } from 'expo-router';
 import Svg, { Circle } from 'react-native-svg';
 import API_BASE_URL from '@/utils/api';
 
@@ -87,12 +88,37 @@ export function MenuParticipantsModal({ visible, onClose, roomId, onUserMenuPres
     setShowUserMenu(true);
   };
 
-  const handleMenuOption = (action: string) => {
-    if (selectedUser && onUserMenuPress) {
+  const handleMenuOption = async (action: string) => {
+    if (!selectedUser) return;
+
+    if (action === 'view-profile') {
+      // Get user ID from username
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/users/by-username/${selectedUser}`);
+        const data = await response.json();
+        
+        if (data.success && data.user) {
+          // Close modals and navigate to view-profile
+          setShowUserMenu(false);
+          setSelectedUser(null);
+          
+          // Navigate to view-profile screen with userId parameter
+          router.push({
+            pathname: '/view-profile',
+            params: { userId: data.user.id.toString() }
+          });
+          
+          // Close the participants modal as well
+          onClose();
+        }
+      } catch (error) {
+        console.error('Error fetching user ID:', error);
+      }
+    } else if (onUserMenuPress) {
       onUserMenuPress(selectedUser, action);
+      setShowUserMenu(false);
+      setSelectedUser(null);
     }
-    setShowUserMenu(false);
-    setSelectedUser(null);
   };
 
   return (

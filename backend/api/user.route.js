@@ -3,6 +3,36 @@ const router = express.Router();
 const userService = require('../services/userService');
 const { getUserLevel, getLeaderboard } = require('../utils/xpLeveling');
 
+// Get user by username
+router.get('/username/:username', async (req, res) => {
+  try {
+    const { username } = req.params;
+    const user = await userService.getUserByUsername(username);
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const levelData = await getUserLevel(user.id);
+
+    res.json({
+      id: user.id,
+      username: user.username,
+      avatar: user.avatar,
+      role: user.role,
+      status: user.status,
+      level: levelData.level,
+      xp: levelData.xp,
+      createdAt: user.created_at
+    });
+
+  } catch (error) {
+    console.error('Get user by username error:', error);
+    res.status(500).json({ error: 'Failed to get user' });
+  }
+});
+
+// Get user by ID
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -30,34 +60,6 @@ router.get('/:id', async (req, res) => {
 
   } catch (error) {
     console.error('Get user error:', error);
-    res.status(500).json({ error: 'Failed to get user' });
-  }
-});
-
-router.get('/username/:username', async (req, res) => {
-  try {
-    const { username } = req.params;
-    const user = await userService.getUserByUsername(username);
-
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    const levelData = await getUserLevel(user.id);
-
-    res.json({
-      id: user.id,
-      username: user.username,
-      avatar: user.avatar,
-      role: user.role,
-      status: user.status,
-      level: levelData.level,
-      xp: levelData.xp,
-      createdAt: user.created_at
-    });
-
-  } catch (error) {
-    console.error('Get user by username error:', error);
     res.status(500).json({ error: 'Failed to get user' });
   }
 });

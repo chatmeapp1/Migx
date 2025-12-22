@@ -238,7 +238,7 @@ const chatroomRoutes = require('./api/chatroom.route');
 
 // API Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/user', userRoutes);
+app.use('/api/users', userRoutes); // Register user routes first
 app.use('/api/profile', profileRouter);
 app.use('/api/viewprofile', viewProfileRouter);
 app.use('/api/rooms', roomRoutes);
@@ -309,9 +309,9 @@ app.post('/api/admin/unban', verifyAdminAuth, async (req, res) => {
 
     await clearGlobalBan(username);
 
-    res.json({ 
-      success: true, 
-      message: `${username} has been unbanned globally.` 
+    res.json({
+      success: true,
+      message: `${username} has been unbanned globally.`
     });
   } catch (error) {
     console.error('Error unbanning user:', error);
@@ -336,9 +336,9 @@ app.post('/api/admin/clear-cooldown', verifyAdminAuth, async (req, res) => {
       await clearVoteCooldown(username, roomId);
     }
 
-    res.json({ 
-      success: true, 
-      message: `Cooldown cleared for ${username} in room ${roomId}` 
+    res.json({
+      success: true,
+      message: `Cooldown cleared for ${username} in room ${roomId}`
     });
   } catch (error) {
     console.error('Error clearing cooldown:', error);
@@ -354,7 +354,7 @@ app.get('/api/admin/ban-status/:username', verifyAdminAuth, async (req, res) => 
     const kickCount = await getAdminKickCount(username);
     const cooldownStatus = roomId ? await getCooldownStatus(username, roomId) : null;
 
-    res.json({ 
+    res.json({
       success: true,
       username,
       adminKickCount: kickCount,

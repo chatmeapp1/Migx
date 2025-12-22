@@ -14,10 +14,10 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/logo/logo_migx.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#043311"
       },
       "softwareKeyboardLayoutMode": "resize",
-      "package": "com.migx1.app"
+      "package": "com.migx.app"
     },
     
     "plugins": [

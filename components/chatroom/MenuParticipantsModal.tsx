@@ -94,19 +94,19 @@ export function MenuParticipantsModal({ visible, onClose, roomId, onUserMenuPres
     if (action === 'view-profile') {
       // Get user ID from username
       try {
-        const response = await fetch(`${API_BASE_URL}/api/users/by-username/${selectedUser}`);
+        const response = await fetch(`${API_BASE_URL}/api/users/username/${selectedUser}`);
         const data = await response.json();
         
-        if (data.success && data.user) {
+        if (data && data.id) {
           // Close modals
           setShowUserMenu(false);
           setSelectedUser(null);
           onClose(); // Close the participants modal
           
           // Navigate to view-profile screen
-          router.push(`/view-profile?userId=${data.user.id}`);
+          router.push(`/view-profile?userId=${data.id}`);
         } else {
-          console.error('User not found:', data.error);
+          console.error('User not found:', data.error || 'Unknown error');
         }
       } catch (error) {
         console.error('Error fetching user ID:', error);

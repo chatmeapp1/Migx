@@ -497,7 +497,6 @@ export default function AdminPanelScreen() {
             insets={insets}
             onAddCoin={() => setAddCoinModalVisible(true)}
             onCreateAccount={() => setCreateAccountModalVisible(true)}
-            onUserManagement={() => setSelectedTab('users')}
             onClose={() => setMenuVisible(false)}
           />
         </Modal>
@@ -597,7 +596,7 @@ export default function AdminPanelScreen() {
 
       {selectedTab === 'announcements' && (
         <View style={styles.comingSoon}>
-          <Text style={[styles.comingSoonText, { color: theme.textSecondary }]}>
+          <Text style={[styles.comingSoonText, { color: theme.secondary }]}>
             Announcements Management Coming Soon
           </Text>
         </View>

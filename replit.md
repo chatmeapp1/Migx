@@ -6,7 +6,33 @@ This project is a cross-platform mobile chat application, built with React Nativ
 
 Preferred communication style: Simple, everyday language.
 
-# Recent Updates (Dec 22, 2025)
+# Recent Updates (Dec 23, 2025)
+
+## Dedicated User Management Page - Username Input & Role Selection
+- **New Page**: `app/user-management.tsx` - Dedicated page for admin user role management
+- **Features**:
+  - Username search input with validation
+  - Displays user details (email, current role, credits, level, last IP)
+  - Role selection grid with buttons: User, Mentor, Admin, Customer Service
+  - Apply role change with confirmation
+  - Accessible from Admin Panel menu → User Management
+- **Implementation**: Searches all users by username, fetches user details, updates role via `/api/admin/users/{userId}/role` API
+- **UI**: Color-coded role badges (different colors for each role), responsive layout with user info sections
+- **Location**: `/user-management` route, opens from AdminMenu "User Management" option
+
+## Admin Panel Refactoring - Component Extraction
+- **Refactored**: Extracted monolithic admin-panel.tsx (1400 lines) into modular components
+- **Components Location**: `components/admin/` (root level, outside app directory)
+- **Components Created**:
+  - `AdminMenu.tsx` - Menu dropdown with Add Coin, Create Account, User Management (navigates to dedicated page)
+  - `AddCoinModal.tsx` - Modal for adding coins to users
+  - `CreateAccountModal.tsx` - Modal for creating admin accounts
+  - `UsersTab.tsx` - User list with search, table display, role/ban actions
+  - `RoomsTab.tsx` - Room management with create/edit/delete
+  - `CreateRoomModal.tsx` - Modal for creating rooms (half-modal style with category buttons)
+- **Benefits**: Reduced main file to ~500 lines, improved maintainability, reusable components, better code organization
+
+# Earlier Updates (Dec 22, 2025)
 
 ## Message Send Validation - Left Room Warning
 - **Frontend Check**: Before sending message, checks if `currentUsername` exists in `roomUsers` array

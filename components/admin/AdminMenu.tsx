@@ -1,16 +1,23 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
 interface AdminMenuProps {
   insets: any;
   onAddCoin: () => void;
   onCreateAccount: () => void;
-  onUserManagement: () => void;
   onClose: () => void;
 }
 
-export function AdminMenu({ insets, onAddCoin, onCreateAccount, onUserManagement, onClose }: AdminMenuProps) {
+export function AdminMenu({ insets, onAddCoin, onCreateAccount, onClose }: AdminMenuProps) {
+  const router = useRouter();
+
+  const handleUserManagement = () => {
+    onClose();
+    router.push('/user-management');
+  };
+
   return (
     <TouchableOpacity
       style={styles.modalOverlay}
@@ -40,12 +47,9 @@ export function AdminMenu({ insets, onAddCoin, onCreateAccount, onUserManagement
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.menuItem}
-          onPress={() => {
-            onClose();
-            onUserManagement();
-          }}
+          onPress={handleUserManagement}
         >
-          <Ionicons name="people-outline" size={20} color="#9B59B6" />
+          <Ionicons name="person-outline" size={20} color="#9B59B6" />
           <Text style={styles.menuItemText}>User Management</Text>
         </TouchableOpacity>
       </View>

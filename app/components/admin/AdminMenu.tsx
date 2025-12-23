@@ -1,0 +1,88 @@
+import React from 'react';
+import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+
+interface AdminMenuProps {
+  insets: any;
+  onAddCoin: () => void;
+  onCreateAccount: () => void;
+  onUserManagement: () => void;
+  onClose: () => void;
+}
+
+export function AdminMenu({ insets, onAddCoin, onCreateAccount, onUserManagement, onClose }: AdminMenuProps) {
+  return (
+    <TouchableOpacity
+      style={styles.modalOverlay}
+      activeOpacity={1}
+      onPress={onClose}
+    >
+      <View style={[styles.menuDropdown, { top: insets.top + 50 }]}>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => {
+            onClose();
+            onAddCoin();
+          }}
+        >
+          <Ionicons name="cash-outline" size={20} color="#2ECC71" />
+          <Text style={styles.menuItemText}>Add Coin</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => {
+            onClose();
+            onCreateAccount();
+          }}
+        >
+          <Ionicons name="person-add-outline" size={20} color="#3498DB" />
+          <Text style={styles.menuItemText}>Create Account</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => {
+            onClose();
+            onUserManagement();
+          }}
+        >
+          <Ionicons name="people-outline" size={20} color="#9B59B6" />
+          <Text style={styles.menuItemText}>User Management</Text>
+        </TouchableOpacity>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  menuDropdown: {
+    position: 'absolute',
+    right: 16,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingVertical: 8,
+    minWidth: 180,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+  },
+  menuItemText: {
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '500',
+  },
+});

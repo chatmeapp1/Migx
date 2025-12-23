@@ -145,40 +145,6 @@ export function ViewProfileHeader({
         </View>
       </View>
 
-      {/* Action Buttons */}
-      <View style={styles.actionButtonsContainer}>
-        <TouchableOpacity
-          style={[
-            styles.followButton,
-            { backgroundColor: isFollowing ? '#999' : '#4A90E2' }
-          ]}
-          onPress={onFollowPress}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="person-add" size={18} color="#fff" style={{ marginRight: 8 }} />
-          <Text style={styles.followButtonText}>
-            {isFollowing ? 'Unfollow' : 'Follow'}
-          </Text>
-        </TouchableOpacity>
-
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Ionicons name="people" size={20} color="#999" />
-            <Text style={styles.statNumber}>{followersCount.toLocaleString()}</Text>
-            <Text style={styles.statLabel}>Follower</Text>
-            <VerifiedIcon size={16} />
-          </View>
-        </View>
-
-        <TouchableOpacity 
-          style={styles.chatButton}
-          onPress={onChatPress}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="chatbubble" size={18} color="#666" />
-          <Text style={styles.chatButtonText}>Chat</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }
@@ -272,63 +238,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#666',
     marginTop: 2,
-  },
-  actionButtonsContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    marginBottom: 16,
-    gap: 12,
-    alignItems: 'center',
-  },
-  followButton: {
-    flexDirection: 'row',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    alignItems: 'center',
-    flex: 0.35,
-  },
-  followButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    flex: 0.35,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    alignItems: 'center',
-  },
-  statItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  statNumber: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#000',
-    marginTop: 2,
-  },
-  statLabel: {
-    fontSize: 11,
-    color: '#999',
-    marginTop: 1,
-  },
-  chatButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 12,
-    flex: 0.3,
-  },
-  chatButtonText: {
-    fontSize: 12,
-    color: '#666',
-    marginLeft: 4,
   },
 });

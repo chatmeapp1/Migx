@@ -10,6 +10,7 @@ interface EditProfileStatsProps {
   giftCount?: number;
   followersCount?: number;
   followingCount?: number;
+  viewCount?: number;
   onPostPress?: () => void;
   onGiftPress?: () => void;
   onFollowersPress?: () => void;
@@ -121,6 +122,7 @@ export function EditProfileStats({
   giftCount: propGiftCount,
   followersCount: propFollowersCount,
   followingCount: propFollowingCount,
+  viewCount: propViewCount,
   onPostPress,
   onGiftPress,
   onFollowersPress,
@@ -135,6 +137,7 @@ export function EditProfileStats({
     giftCount: propGiftCount || 0,
     followersCount: propFollowersCount || 2535,
     followingCount: propFollowingCount || 0,
+    viewCount: propViewCount || 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -145,12 +148,13 @@ export function EditProfileStats({
         giftCount: propGiftCount || 0,
         followersCount: propFollowersCount || 2535,
         followingCount: propFollowingCount || 0,
+        viewCount: propViewCount || 0,
       });
       setLoading(false);
     } else {
       loadStats();
     }
-  }, [userId, propPostCount, propGiftCount, propFollowersCount, propFollowingCount]);
+  }, [userId, propPostCount, propGiftCount, propFollowersCount, propFollowingCount, propViewCount]);
 
   const loadStats = async () => {
     try {
@@ -164,6 +168,7 @@ export function EditProfileStats({
           giftCount: data.giftCount || 0,
           followersCount: data.followersCount || 2535,
           followingCount: data.followingCount || 0,
+          viewCount: data.viewCount || 0,
         });
       }
     } catch (error) {
@@ -223,38 +228,29 @@ export function EditProfileStats({
         </TouchableOpacity>
       </View>
 
-      {/* Second Row: Follow, Footprint, Gift Menu */}
+      {/* Second Row: Followers, Footprint, Gift Display (no click) */}
       <View style={[styles.menuRow, { backgroundColor: theme.card, borderColor: theme.border }]}>
-        <TouchableOpacity
-          style={styles.menuItem}
-          onPress={onFollowersPress}
-          activeOpacity={0.6}
-        >
+        <View style={styles.menuItem}>
           <UsersIcon size={24} color="#2563EB" />
+          <Text style={[styles.menuCount, { color: theme.text }]}>{stats.followersCount}</Text>
           <Text style={[styles.menuLabel, { color: theme.text }]}>Followers</Text>
-        </TouchableOpacity>
+        </View>
 
         <View style={[styles.menuDivider, { backgroundColor: theme.border }]} />
 
-        <TouchableOpacity
-          style={styles.menuItem}
-          onPress={onFootprintPress}
-          activeOpacity={0.6}
-        >
+        <View style={styles.menuItem}>
           <FootprintIcon size={24} color="#2563EB" />
+          <Text style={[styles.menuCount, { color: theme.text }]}>{stats.viewCount}</Text>
           <Text style={[styles.menuLabel, { color: theme.text }]}>Footprint</Text>
-        </TouchableOpacity>
+        </View>
 
         <View style={[styles.menuDivider, { backgroundColor: theme.border }]} />
 
-        <TouchableOpacity
-          style={styles.menuItem}
-          onPress={onGiftPress}
-          activeOpacity={0.6}
-        >
+        <View style={styles.menuItem}>
           <GiftIcon size={24} color="#2563EB" />
+          <Text style={[styles.menuCount, { color: theme.text }]}>{stats.giftCount}</Text>
           <Text style={[styles.menuLabel, { color: theme.text }]}>Gift</Text>
-        </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -335,6 +331,11 @@ const styles = StyleSheet.create({
   menuLabel: {
     fontSize: 12,
     fontWeight: '500',
+  },
+  menuCount: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 2,
   },
   menuDivider: {
     width: 1,

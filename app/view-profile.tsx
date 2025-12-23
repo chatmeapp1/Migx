@@ -8,10 +8,11 @@ import { ViewProfileHeader } from '@/components/profile/ViewProfileHeader';
 import { EditProfileStats } from '@/components/profile/EditProfileStats';
 import { API_ENDPOINTS } from '@/utils/api';
 import { getStoredUser } from '@/utils/storage';
-import { getSocket } from '@/hooks/useSocket';
+import { useSocket } from '@/hooks/useSocket';
 
 export default function ViewProfileScreen() {
   const { theme } = useThemeCustom();
+  const { socket } = useSocket();
   const params = useLocalSearchParams();
   const userId = params.userId as string;
 
@@ -111,19 +112,16 @@ export default function ViewProfileScreen() {
         }));
 
         // Send notification to the followed user if following
-        if (newFollowingState) {
-          const socket = getSocket();
-          if (socket) {
-            socket.emit('notif:send', {
-              username: profileData.user.username,
-              notification: {
-                type: 'follow',
-                message: `${currentUser.username} started following you`,
-                from: currentUser.username,
-                timestamp: Date.now(),
-              },
-            });
-          }
+        if (newFollowingState && socket) {
+          socket.emit('notif:send', {
+            username: profileData.user.username,
+            notification: {
+              type: 'follow',
+              message: `${currentUser.username} started following you`,
+              from: currentUser.username,
+              timestamp: Date.now(),
+            },
+          });
         }
       } else {
         Alert.alert('Error', data.error || `Failed to ${isFollowing ? 'unfollow' : 'follow'} user`);

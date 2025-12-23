@@ -242,13 +242,6 @@ export const ChatRoomInput = forwardRef<ChatRoomInputRef, ChatRoomInputProps>(({
         </TouchableOpacity>
       </View>
 
-      <ChatRoomMenu
-        visible={menuVisible}
-        onClose={() => setMenuVisible(false)}
-        onMenuItemPress={handleMenuItemPress}
-        onOpenParticipants={onOpenParticipants}
-      />
-
       <CmdList
         visible={cmdListVisible}
         onClose={() => setCmdListVisible(false)}

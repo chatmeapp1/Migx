@@ -36,6 +36,9 @@ import { SwipeableScreen } from '@/components/navigation/SwipeableScreen';
 import FeedMedia from '../components/feed/FeedMedia';
 import ImageModal from '../components/feed/ImageModal';
 
+// Feed screen uses REST API only - no Socket.IO needed here
+// Global socket is already managed in useRoomTabsStore
+
 const CloseIcon = ({ size = 24, color = '#000' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M18 6L6 18M6 6l12 12" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

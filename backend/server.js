@@ -422,20 +422,8 @@ chatNamespace.on('connection', (socket) => {
   });
 });
 
-io.on('connection', (socket) => {
-  const username = socket.handshake.auth?.username || 'Anonymous';
-  const userId = socket.handshake.auth?.userId || 'Unknown';
-  console.log(`Main namespace client connected: ${socket.id} | User: ${username} (ID: ${userId})`);
-
-  roomEvents(io, socket);
-  chatEvents(io, socket);
-  pmEvents(io, socket);
-  systemEvents(io, socket);
-  creditEvents(io, socket);
-  merchantEvents(io, socket);
-  gameEvents(io, socket);
-  chatListEvents(io, socket);
-});
+// Main namespace handler removed - use /chat namespace only
+// This prevents duplicate socket connections per client
 
 const PORT = process.env.PORT || 5000;
 const HOST = '0.0.0.0';

@@ -20,6 +20,7 @@ import { CreateAccountModal } from '@/components/admin/CreateAccountModal';
 import { UsersTab } from '@/components/admin/UsersTab';
 import { RoomsTab } from '@/components/admin/RoomsTab';
 import { CreateRoomModal } from '@/components/admin/CreateRoomModal';
+import { TransactionHistoryModal } from '@/components/admin/TransactionHistoryModal';
 
 const HEADER_COLOR = '#0a5229';
 
@@ -36,6 +37,7 @@ export default function AdminPanelScreen() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [addCoinModalVisible, setAddCoinModalVisible] = useState(false);
   const [createAccountModalVisible, setCreateAccountModalVisible] = useState(false);
+  const [transactionHistoryVisible, setTransactionHistoryVisible] = useState(false);
   
   const [coinUsername, setCoinUsername] = useState('');
   const [coinAmount, setCoinAmount] = useState('');
@@ -497,6 +499,7 @@ export default function AdminPanelScreen() {
             insets={insets}
             onAddCoin={() => setAddCoinModalVisible(true)}
             onCreateAccount={() => setCreateAccountModalVisible(true)}
+            onTransactionHistory={() => setTransactionHistoryVisible(true)}
             onClose={() => setMenuVisible(false)}
           />
         </Modal>
@@ -527,6 +530,16 @@ export default function AdminPanelScreen() {
         loading={createLoading}
         onSubmit={handleCreateAccount}
       />
+
+      <Modal
+        visible={transactionHistoryVisible}
+        animationType="slide"
+        onRequestClose={() => setTransactionHistoryVisible(false)}
+      >
+        <TransactionHistoryModal
+          onClose={() => setTransactionHistoryVisible(false)}
+        />
+      </Modal>
 
       <CreateRoomModal
         visible={createRoomModalVisible}

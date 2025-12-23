@@ -7,10 +7,11 @@ interface AdminMenuProps {
   insets: any;
   onAddCoin: () => void;
   onCreateAccount: () => void;
+  onTransactionHistory: () => void;
   onClose: () => void;
 }
 
-export function AdminMenu({ insets, onAddCoin, onCreateAccount, onClose }: AdminMenuProps) {
+export function AdminMenu({ insets, onAddCoin, onCreateAccount, onTransactionHistory, onClose }: AdminMenuProps) {
   const router = useRouter();
 
   const handleUserManagement = () => {
@@ -51,6 +52,16 @@ export function AdminMenu({ insets, onAddCoin, onCreateAccount, onClose }: Admin
         >
           <Ionicons name="person-outline" size={20} color="#9B59B6" />
           <Text style={styles.menuItemText}>User Management</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => {
+            onClose();
+            onTransactionHistory();
+          }}
+        >
+          <Ionicons name="receipt-outline" size={20} color="#E67E22" />
+          <Text style={styles.menuItemText}>Transaction History</Text>
         </TouchableOpacity>
       </View>
     </TouchableOpacity>

@@ -381,4 +381,89 @@ router.delete('/rooms/:roomId', authMiddleware, superAdminMiddleware, async (req
   }
 });
 
+// Transaction History Endpoints
+router.get('/transactions/game', authMiddleware, superAdminMiddleware, async (req, res) => {
+  try {
+    const pool = getPool();
+    const result = await pool.query(
+      `SELECT 
+        id, 
+        CASE 
+          WHEN amount > 0 THEN 'win'
+          ELSE 'bet'
+        END as type,
+        ABS(amount) as amount,
+        from_username as username,
+        description,
+        created_at
+       FROM credit_logs
+       WHERE transaction_type = 'game_spend'
+       ORDER BY created_at DESC
+       LIMIT 100`
+    );
+    
+    res.json({ transactions: result.rows });
+  } catch (error) {
+    console.error('Error fetching game transactions:', error);
+    res.status(500).json({ error: 'Failed to fetch game transactions' });
+  }
+});
+
+router.get('/transactions/gift', authMiddleware, superAdminMiddleware, async (req, res) => {
+  try {
+    const pool = getPool();
+    const result = await pool.query(
+      `SELECT 
+        ug.id,
+        CASE 
+          WHEN ug.sender_id = u.id THEN 'send'
+          ELSE 'receive'
+        END as type,
+        ug.gift_cost as amount,
+        CASE 
+          WHEN ug.sender_id = u.id THEN ug.receiver_id::text
+          ELSE ug.sender_id::text
+        END as username,
+        ug.gift_name as description,
+        ug.created_at
+       FROM user_gifts ug
+       JOIN users u ON u.id = ug.sender_id OR u.id = ug.receiver_id
+       ORDER BY ug.created_at DESC
+       LIMIT 100`
+    );
+    
+    res.json({ transactions: result.rows });
+  } catch (error) {
+    console.error('Error fetching gift transactions:', error);
+    res.status(500).json({ error: 'Failed to fetch gift transactions' });
+  }
+});
+
+router.get('/transactions/transfer', authMiddleware, superAdminMiddleware, async (req, res) => {
+  try {
+    const pool = getPool();
+    const result = await pool.query(
+      `SELECT 
+        id,
+        amount,
+        from_username as username,
+        description,
+        created_at,
+        CASE 
+          WHEN from_user_id IS NOT NULL THEN 'send'
+          ELSE 'receive'
+        END as type
+       FROM credit_logs
+       WHERE transaction_type = 'transfer'
+       ORDER BY created_at DESC
+       LIMIT 100`
+    );
+    
+    res.json({ transactions: result.rows });
+  } catch (error) {
+    console.error('Error fetching transfer transactions:', error);
+    res.status(500).json({ error: 'Failed to fetch transfer transactions' });
+  }
+});
+
 module.exports = router;

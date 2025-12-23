@@ -1,227 +1,59 @@
 # Overview
 
-This project is a cross-platform mobile chat application, built with React Native and Expo, designed to replicate a classic chat experience. It offers real-time messaging, chat rooms, private conversations, user profiles, and social networking features like friends lists and online status. The application supports iOS, Android, and Web deployment, incorporating features such as room browsing, favorite management, user leveling, theme customization, and a credit transfer system. The overarching vision is to create a dynamic and engaging social platform reminiscent of early chat services, fostering community and interaction.
+This project is a cross-platform mobile chat application built with React Native and Expo, designed to offer a classic chat experience. It features real-time messaging, chat rooms, private conversations, user profiles, and social networking functionalities like friends lists and online status. The application supports iOS, Android, and Web, incorporating room browsing, favorite management, user leveling, theme customization, and a credit transfer system. The goal is to create an engaging social platform that fosters community and interaction, reminiscent of early chat services.
 
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
 
-# Recent Updates (Dec 23, 2025)
-
-## User Management - Change Password, Email & Reset PIN (NEW)
-- **Added Sections**: Three new sections in `app/user-management.tsx` for admin operations
-- **Change Password Section**:
-  - Username input field
-  - New password input field (hidden/masked)
-  - Submit button that calls `PUT /api/admin/users/{userId}/password`
-  - Validates password length (min 6 characters)
-- **Change Email Section**:
-  - Username input field
-  - New email input field with email validation
-  - Submit button that calls `PUT /api/admin/users/{userId}/email`
-  - Validates email format and checks for duplicate emails
-- **Reset PIN Section**:
-  - Username input field
-  - New PIN input field (4 digits, masked)
-  - Submit button that calls `PUT /api/admin/users/{userId}/pin`
-  - Validates PIN format (exactly 4 digits)
-- **Backend Endpoints Created**:
-  - `PUT /api/admin/users/:userId/password` - Changes user password (admin only)
-  - `PUT /api/admin/users/:userId/email` - Changes user email (admin only)
-  - `PUT /api/admin/users/:userId/pin` - Resets user PIN (admin only)
-  - All endpoints require admin or super_admin role
-- **Database Schema**: Added `pin VARCHAR(4)` column to users table for storing user PINs
-- **UI Pattern**: Consistent with existing sections, uses theme colors, shows loading states
-
-## Dedicated User Management Page - Username Input & Role Selection
-- **New Page**: `app/user-management.tsx` - Dedicated page for admin user role management
-- **Features**:
-  - Username search input with validation
-  - Displays user details (email, current role, credits, level, last IP)
-  - Role selection grid with buttons: User, Mentor, Admin, Customer Service
-  - Apply role change with confirmation
-  - Accessible from Admin Panel menu → User Management
-- **Implementation**: Searches all users by username, fetches user details, updates role via `/api/admin/users/{userId}/role` API
-- **UI**: Color-coded role badges (different colors for each role), responsive layout with user info sections
-- **Location**: `/user-management` route, opens from AdminMenu "User Management" option
-
-## Admin Panel Refactoring - Component Extraction
-- **Refactored**: Extracted monolithic admin-panel.tsx (1400 lines) into modular components
-- **Components Location**: `components/admin/` (root level, outside app directory)
-- **Components Created**:
-  - `AdminMenu.tsx` - Menu dropdown with Add Coin, Create Account, User Management (navigates to dedicated page)
-  - `AddCoinModal.tsx` - Modal for adding coins to users
-  - `CreateAccountModal.tsx` - Modal for creating admin accounts
-  - `UsersTab.tsx` - User list with search, table display, role/ban actions
-  - `RoomsTab.tsx` - Room management with create/edit/delete
-  - `CreateRoomModal.tsx` - Modal for creating rooms (half-modal style with category buttons)
-- **Benefits**: Reduced main file to ~500 lines, improved maintainability, reusable components, better code organization
-
-# Earlier Updates (Dec 22, 2025)
-
-## Message Send Validation - Left Room Warning
-- **Frontend Check**: Before sending message, checks if `currentUsername` exists in `roomUsers` array
-- **User Experience**: If user left the room but tab is still open, shows alert: "You are not in the room {roomName}"
-- **Implementation**: Added check in `handleSendMessage()` function to validate room membership
-- **Prevents**: Messages being sent after user leaves, avoiding "not in room" backend errors
-
-## Room Participant Sync - Redis Set as Single Source of Truth
-- **Backend Redis Storage**: `room:{roomId}:participants` = Redis Set of usernames (classic MIG33 style)
-- **Functions Updated**:
-  - `addRoomParticipant(roomId, username)` - adds username to Set
-  - `removeRoomParticipant(roomId, username)` - removes username from Set
-  - `getRoomParticipants(roomId)` - returns array of usernames from Set
-- **Socket Events**:
-  - On join/rejoin: add to set, emit `room:participants:update` with full list to all users
-  - On leave/disconnect/kick: remove from set, emit `room:participants:update`
-- **Frontend Behavior**:
-  - Listens to `room:participants:update` with participant list (string array)
-  - Updates roomUsers state instantly
-  - MenuKickModal automatically excludes current user
-  - "Currently users in the room" always matches participant list
-
-# Earlier Updates (Dec 21, 2025)
-
-## Feed System - Anonymous Posts Filtering & Avatars
-- **Backend**: Posts without username or with "Anonymous" are filtered out at API level (normalizeFeedItem)
-- **Frontend**: Double filter in normalizeFeedArray removes null/Anonymous usernames
-- **Avatar Display**: 40x40px rounded avatars now display in feed posts (from user database or placeholder)
-
-## Chat Tab - Room List Real-time Updates
-- **ChatList.tsx**: Now fetches joined rooms from `/api/chat/list/:username` with proper error logging
-- **ChatItem.tsx**: Accepts roomId parameter, uses SVG room icon, displays last message with timestamp
-- **Real-time**: Socket listeners for chatlist:update, chatlist:roomJoined, chatlist:roomLeft automatically reload room list
-- **Navigation**: Clicking room uses actual roomId from backend for proper navigation to chatroom
-
 # System Architecture
 
 ## Frontend Architecture
 
-### Core Technologies
-The frontend is built using **Expo SDK 54**, **React Native 0.81.4**, and **React 19.1.0**, leveraging **Expo Router 6.x** for file-based navigation. It supports the new React Native architecture and is designed for cross-platform consistency.
-
-### UI/UX Design
-A **custom component library** with themed components (`ThemedView`, `ThemedText`) and **SVG-based icons** ensures a consistent look. **React Native Gesture Handler** and **Reanimated** provide custom gestures and animations. The app features responsive layouts and platform-specific UI elements (SF Symbols on iOS, Material Icons elsewhere). A comprehensive **theming system** supports light, dark, and system-auto modes, with persistent storage via AsyncStorage and predefined color schemes. The current active theme incorporates an emerald gradient.
-
-### Navigation and Features
-The application uses tab-based navigation with a custom swipeable implementation via `PagerView`. Key features include:
-- **Chat System**: Multi-tab interface supporting concurrent conversations, message rendering, emoji support, and a real-time ready architecture.
-- **Room Management**: Collapsible categories, capacity indicators, search, and dynamic room creation.
-- **User Profile**: Role-based features, a level system with badge display, and account management options.
-- **Credit System**: In-app credit transfer with PIN authentication and transaction history.
-- **Authentication**: Login and signup screens with teal/cyan gradients, "remember me" functionality, and email validation.
-- **Splash Screen**: Custom animated splash screen with a gradient background and dynamic elements.
-
-### State Management
-React's built-in hooks (`useState`, `useEffect`, `useContext`) and the Context API are used for both local and global state management, without external state libraries.
+The frontend uses **Expo SDK 54**, **React Native 0.81.4**, and **React 19.1.0**, with **Expo Router 6.x** for navigation. It features a **custom component library** with themed components and **SVG-based icons** for a consistent UI. **React Native Gesture Handler** and **Reanimated** are used for custom gestures and animations. The application includes a comprehensive **theming system** supporting light, dark, and system-auto modes, with persistent storage. Navigation is tab-based with a custom swipeable implementation. Key features include a multi-tab chat system, dynamic room management, role-based user profiles with a level system, an in-app credit system with PIN authentication, and secure authentication flows. State management relies on React's built-in hooks and Context API.
 
 ## Backend Architecture
 
-### Server Stack
-The backend is powered by **Node.js** with **Express.js** for RESTful APIs and **Socket.IO** for real-time communication. **PostgreSQL (Neon DB)** is used for persistent data storage, and **Redis Cloud** handles presence, rate limiting, and caching.
-
-### Backend Structure and Services
-The backend is organized into services for users, rooms, messages, bans, credits, merchants, and games. It includes dedicated Socket.IO event handlers for various functionalities such as room events, chat messages, private messages, system events, credit transfers, merchant management, and games.
+The backend is built with **Node.js** and **Express.js** for RESTful APIs, and **Socket.IO** for real-time communication. **PostgreSQL (Neon DB)** is used for persistent data storage, while **Redis Cloud** handles presence, rate limiting, and caching. The backend is structured into services for users, rooms, messages, bans, credits, merchants, and games.
 
 ### Database Schema
-The PostgreSQL database includes tables for `users`, `rooms`, `messages`, `private_messages`, `credit_logs`, `merchants`, `merchant_spend_logs`, `user_levels`, `room_bans`, and `game_history`.
 
-The `rooms` table includes a `category` column with values: 'general' (default), 'official', and 'game'.
+The PostgreSQL database includes tables for `users`, `rooms` (with 'general', 'official', 'game' categories), `messages`, `private_messages`, `credit_logs`, `merchants`, `merchant_spend_logs`, `user_levels`, `room_bans`, and `game_history`.
 
 ### Redis Usage & Presence Management
-Redis is utilized for managing online user presence in rooms, banned user lists, flood control, global rate limiting, caching merchant income, and mapping user IDs to socket connections.
 
-#### Redis TTL Presence System (Single Source of Truth)
-Implemented for clean and reliable participant/viewer count management. Key design:
-- **Key Format**: `room:{roomId}:user:{userId}` with **6-hour TTL (21600 seconds)**
-- **Value**: User presence JSON (socketId, username, timestamp)
-- **Client Heartbeat**: Frontend emits `room:heartbeat` every 28 seconds to refresh TTL
-- **Server Cleanup Job**: Runs every 60 seconds via `startPresenceCleanup()` to detect expired presences and emit `room:force-leave` events to clients
-- **Participant List**: Always fetched from Redis TTL keys via `getRoomParticipants()`, never from DB/Set
-- **Server Startup**: Automatically clears legacy Redis keys (`room:users:*`, `room:participants:*`, `room:userRoom:*`) on startup for clean state
-- **Guarantees**: 
-  - No ghost users after server restart (legacy keys cleared, participants recalculated from TTL keys only)
-  - No stale participant data (6-hour TTL + heartbeat refresh)
-  - Graceful cleanup of timed-out connections (force-leave event to client)
-  - Accurate viewer count always (count = number of active TTL keys in room)
+Redis is crucial for managing online user presence with a **TTL-based system** (6-hour TTL, refreshed by client heartbeats), ensuring accurate participant counts and graceful cleanup of disconnected users. It also handles banned user lists, flood control, global rate limiting, and caching.
 
 ### Real-time Communication (Socket.IO)
-The `/chat` namespace handles a wide array of real-time events, including joining/leaving rooms, sending/receiving chat messages, private messages, credit transfers, and game interactions.
+
+The `/chat` namespace facilitates real-time events such as joining/leaving rooms, sending/receiving chat and private messages, credit transfers, and game interactions.
 
 ### REST API Endpoints
-Key API endpoints include:
-- `/api/auth/login` - User authentication
-- `/api/users/:id` - User data
-- `/api/rooms` - Room listing, details, favorites, recent (READ operations)
-- `/api/rooms/official` - Get official rooms (category='official')
-- `/api/rooms/game` - Get game rooms (category='game')
-- `/api/rooms/recent/:username` - Get user's recent rooms
-- `/api/rooms/favorites/:username` - Get user's favorite rooms
-- `/api/chatroom/:roomId/join` - Join chatroom (lifecycle)
-- `/api/chatroom/:roomId/leave` - Leave chatroom (lifecycle)
-- `/api/chatroom/:roomId/participants` - Get room participants
-- `/api/chatroom/:roomId/status` - Get room status
-- `/api/messages/:roomId` - Room messages
-- `/api/credits/transfer` - Credit transfers
-- `/api/merchants/create` - Merchant creation
 
-**Note**: The legacy `/api/rooms/join` and `/api/rooms/leave` endpoints are deprecated. Use `/api/chatroom/:roomId/join` and `/api/chatroom/:roomId/leave` instead.
+Key REST API endpoints include authentication (`/api/auth/login`), user data (`/api/users/:id`), room management (`/api/rooms`, `/api/rooms/official`, `/api/rooms/game`, `/api/rooms/recent/:username`, `/api/rooms/favorites/:username`), chatroom lifecycle (`/api/chatroom/:roomId/join`, `/api/chatroom/:roomId/leave`), messages (`/api/messages/:roomId`), credit transfers (`/api/credits/transfer`), and merchant creation (`/api/merchants/create`).
 
 ### Game and Economy Systems
-- **XP & Level System**: Users gain XP for various actions (sending messages, joining rooms, playing/winning games, transferring credits) to progress through levels.
-- **Merchant Commission System**: Mentors can create merchants who earn a 30% commission from game spend.
-- **Free Credit Claim System (Auto Voucher)**: Automatic voucher system that broadcasts free credit codes to all active rooms. Features include:
-  - Auto-generated 7-digit codes every 30 minutes
-  - Each voucher expires after 60 seconds
-  - Random IDR amount between configured min/max (default: 500-1000 IDR)
-  - Users claim via `/c <code>` chat command
-  - 30-minute cooldown per user after successful claim
-  - Users can only claim each voucher once
-  - Private claim responses (not broadcast to room)
-  - Voucher announcement broadcast to all active rooms via `chat:message` event
+
+The application includes an **XP & Level System** where users earn experience for various actions. A **Merchant Commission System** allows mentors to create merchants who earn commissions. An **Auto Voucher system** broadcasts free credit codes to active rooms, allowing users to claim credits with a cooldown.
 
 # External Dependencies
 
 ## Core Expo Modules
-- `expo-router`: Navigation and routing.
-- `expo-font`: Custom font loading.
-- `expo-splash-screen`: Splash screen management.
-- `expo-status-bar`: Status bar styling.
-- `expo-constants`: App configuration.
-- `expo-system-ui`: System UI customization.
-- `expo-linking`: Deep linking.
-- `expo-web-browser`: In-app browser.
-- `expo-image`: Optimized image component.
-- `expo-blur`: Blur effects (iOS).
-- `expo-haptics`: Haptic feedback (iOS).
-- `expo-linear-gradient`: Gradient styling.
+
+`expo-router`, `expo-font`, `expo-splash-screen`, `expo-status-bar`, `expo-constants`, `expo-system-ui`, `expo-linking`, `expo-web-browser`, `expo-image`, `expo-blur`, `expo-haptics`, `expo-linear-gradient`.
 
 ## UI & Animation Libraries
-- `react-native-reanimated`: Advanced animations.
-- `react-native-gesture-handler`: Touch gestures.
-- `react-native-pager-view`: Swipeable page views.
-- `react-native-svg`: Vector graphics.
-- `react-native-safe-area-context`: Safe area handling.
-- `react-native-screens`: Native screen optimization.
+
+`react-native-reanimated`, `react-native-gesture-handler`, `react-native-pager-view`, `react-native-svg`, `react-native-safe-area-context`, `react-native-screens`.
 
 ## Storage
-- `@react-native-async-storage/async-storage`: Persistent local storage.
 
-## Development Tools & Integrations
-- `TypeScript`: For type safety.
-- `ESLint`: Code linting.
-- `Jest`: Testing framework.
-- `Babel`: JavaScript transpilation.
-- `@expo/ngrok`: Development tunneling.
-- `react-native-webview`: Embedded web content (for future use).
+`@react-native-async-storage/async-storage`.
 
 ## Backend Specific Dependencies
-- `Node.js`: Runtime environment.
-- `Express.js`: Web framework.
-- `Socket.IO`: Real-time communication library.
-- `PostgreSQL (Neon DB)`: Primary database.
-- `Redis Cloud`: Caching and real-time data store.
+
+`Node.js`, `Express.js`, `Socket.IO`, `PostgreSQL (Neon DB)`, `Redis Cloud`.
 
 ## API Configuration
-- **API Base URL**: `https://c1a0709e-b20d-4687-ab11-e0584b9914f2-00-pfaqheie55z6.pike.replit.dev`
-- Socket.IO connection also uses `API_BASE_URL`.
+
+**API Base URL**: `https://c1a0709e-b20d-4687-ab11-e0584b9914f2-00-pfaqheie55z6.pike.replit.dev` (also used for Socket.IO).

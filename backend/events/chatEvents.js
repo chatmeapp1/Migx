@@ -173,9 +173,9 @@ module.exports = (io, socket) => {
             socket.emit('chat:message', {
               id: generateMessageId(),
               roomId,
-              message: `✅ Follow request sent to ${targetUsername}. Waiting for acceptance...`,
+              message: `You are now follow ${targetUsername}`,
               messageType: 'cmdFollow',
-              type: 'notice',
+              type: 'cmd',
               timestamp: new Date().toISOString(),
               isPrivate: true
             });
@@ -265,9 +265,9 @@ module.exports = (io, socket) => {
             socket.emit('chat:message', {
               id: generateMessageId(),
               roomId,
-              message: `✅ You are now unfollow ${targetUsername}.`,
+              message: `You are now unfollow ${targetUsername}`,
               messageType: 'cmdUnfollow',
-              type: 'notice',
+              type: 'cmd',
               timestamp: new Date().toISOString(),
               isPrivate: true
             });

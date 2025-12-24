@@ -14,6 +14,7 @@ interface ChatMessageProps {
   isPresence?: boolean;
   userType?: 'creator' | 'admin' | 'normal' | 'mentor' | 'merchant';
   isOwnMessage?: boolean;
+  messageType?: string;
 }
 
 export function ChatMessage({
@@ -25,7 +26,8 @@ export function ChatMessage({
   isCmd,
   isPresence,
   userType,
-  isOwnMessage
+  isOwnMessage,
+  messageType
 }: ChatMessageProps) {
   
   const { theme } = useThemeCustom();
@@ -47,9 +49,13 @@ export function ChatMessage({
   };
 
   if (isCmd) {
+    // Check if it's a follow/unfollow message
+    const isFollowMessage = messageType === 'cmdFollow' || messageType === 'cmdUnfollow';
+    const textColor = isFollowMessage ? '#8B6F47' : '#C96F4A';
+    
     return (
       <View style={styles.messageContainer}>
-        <Text style={styles.cmdText}>
+        <Text style={[styles.cmdText, { color: textColor }]}>
           {message}
         </Text>
       </View>

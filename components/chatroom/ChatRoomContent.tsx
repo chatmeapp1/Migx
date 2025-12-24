@@ -12,6 +12,7 @@ interface Message {
   isCmd?: boolean;
   isPresence?: boolean;
   userType?: 'creator' | 'admin' | 'normal' | 'mentor' | 'merchant';
+  messageType?: string;
 }
 
 interface ChatRoomContentProps {
@@ -48,6 +49,7 @@ export function ChatRoomContent({ messages, bottomPadding = 70 }: ChatRoomConten
           isPresence={item.isPresence}
           userType={item.userType}
           isOwnMessage={item.isOwnMessage}
+          messageType={item.messageType}
         />
       )}
       contentContainerStyle={[styles.container, { paddingBottom: bottomPadding }]}

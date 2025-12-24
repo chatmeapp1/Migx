@@ -183,12 +183,20 @@ export const useRoomTabsStore = create<RoomTabsStore>((set, get) => ({
       return;
     }
     
-    const newMessages = [...existingMessages, message];
+    // Map incoming message type field to isCmd/isNotice flags
+    let processedMessage = { ...message };
+    if ((message as any).type === 'cmd') {
+      processedMessage.isCmd = true;
+    } else if ((message as any).type === 'notice') {
+      processedMessage.isNotice = true;
+    }
+    
+    const newMessages = [...existingMessages, processedMessage];
     const activeRoomId = state.openRoomIds[state.activeIndex];
     const isActiveRoom = activeRoomId === roomId;
     
     let newOpenRoomsById = state.openRoomsById;
-    if (state.openRoomsById[roomId] && !isActiveRoom && !message.isOwnMessage) {
+    if (state.openRoomsById[roomId] && !isActiveRoom && !processedMessage.isOwnMessage) {
       const room = state.openRoomsById[roomId];
       newOpenRoomsById = {
         ...state.openRoomsById,

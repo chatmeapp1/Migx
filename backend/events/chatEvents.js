@@ -188,16 +188,16 @@ module.exports = (io, socket) => {
               username: targetUsername,
               notification: {
                 type: 'follow',
-                message: `${username} has follow you`,
+                message: `${username} wants to follow you`,
                 from: username,
                 fromUserId: userId,
                 timestamp: Date.now(),
               },
             });
 
-            console.log(`👤 ${username} followed ${targetUsername} via /d command`);
+            console.log(`👤 ${username} followed ${targetUsername} via /f command`);
           } catch (error) {
-            console.error('Error following user via /d command:', error);
+            console.error('Error following user via /f command:', error);
             socket.emit('chat:message', {
               id: generateMessageId(),
               roomId,

@@ -2,12 +2,17 @@
 
 This project is a cross-platform mobile chat application built with React Native and Expo, designed to offer a classic chat experience. It features real-time messaging, chat rooms, private conversations, user profiles, and social networking functionalities like friends lists and online status. The application supports iOS, Android, and Web, incorporating room browsing, favorite management, user leveling, theme customization, and a credit transfer system. The goal is to create an engaging social platform that fosters community and interaction, reminiscent of early chat services.
 
-## Latest Changes (December 23, 2025)
+## Latest Changes (December 24, 2025)
 
-- **Follow User Feature**: Implemented both UI-based follow (from participants menu) and command-based follow via `/f [username]` command
-  - Follow via participants menu: Shows system message in chat + sends follow notification with Accept/Reject buttons
-  - Follow via `/f [username]` command: Private response message visible only to sender + follow notification with Accept/Reject buttons
-  - Both methods use same backend follow system and notification workflow
+- **NotificationModal Redesign**: Complete UI overhaul for full-screen notifications
+  - Changed from modal popup to full-screen display
+  - Removed all icons - text-only display with colored left borders
+  - Follow notifications now show with Accept/Reject buttons
+  - Improved visual hierarchy and readability
+- **Follow User Feature**: Fully implemented `/f [username]` command
+  - Command sends private response to sender + follow notification to target
+  - Notification message: "[Username] wants to follow you" with Accept/Reject actions
+  - Integrated with notification system for persistent storage
 
 # User Preferences
 

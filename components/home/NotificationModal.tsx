@@ -186,11 +186,29 @@ export function NotificationModal({ visible, onClose, username, socket }: Notifi
     }
   };
 
+  const getNotificationBorderColor = (type: string) => {
+    switch (type) {
+      case 'credit':
+        return '#4A90E2';
+      case 'gift':
+        return '#E91E63';
+      case 'follow':
+        return '#4CAF50';
+      default:
+        return '#999';
+    }
+  };
+
   const renderNotification = ({ item }: { item: Notification }) => (
-    <View style={[styles.notificationItem, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
-      <View style={styles.notificationIcon}>
-        {getNotificationIcon(item.type)}
-      </View>
+    <View
+      style={[
+        styles.notificationItem,
+        {
+          backgroundColor: theme.card,
+          borderLeftColor: getNotificationBorderColor(item.type),
+        },
+      ]}
+    >
       <View style={styles.notificationContent}>
         <Text style={[styles.notificationMessage, { color: theme.text }]}>
           {item.message}
@@ -222,45 +240,43 @@ export function NotificationModal({ visible, onClose, username, socket }: Notifi
     <Modal
       visible={visible}
       animationType="slide"
-      transparent={true}
+      transparent={false}
       onRequestClose={onClose}
     >
-      <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, { backgroundColor: theme.background }]}>
-          <View style={[styles.header, { borderBottomColor: theme.border }]}>
-            <Text style={[styles.title, { color: theme.text }]}>Notifications</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <CloseIcon color={theme.text} />
-            </TouchableOpacity>
-          </View>
-
-          {loading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#4A90E2" />
-            </View>
-          ) : notifications.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Text style={[styles.emptyText, { color: theme.secondary }]}>
-                No notifications
-              </Text>
-            </View>
-          ) : (
-            <>
-              <FlatList
-                data={notifications}
-                renderItem={renderNotification}
-                keyExtractor={(item, index) => `${item.timestamp}-${index}`}
-                style={styles.list}
-              />
-              <TouchableOpacity
-                style={[styles.clearButton, { backgroundColor: '#E91E63' }]}
-                onPress={clearNotifications}
-              >
-                <Text style={styles.clearButtonText}>Clear All</Text>
-              </TouchableOpacity>
-            </>
-          )}
+      <View style={[styles.modalOverlay, { backgroundColor: theme.background }]}>
+        <View style={[styles.header, { borderBottomColor: theme.border }]}>
+          <Text style={[styles.title, { color: theme.text }]}>Notifications</Text>
+          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <CloseIcon color={theme.text} />
+          </TouchableOpacity>
         </View>
+
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#4A90E2" />
+          </View>
+        ) : notifications.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={[styles.emptyText, { color: theme.secondary }]}>
+              No notifications
+            </Text>
+          </View>
+        ) : (
+          <>
+            <FlatList
+              data={notifications}
+              renderItem={renderNotification}
+              keyExtractor={(item, index) => `${item.timestamp}-${index}`}
+              style={styles.list}
+            />
+            <TouchableOpacity
+              style={[styles.clearButton, { backgroundColor: '#E91E63' }]}
+              onPress={clearNotifications}
+            >
+              <Text style={styles.clearButtonText}>Clear All</Text>
+            </TouchableOpacity>
+          </>
+        )}
       </View>
     </Modal>
   );
@@ -269,14 +285,6 @@ export function NotificationModal({ visible, onClose, username, socket }: Notifi
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    maxHeight: '80%',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingBottom: 20,
   },
   header: {
     flexDirection: 'row',
@@ -284,6 +292,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
+    paddingTop: 12,
   },
   title: {
     fontSize: 20,
@@ -296,32 +305,32 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   notificationItem: {
-    flexDirection: 'row',
     padding: 16,
+    marginHorizontal: 0,
+    marginVertical: 0,
+    borderLeftWidth: 4,
     borderBottomWidth: 1,
-  },
-  notificationIcon: {
-    marginRight: 12,
-    justifyContent: 'center',
   },
   notificationContent: {
     flex: 1,
   },
   notificationMessage: {
-    fontSize: 14,
-    marginBottom: 4,
+    fontSize: 15,
+    marginBottom: 6,
+    fontWeight: '500',
   },
   notificationTime: {
-    fontSize: 12,
+    fontSize: 11,
+    marginTop: 4,
   },
   notificationActions: {
     flexDirection: 'row',
-    gap: 8,
-    marginTop: 8,
+    gap: 10,
+    marginTop: 12,
   },
   actionButton: {
     flex: 1,
-    paddingVertical: 6,
+    paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 6,
     alignItems: 'center',
@@ -334,23 +343,27 @@ const styles = StyleSheet.create({
   },
   actionButtonText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
   loadingContainer: {
+    flex: 1,
     padding: 40,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   emptyContainer: {
+    flex: 1,
     padding: 40,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   emptyText: {
     fontSize: 16,
   },
   clearButton: {
     margin: 16,
-    padding: 12,
+    padding: 14,
     borderRadius: 8,
     alignItems: 'center',
   },

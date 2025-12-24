@@ -288,23 +288,25 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    paddingTop: 16,
+    alignItems: 'flex-end',
+    paddingHorizontal: 16,
+    paddingTop: 24,
     paddingBottom: 16,
+    borderBottomWidth: 1,
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
+    paddingBottom: 4,
   },
   headerRight: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     gap: 12,
   },
   clearAllButton: {
     padding: 8,
+    paddingBottom: 4,
   },
   clearAllText: {
     fontSize: 14,
@@ -314,7 +316,6 @@ const styles = StyleSheet.create({
     padding: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 2,
   },
   list: {
     flex: 1,

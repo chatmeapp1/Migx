@@ -76,6 +76,9 @@ Chat commands available to users:
   - Follow relationship is ONLY saved after target accepts the request
   - Both users must accept to see each other in contact lists
 - `/uf [username]` - Unfollow a user and remove from contact list (private response)
+- `/kick [username]` - Kick a user from the room (all roles)
+  - Admin: Instant kick with global ban after 3 kicks
+  - Non-admin: Starts vote kick (requires payment, votes from other users)
 - `/me <action>` - Perform an action
 - `/roll` - Roll a random number (1-100)
 - `/gift <name> <username>` - Send a gift

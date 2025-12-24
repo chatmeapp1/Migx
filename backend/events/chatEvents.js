@@ -289,6 +289,97 @@ module.exports = (io, socket) => {
           return;
         }
 
+        // Handle /kick <username> command - All roles (Admin: instant, Others: vote kick)
+        if (cmdKey === 'kick') {
+          const targetUsername = parts[1] || null;
+
+          if (!targetUsername) {
+            socket.emit('chat:message', {
+              id: generateMessageId(),
+              roomId,
+              message: '❌ Usage: /kick <username>',
+              messageType: 'cmdKick',
+              type: 'notice',
+              timestamp: new Date().toISOString(),
+              isPrivate: true
+            });
+            return;
+          }
+
+          const userService = require('../services/userService');
+          const targetUser = await userService.getUserByUsername(targetUsername);
+
+          if (!targetUser) {
+            socket.emit('chat:message', {
+              id: generateMessageId(),
+              roomId,
+              message: `❌ User ${targetUsername} not found.`,
+              messageType: 'cmdKick',
+              type: 'notice',
+              timestamp: new Date().toISOString(),
+              isPrivate: true
+            });
+            return;
+          }
+
+          // Check if target is the same as sender
+          if (targetUsername === username) {
+            socket.emit('chat:message', {
+              id: generateMessageId(),
+              roomId,
+              message: '❌ You cannot kick yourself.',
+              messageType: 'cmdKick',
+              type: 'notice',
+              timestamp: new Date().toISOString(),
+              isPrivate: true
+            });
+            return;
+          }
+
+          try {
+            // Check if user is in this room
+            const roomService = require('../services/roomService');
+            const room = await roomService.getRoomById(roomId);
+            if (!room) {
+              socket.emit('chat:message', {
+                id: generateMessageId(),
+                roomId,
+                message: '❌ Room not found.',
+                messageType: 'cmdKick',
+                type: 'notice',
+                timestamp: new Date().toISOString(),
+                isPrivate: true
+              });
+              return;
+            }
+
+            // Emit room:kick event to roomEvents handler
+            // The handler will check if user is admin (instant kick) or non-admin (vote kick)
+            socket.emit('room:kick', {
+              roomId,
+              targetUsername,
+              kickerUserId: userId,
+              kickerUsername: username,
+              isAdmin: await userService.isAdmin(userId)
+            });
+
+            console.log(`⚔️ ${username} initiated kick for ${targetUsername} via /kick command in room ${roomId}`);
+          } catch (error) {
+            console.error('Error processing /kick command:', error);
+            socket.emit('chat:message', {
+              id: generateMessageId(),
+              roomId,
+              message: `❌ Failed to process kick command.`,
+              messageType: 'cmdKick',
+              type: 'notice',
+              timestamp: new Date().toISOString(),
+              isPrivate: true
+            });
+          }
+
+          return;
+        }
+
         // Handle /c <code> command for Free Credit Claim (Voucher)
         if (cmdKey === 'c') {
           const code = parts[1] || null;

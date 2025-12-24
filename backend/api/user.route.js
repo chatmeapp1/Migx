@@ -3,6 +3,57 @@ const router = express.Router();
 const userService = require('../services/userService');
 const { getUserLevel, getLeaderboard } = require('../utils/xpLeveling');
 
+// Search users (must come BEFORE /:id route)
+router.get('/search', async (req, res) => {
+  try {
+    const { q, limit = 20 } = req.query;
+
+    if (!q || q.length < 1) {
+      return res.json([]);
+    }
+
+    const users = await userService.searchUsers(q, parseInt(limit));
+    res.json(users);
+
+  } catch (error) {
+    console.error('Search users error:', error);
+    res.json([]);
+  }
+});
+
+// Online users (must come BEFORE /:id route)
+router.get('/online', async (req, res) => {
+  try {
+    const { limit = 50 } = req.query;
+    const users = await userService.getOnlineUsers(parseInt(limit));
+
+    res.json({
+      users,
+      count: users.length
+    });
+
+  } catch (error) {
+    console.error('Get online users error:', error);
+    res.status(500).json({ error: 'Failed to get online users' });
+  }
+});
+
+// Leaderboard (must come BEFORE /:id route)
+router.get('/leaderboard', async (req, res) => {
+  try {
+    const { limit = 10 } = req.query;
+    const leaderboard = await getLeaderboard(parseInt(limit));
+
+    res.json({
+      leaderboard
+    });
+
+  } catch (error) {
+    console.error('Get leaderboard error:', error);
+    res.status(500).json({ error: 'Failed to get leaderboard' });
+  }
+});
+
 // Get user by username
 router.get('/username/:username', async (req, res) => {
   try {
@@ -32,7 +83,7 @@ router.get('/username/:username', async (req, res) => {
   }
 });
 
-// Get user by ID
+// Get user by ID (must come LAST)
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -61,58 +112,6 @@ router.get('/:id', async (req, res) => {
   } catch (error) {
     console.error('Get user error:', error);
     res.status(500).json({ error: 'Failed to get user' });
-  }
-});
-
-router.get('/search', async (req, res) => {
-  try {
-    const { q, limit = 20 } = req.query;
-
-    if (!q || q.length < 2) {
-      return res.status(400).json({ error: 'Search query too short' });
-    }
-
-    const users = await userService.searchUsers(q, parseInt(limit));
-
-    res.json({
-      users,
-      count: users.length
-    });
-
-  } catch (error) {
-    console.error('Search users error:', error);
-    res.status(500).json({ error: 'Search failed' });
-  }
-});
-
-router.get('/online', async (req, res) => {
-  try {
-    const { limit = 50 } = req.query;
-    const users = await userService.getOnlineUsers(parseInt(limit));
-
-    res.json({
-      users,
-      count: users.length
-    });
-
-  } catch (error) {
-    console.error('Get online users error:', error);
-    res.status(500).json({ error: 'Failed to get online users' });
-  }
-});
-
-router.get('/leaderboard', async (req, res) => {
-  try {
-    const { limit = 10 } = req.query;
-    const leaderboard = await getLeaderboard(parseInt(limit));
-
-    res.json({
-      leaderboard
-    });
-
-  } catch (error) {
-    console.error('Get leaderboard error:', error);
-    res.status(500).json({ error: 'Failed to get leaderboard' });
   }
 });
 

@@ -84,9 +84,9 @@ export function SearchUserModal({ visible, onClose }: SearchUserModalProps) {
           <View style={styles.searchInputWrapper}>
             <SearchIcon color="#999" size={16} />
             <TextInput
-              style={[styles.headerSearchInput, { color: theme.text }]}
+              style={[styles.headerSearchInput]}
               placeholder="Search users..."
-              placeholderTextColor={theme.secondary}
+              placeholderTextColor="rgba(255,255,255,0.5)"
               value={searchQuery}
               onChangeText={handleSearch}
               autoFocus
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     paddingVertical: 8,
     color: '#fff',
-  },
+  } as any,
   closeButton: {
     padding: 8,
   },

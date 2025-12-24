@@ -144,11 +144,24 @@ export function MenuParticipantsModal({ visible, onClose, roomId, onUserMenuPres
         console.error('Error fetching user ID:', error);
       }
     } else if (action === 'private-chat') {
-      // Open private chat screen
-      setShowUserMenu(false);
-      setSelectedUser(null);
-      onClose();
-      router.push(`/private-chat/${selectedUser}`);
+      // Open private chat as new tab in chatroom
+      try {
+        const { useRoomTabsStore } = await import('@/stores/useRoomTabsStore');
+        const store = useRoomTabsStore.getState();
+        
+        // Create private chat room ID
+        const privateChatId = `pm_${selectedUser}`;
+        
+        // Open as new tab
+        store.openRoom(privateChatId, selectedUser);
+        
+        // Close modals
+        setShowUserMenu(false);
+        setSelectedUser(null);
+        onClose();
+      } catch (error) {
+        console.error('Error opening private chat:', error);
+      }
     } else if (action === 'follow') {
       // Handle follow user action
       try {

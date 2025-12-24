@@ -3,6 +3,7 @@ import { View, StyleSheet, Dimensions } from 'react-native';
 import PagerView, { PagerViewOnPageSelectedEvent } from 'react-native-pager-view';
 import { useRoomTabsStore, useActiveIndex, useOpenRooms } from '@/stores/useRoomTabsStore';
 import { ChatRoomInstance } from './ChatRoomInstance';
+import { PrivateChatInstance } from './PrivateChatInstance';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -52,17 +53,31 @@ export function ChatRoomTabs({
         overdrag={false}
         offscreenPageLimit={1}
       >
-        {openRooms.map((room, index) => (
-          <View key={room.roomId} style={styles.page}>
-            <ChatRoomInstance
-              roomId={room.roomId}
-              roomName={room.name}
-              bottomPadding={bottomPadding}
-              isActive={index === activeIndex}
-              renderVoteButton={renderVoteButton}
-            />
-          </View>
-        ))}
+        {openRooms.map((room, index) => {
+          const isPrivateChat = room.roomId.startsWith('pm_');
+          const targetUsername = isPrivateChat ? room.roomId.replace('pm_', '') : '';
+          
+          return (
+            <View key={room.roomId} style={styles.page}>
+              {isPrivateChat ? (
+                <PrivateChatInstance
+                  roomId={room.roomId}
+                  targetUsername={targetUsername}
+                  bottomPadding={bottomPadding}
+                  isActive={index === activeIndex}
+                />
+              ) : (
+                <ChatRoomInstance
+                  roomId={room.roomId}
+                  roomName={room.name}
+                  bottomPadding={bottomPadding}
+                  isActive={index === activeIndex}
+                  renderVoteButton={renderVoteButton}
+                />
+              )}
+            </View>
+          );
+        })}
       </PagerView>
     </View>
   );

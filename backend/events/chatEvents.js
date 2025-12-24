@@ -54,16 +54,16 @@ module.exports = (io, socket) => {
         // Handle /me command
         if (cmdKey === 'me') {
           const actionText = parts.slice(1).join(' ');
+          let formatted;
+          
           if (!actionText) {
-            socket.emit('system:message', {
-              roomId,
-              message: `Usage: /me <action text>`,
-              timestamp: new Date().toISOString(),
-              type: 'warning'
-            });
-            return;
+            // No text: just show username
+            formatted = username;
+          } else {
+            // With text: show with formatting
+            formatted = `** ${username} ${actionText} **`;
           }
-          const formatted = `** ${username} ${actionText} **`;
+          
           const systemMsg = {
             id: generateMessageId(),
             roomId,

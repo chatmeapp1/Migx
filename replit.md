@@ -4,23 +4,34 @@ This project is a cross-platform mobile chat application built with React Native
 
 ## Latest Changes (December 24, 2025)
 
+- **Follow/Unfollow Message Formatting**: Updated message styling with brown color
+  - Follow message: "You are now follow [username]" (brown text, no checkmark, no ellipsis)
+  - Unfollow message: "You are now unfollow [username]" (brown text, no checkmark, no ellipsis)
+  - Color: #8B6F47 (brown) for follow/unfollow messages
+  - Removed emoji icons and ellipsis from responses
+  - Frontend properly handles messageType prop for styling
+
+- **Accept Follow Button Fix**: Implemented smart fallback for follow notifications
+  - Notification can have fromUserId OR just username
+  - Frontend fetches user ID from username if fromUserId is missing via /api/users/username/:username
+  - Success alert on accept: "✅ Full Accepted - You are now following [username]!"
+  - Success alert on reject: "✅ Rejected - You rejected [username]'s follow request"
+
+- **Command /me Enhancement**: Updated to support both text and no-text usage
+  - `/me` (no text): Shows only username: "migxtes4"
+  - `/me <action>`: Shows with formatting: "** migxtes4 <action> **"
+
 - **Unfollow Command**: Implemented `/uf [username]` command
   - Command unfollows a user and removes from contact list
   - Private response: "You are now unfollow [username]"
   - Checks if user exists and if currently following before unfollowing
   - Integrated with profileService.unfollowUser()
-- **Follow Notification Fix**: Changed `/f` command to directly save notifications to Redis
-  - Previously used io.emit() which wasn't saving to Redis
-  - Now uses notificationService.addNotification() for proper persistence
-- **NotificationModal Redesign**: Complete UI overhaul for full-screen notifications
-  - Changed from modal popup to full-screen display
-  - Removed all icons - text-only display with colored left borders
-  - Follow notifications now show with Accept/Reject buttons
-  - Improved visual hierarchy and readability
-- **Follow User Feature**: Fully implemented `/f [username]` command
-  - Command sends private response to sender + follow notification to target
-  - Notification message: "[Username] wants to follow you" with Accept/Reject actions
-  - Integrated with notification system for persistent storage
+
+- **Follow Notification System**: Follow requests with request-accept workflow
+  - `/f [username]` sends follow request (notification WITHOUT saving to DB)
+  - Target user receives notification with Accept/Reject buttons
+  - Follow relationship ONLY saved after acceptance
+  - Both users must accept to see each other in contact lists
 
 # User Preferences
 

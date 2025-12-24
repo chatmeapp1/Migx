@@ -376,6 +376,64 @@ router.get('/follow/status', async (req, res) => {
   }
 });
 
+router.post('/follow/accept', async (req, res) => {
+  try {
+    const { followerId, followingUsername } = req.body;
+    const notificationService = require('../services/notificationService');
+    
+    if (!followerId || !followingUsername) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Follower ID and following username are required' 
+      });
+    }
+    
+    // Remove the notification
+    await notificationService.removeNotification(followingUsername, followerId);
+    
+    res.json({
+      success: true,
+      message: 'Follow request accepted'
+    });
+    
+  } catch (error) {
+    console.error('Accept follow error:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to accept follow request' 
+    });
+  }
+});
+
+router.post('/follow/reject', async (req, res) => {
+  try {
+    const { followerId, followingUsername } = req.body;
+    const notificationService = require('../services/notificationService');
+    
+    if (!followerId || !followingUsername) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Follower ID and following username are required' 
+      });
+    }
+    
+    // Remove the notification
+    await notificationService.removeNotification(followingUsername, followerId);
+    
+    res.json({
+      success: true,
+      message: 'Follow request rejected'
+    });
+    
+  } catch (error) {
+    console.error('Reject follow error:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to reject follow request' 
+    });
+  }
+});
+
 // ==================== STATS ====================
 
 router.get('/stats/:userId', async (req, res) => {

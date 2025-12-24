@@ -59,9 +59,40 @@ const getUnreadCount = async (username) => {
   }
 };
 
+const removeNotification = async (username, followerId) => {
+  try {
+    const redis = getRedisClient();
+    const key = `notif:${username}`;
+    
+    // Get all notifications
+    const notifications = await redis.lRange(key, 0, -1);
+    
+    // Remove the key
+    await redis.del(key);
+    
+    // Re-add all notifications except the one from followerId
+    for (const notifStr of notifications) {
+      const notif = JSON.parse(notifStr);
+      if (notif.fromUserId !== followerId) {
+        await redis.lPush(key, JSON.stringify(notif));
+      }
+    }
+    
+    if (notifications.length > 0) {
+      await redis.expire(key, NOTIFICATION_TTL);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error removing notification:', error);
+    return false;
+  }
+};
+
 module.exports = {
   addNotification,
   getNotifications,
   clearNotifications,
-  getUnreadCount
+  getUnreadCount,
+  removeNotification
 };

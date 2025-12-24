@@ -46,16 +46,25 @@ module.exports = (io, socket) => {
         return;
       }
 
-      // Check if sender is blocked by getting list of blocked users
+      // Check if sender is blocked - get all users who blocked this sender in ONE query
       const profileService = require('../services/profileService');
       const { getRoomParticipantsWithNames } = require('../utils/redisUtils');
       const roomParticipants = await getRoomParticipantsWithNames(roomId);
       
-      // Check which users in room have blocked this sender
+      // Build map of room participant IDs for quick lookup
+      const participantIds = new Set(roomParticipants.map(p => p.userId));
+      
+      // Get all users who blocked this sender (single optimized query)
+      const blockedByQuery = await require('../db/db').query(
+        'SELECT blocker_id FROM user_blocks WHERE blocked_id = $1',
+        [userId]
+      );
+      const blockedByUserIds = new Set(blockedByQuery.rows.map(r => r.blocker_id));
+      
+      // Find intersection - room participants who have blocked this sender
       const blockedByUsers = new Set();
       for (const participant of roomParticipants) {
-        const isBlocked = await profileService.isBlockedBy(participant.userId, userId);
-        if (isBlocked) {
+        if (blockedByUserIds.has(participant.userId)) {
           blockedByUsers.add(participant.username);
         }
       }

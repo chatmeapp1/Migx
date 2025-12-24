@@ -184,15 +184,13 @@ module.exports = (io, socket) => {
             });
 
             // Send follow notification to target user
-            io.emit('notif:send', {
-              username: targetUsername,
-              notification: {
-                type: 'follow',
-                message: `${username} wants to follow you`,
-                from: username,
-                fromUserId: userId,
-                timestamp: Date.now(),
-              },
+            const notificationService = require('../services/notificationService');
+            await notificationService.addNotification(targetUsername, {
+              type: 'follow',
+              message: `${username} wants to follow you`,
+              from: username,
+              fromUserId: userId,
+              timestamp: Date.now(),
             });
 
             console.log(`👤 ${username} followed ${targetUsername} via /f command`);

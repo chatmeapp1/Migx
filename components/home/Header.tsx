@@ -5,6 +5,7 @@ import { useThemeCustom } from '@/theme/provider';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { NotificationModal } from './NotificationModal';
 import { ProfileMenuModal } from './ProfileMenuModal';
+import { SearchUserModal } from './SearchUserModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import API_BASE_URL, { createSocket } from '@/utils/api';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -29,11 +30,18 @@ const MenuIcon = ({ size = 24, color = '#fff' }) => (
   </Svg>
 );
 
+const SearchUserIcon = ({ size = 20, color = '#fff' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.35-4.35" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
 export function Header() {
   const { theme } = useThemeCustom();
   const insets = useSafeAreaInsets();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showSearchUsers, setShowSearchUsers] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
   const [username, setUsername] = useState('');
   const [userData, setUserData] = useState<any>(null);
@@ -103,6 +111,10 @@ export function Header() {
           </View>
 
           <View style={styles.rightSection}>
+            <TouchableOpacity style={styles.iconButton} onPress={() => setShowSearchUsers(true)}>
+              <SearchUserIcon size={20} color="#FFFFFF" />
+            </TouchableOpacity>
+
             <TouchableOpacity style={styles.iconButton} onPress={() => setShowNotifications(true)}>
               <BellIcon size={24} color="#FFFFFF" />
               {notificationCount > 0 && (
@@ -132,6 +144,11 @@ export function Header() {
         visible={showProfileMenu}
         onClose={() => setShowProfileMenu(false)}
         userData={userData}
+      />
+
+      <SearchUserModal
+        visible={showSearchUsers}
+        onClose={() => setShowSearchUsers(false)}
       />
     </>
   );

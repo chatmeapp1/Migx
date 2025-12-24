@@ -2,14 +2,21 @@
 
 This project is a cross-platform mobile chat application built with React Native and Expo, designed to offer a classic chat experience. It features real-time messaging, chat rooms, private conversations, user profiles, and social networking functionalities like friends lists and online status. The application supports iOS, Android, and Web, incorporating room browsing, favorite management, user leveling, theme customization, and a credit transfer system. The goal is to create an engaging social platform that fosters community and interaction, reminiscent of early chat services.
 
-## Latest Changes (December 24, 2025 - Room Management + Search Feature)
+## Latest Changes (December 24, 2025 - Search Features: Rooms + Users)
+
+- **Search Users Feature**: User search modal in Home header
+  - Search icon added to header next to notification bell
+  - Input field to search users by username (case-insensitive)
+  - Live results displayed as user types with [Avatar] [Username] [Level Badge]
+  - Click username to view user profile
+  - Uses `/api/users/search?q={query}` endpoint
 
 - **Search Rooms Feature**: Real-time room search modal
   - Input field to search rooms by name (case-insensitive)
   - Live results displayed as user types
   - Search via `/api/rooms/search?q={query}` endpoint
   - Click to join room directly from search results
-  - Available in Chat Rooms menu: "Search Rooms" button
+  - Available in Chat Rooms menu: "Search Rooms" button with dark green header
 
 - **Room Categorization**: Official and Game room organization
   - Moved 5 rooms to "Official Rooms": Voucher, Support Center, English, Merchant Area, Cafe Gaul Indo

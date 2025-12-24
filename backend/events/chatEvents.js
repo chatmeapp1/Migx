@@ -363,7 +363,7 @@ module.exports = (io, socket) => {
                 socket.emit('chat:message', {
                   id: generateMessageId(),
                   roomId,
-                  message: 'You don\'t have credite for start kick',
+                  message: `You don't have credite for start kick`,
                   messageType: 'cmdKick',
                   type: 'notice',
                   timestamp: new Date().toISOString(),

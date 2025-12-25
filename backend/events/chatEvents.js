@@ -1464,6 +1464,25 @@ module.exports = (io, socket) => {
         }
       }
 
+      // Check if user is actually in the room (participant)
+      const isInRoom = roomParticipants.some(p => p.userId === userId);
+      if (!isInRoom) {
+        const roomService = require('../services/roomService');
+        const roomInfo = await roomService.getRoomById(roomId);
+        const roomName = roomInfo?.name || roomId;
+        
+        socket.emit('chat:message', {
+          id: generateMessageId(),
+          roomId,
+          message: `you are not in the Chatroom ${roomName}`,
+          messageType: 'error',
+          type: 'error',
+          timestamp: new Date().toISOString(),
+          isPrivate: true
+        });
+        return;
+      }
+
       const messageData = {
         id: generateMessageId(),
         roomId,

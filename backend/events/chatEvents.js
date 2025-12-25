@@ -323,7 +323,7 @@ module.exports = (io, socket) => {
               roomId,
               message: whoisMsg,
               messageType: 'cmdWhois',
-              type: 'notice',
+              type: 'cmd',
               color: '#A0826D',
               timestamp: new Date().toISOString()
             });

@@ -215,7 +215,8 @@ module.exports = (io, socket) => {
 
         // Only send "managed by" message for non-global rooms (managed or game categories)
         if (room.category !== 'global') {
-          const welcomeMsg2 = `This room is managed by ${room.owner_name || room.creator_name || 'admin'}`;
+          const fallbackManager = room.category === 'official' ? 'migx' : 'admin';
+          const welcomeMsg2 = `This room is managed by ${room.owner_name || room.creator_name || fallbackManager}`;
           setTimeout(() => {
             socket.emit('chat:message', {
               id: Date.now().toString() + '-2',

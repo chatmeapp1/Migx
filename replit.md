@@ -167,6 +167,8 @@ Chat commands available to users:
   - Non-admin: Starts vote kick (requires payment, votes from other users)
 - `/me <action>` - Perform an action
 - `/roll` - Roll a random number (1-100)
+  - `/roll [1-100]` - Set a target number for the room. When someone rolls that number, they're silenced for 10 seconds
+  - `/roll` (no target) - Regular roll that checks against current room target
 - `/goal` - Cheer for a goal (displays: ** username cheers "GOALLLLLLLLLLL" **)
 - `/go` - Cheer for the team (displays: ** username cheers,"GO TEAM GO! **)
 - `/gift <name> <username>` - Send a gift

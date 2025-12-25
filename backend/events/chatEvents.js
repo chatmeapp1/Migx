@@ -46,13 +46,23 @@ module.exports = (io, socket) => {
         return;
       }
 
+      // Check if user is silenced (from /roll target match)
+      const { getRedisClient } = require('../redis');
+      const redis = getRedisClient();
+      const isSilenced = await redis.exists(`silence:${roomId}:${userId}`);
+      if (isSilenced) {
+        socket.emit('system:message', {
+          roomId,
+          message: `${username}: You are silenced and cannot send messages.`,
+          timestamp: new Date().toISOString(),
+          type: 'warning'
+        });
+        return;
+      }
+
       // Check if sender is blocked using Redis cache (most efficient)
       const { getRoomParticipantsWithNames } = require('../utils/redisUtils');
-      const { getRedisClient } = require('../redis');
       const roomParticipants = await getRoomParticipantsWithNames(roomId);
-      
-      // Get blocked list from Redis cache (fast in-memory lookup)
-      const redis = getRedisClient();
       let blockedByUserIds = new Set();
       
       try {
@@ -114,10 +124,65 @@ module.exports = (io, socket) => {
           return;
         }
 
-        // Handle /roll command
+        // Handle /roll command with optional target
         if (cmdKey === 'roll') {
+          const targetParam = parts[1];
+          
+          // If target is specified, set it
+          if (targetParam && /^\d+$/.test(targetParam)) {
+            const target = parseInt(targetParam);
+            if (target < 1 || target > 100) {
+              socket.emit('chat:message', {
+                id: generateMessageId(),
+                roomId,
+                message: '❌ Target must be between 1 and 100',
+                messageType: 'notice',
+                type: 'notice',
+                timestamp: new Date().toISOString(),
+                isPrivate: true
+              });
+              return;
+            }
+            
+            // Store target for this room
+            await redis.set(`roll:target:${roomId}`, target, 'EX', 3600); // 1 hour expiry
+            
+            // Announce target being set
+            const formatted = `adi: Roll's target has been set to ${target} by ${username}.`;
+            const systemMsg = {
+              id: generateMessageId(),
+              roomId,
+              message: formatted,
+              messageType: 'cmdRoll',
+              type: 'cmdRoll',
+              timestamp: new Date().toISOString()
+            };
+            io.to(`room:${roomId}`).emit('chat:message', systemMsg);
+            return;
+          }
+          
+          // Regular roll (check against target)
           const rollResult = Math.floor(Math.random() * 100) + 1;
           const formatted = `** ${username} rolls ${rollResult} **`;
+          
+          // Check if roll matches target
+          const currentTarget = await redis.get(`roll:target:${roomId}`);
+          if (currentTarget && parseInt(currentTarget) === rollResult) {
+            // Target matched! Silence user and announce
+            await redis.setex(`silence:${roomId}:${userId}`, 10, '1'); // 10 second silence
+            
+            const targetMsg = {
+              id: generateMessageId(),
+              roomId,
+              message: `${username}: Roll's has been temporary disabled due to rolls target being matched ${rollResult} [${username}]`,
+              messageType: 'cmdRoll',
+              type: 'cmdRoll',
+              timestamp: new Date().toISOString()
+            };
+            io.to(`room:${roomId}`).emit('chat:message', targetMsg);
+            return;
+          }
+          
           const systemMsg = {
             id: generateMessageId(),
             roomId,

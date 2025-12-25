@@ -264,6 +264,20 @@ CREATE TABLE IF NOT EXISTS feed_comments (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Abuse Reports table
+CREATE TABLE IF NOT EXISTS abuse_reports (
+  id BIGSERIAL PRIMARY KEY,
+  reporter_username VARCHAR(50) NOT NULL,
+  target_username VARCHAR(50) NOT NULL,
+  room_id BIGINT REFERENCES rooms(id) ON DELETE CASCADE,
+  message_id VARCHAR(100),
+  message_text TEXT,
+  reason VARCHAR(50) NOT NULL CHECK (reason IN ('spam', 'harassment', 'porn', 'scam')),
+  status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'reviewed', 'actioned')),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_messages_room_id ON messages(room_id);
 CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);

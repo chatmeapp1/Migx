@@ -64,7 +64,7 @@ The application includes an XP & Level System. A Merchant Commission System allo
 - Database: New `room_moderators` table (room_id, user_id with unique constraint)
 - Moderator role: **Per-room only** - moderators only have special status in the room where they're promoted
 - Moderator color: **Yellow (#FFD700)** - same as room owner/creator
-- Owner color: **Orange (#FF8C00)** - applies in their created rooms
+- Owner color: **Yellow (#FFD700)** - applies in their created rooms
 - Backend validates:
   - Only room owner can add moderators
   - Cannot add duplicate moderators

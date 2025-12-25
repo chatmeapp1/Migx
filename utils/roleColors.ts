@@ -1,6 +1,6 @@
 
 export const roleColors = {
-  creator: '#FF8C00',   // orange untuk creator/owner
+  creator: '#FFD700',   // kuning untuk creator/owner
   admin: '#FF9800',     // orange untuk admin
   mentor: '#F44336',    // merah untuk mentor
   merchant: '#9C27B0',  // ungu untuk merchant

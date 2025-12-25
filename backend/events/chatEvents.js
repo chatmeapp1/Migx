@@ -1451,9 +1451,9 @@ module.exports = (io, socket) => {
         }
       }
 
-      // Check if user is actually in the room (participant)
-      const isInRoom = roomParticipants.some(p => p.userId === userId);
-      if (!isInRoom) {
+      // Check if socket is actually connected to the room
+      const isSocketInRoom = socket.rooms.has(`room:${roomId}`);
+      if (!isSocketInRoom) {
         const roomService = require('../services/roomService');
         const roomInfo = await roomService.getRoomById(roomId);
         const roomName = roomInfo?.name || roomId;

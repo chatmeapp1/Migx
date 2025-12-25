@@ -42,9 +42,19 @@ router.get('/:roomId/info', async (req, res) => {
     
     const room = roomResult.rows[0];
     
-    // Ambil data real-time dari Redis
+    // Ambil data real-time dari Redis untuk participant count
     const participants = await getRoomParticipants(roomId);
     const currentUsers = participants.length;
+    
+    // Ambil moderators dari database
+    const moderatorsResult = await query(
+      `SELECT u.id, u.username FROM room_moderators rm
+       JOIN users u ON rm.user_id = u.id
+       WHERE rm.room_id = $1
+       ORDER BY rm.added_at ASC`,
+      [roomId]
+    );
+    const moderators = moderatorsResult.rows.map(m => m.username);
     
     // Format response
     const roomInfo = {
@@ -58,7 +68,7 @@ router.get('/:roomId/info', async (req, res) => {
       maxUsers: room.maxUsers || 25,
       isPrivate: room.isPrivate || false,
       currentUsers,
-      participants
+      participants: moderators
     };
     
     res.json({

@@ -75,9 +75,12 @@ The application includes an XP & Level System. A Merchant Commission System allo
 
 ## Room Info Modal UI Updates
 - Modal now displays **full screen** instead of half-screen (flex: 1 layout)
-- Changed "Online Users" section header to **"List Moderator"**
+- Changed "Online Users" section header to **"List Moderator"** - shows only actual moderators from room_moderators table
 - Room owner now displays actual **username** from database (e.g., "migx" for Merchant Area) instead of "Unknown"
-- Backend `/api/rooms/:roomId/info` endpoint now joins with users table to fetch correct owner username
+- Backend `/api/rooms/:roomId/info` endpoint fetches:
+  - Owner username from users table (owner_id)
+  - **Moderators only** from room_moderators table (not random participants)
+- All official rooms now have owner_id = migx (user_id 36)
 - Maintains all existing room information: description, participants count, privacy status, creation date
 
 # Previous Feature Additions (December 25, 2025)

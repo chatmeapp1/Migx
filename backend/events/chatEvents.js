@@ -579,6 +579,71 @@ module.exports = (io, socket) => {
           return;
         }
 
+        // Handle /unlock <username> command (Private Response)
+        if (cmdKey === 'unlock') {
+          const targetUsername = parts[1] || null;
+
+          if (!targetUsername) {
+            socket.emit('chat:message', {
+              id: generateMessageId(),
+              roomId,
+              message: '❌ Usage: /unlock <username>',
+              messageType: 'cmdUnlock',
+              type: 'notice',
+              timestamp: new Date().toISOString(),
+              isPrivate: true
+            });
+            return;
+          }
+
+          const userService = require('../services/userService');
+          const targetUser = await userService.getUserByUsername(targetUsername);
+
+          if (!targetUser) {
+            socket.emit('chat:message', {
+              id: generateMessageId(),
+              roomId,
+              message: `❌ User ${targetUsername} not found.`,
+              messageType: 'cmdUnlock',
+              type: 'notice',
+              timestamp: new Date().toISOString(),
+              isPrivate: true
+            });
+            return;
+          }
+
+          try {
+            const profileService = require('../services/profileService');
+            await profileService.unblockUser(userId, targetUsername);
+
+            // Send private success response to sender
+            socket.emit('chat:message', {
+              id: generateMessageId(),
+              roomId,
+              message: `You have unblocked ${targetUsername}`,
+              messageType: 'cmdUnlock',
+              type: 'cmd',
+              timestamp: new Date().toISOString(),
+              isPrivate: true
+            });
+
+            console.log(`🔓 ${username} unlocked ${targetUsername} via /unlock command`);
+          } catch (error) {
+            console.error('Error unlocking user via /unlock command:', error);
+            socket.emit('chat:message', {
+              id: generateMessageId(),
+              roomId,
+              message: `❌ Failed to unlock ${targetUsername}.`,
+              messageType: 'cmdUnlock',
+              type: 'notice',
+              timestamp: new Date().toISOString(),
+              isPrivate: true
+            });
+          }
+
+          return;
+        }
+
         // Handle /kick <username> command - All roles (Admin: instant, Others: vote kick)
         if (cmdKey === 'kick') {
           const targetUsername = parts[1] || null;

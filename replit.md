@@ -51,7 +51,7 @@ Chat commands available to users:
 - `/suspend <username>` - Admin only: Suspend account.
 - `/unsuspend <username>` - Admin only: Unsuspend account.
 - `/block [username]` - Block a user (prevents private chats and hides messages in rooms).
-- `/unlock <username>` - Unblock a user (restores private chats and shows messages in rooms).
+- `/unblock <username>` - Unblock a user (restores private chats and shows messages in rooms).
 
 ### Game and Economy Systems
 

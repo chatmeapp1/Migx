@@ -113,3 +113,11 @@ The application includes an XP & Level System. A Merchant Commission System allo
 ## API Configuration
 
 **API Base URL**: `https://c1a0709e-b20d-4687-ab11-e0584b9914f2-00-pfaqheie55z6.pike.replit.dev` (also used for Socket.IO).
+
+## Development Workflows
+
+Two concurrent workflows for development:
+- **Development Server** (Port 5000): Node.js Express backend with Socket.IO and REST APIs
+- **Admin Panel Dev** (Port 5173): Vite dev server for hot-reload admin panel development
+
+Admin panel calls backend API via relative paths (`/api/*`) during development - configured in `.env.local` with `VITE_API_BASE_URL`.

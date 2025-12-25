@@ -17,6 +17,10 @@ localPort = 5001
 externalPort = 3002
 
 [[ports]]
+localPort = 5173
+externalPort = 5173
+
+[[ports]]
 localPort = 8081
 externalPort = 8081
 
@@ -90,6 +94,10 @@ author = "agent"
 task = "workflow.run"
 args = "Development Server"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Admin Panel Dev"
+
 [[workflows.workflow]]
 name = "Development Server"
 author = "agent"
@@ -97,6 +105,18 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "node backend/server.js"
+
+[[workflows.workflow]]
+name = "Admin Panel Dev"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd admin-panel && npm run dev"
+waitForPort = 5173
 
 [agent]
 expertMode = true

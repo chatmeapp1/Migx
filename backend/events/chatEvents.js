@@ -1451,9 +1451,13 @@ module.exports = (io, socket) => {
         }
       }
 
-      // Check if socket is actually connected to the room
-      const isSocketInRoom = socket.rooms.has(`room:${roomId}`);
-      if (!isSocketInRoom) {
+      // Check if user is in room participants (only show error on true disconnect)
+      // Note: Using roomParticipants from Redis which is already fetched above
+      // Only show error if user is completely absent from Redis
+      const isInRoom = roomParticipants.some(p => p.userId === userId);
+      if (!isInRoom && roomParticipants.length > 0) {
+        // Only show error if there are other participants (room is active)
+        // This prevents false errors during rapid joins/leaves
         const roomService = require('../services/roomService');
         const roomInfo = await roomService.getRoomById(roomId);
         const roomName = roomInfo?.name || roomId;

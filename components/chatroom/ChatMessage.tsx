@@ -65,9 +65,13 @@ export function ChatMessage({
   }
 
   if (isCmd) {
-    // Check if it's a follow/unfollow message
-    const isFollowMessage = messageType === 'cmdFollow' || messageType === 'cmdUnfollow';
-    const textColor = isFollowMessage ? '#8B6F47' : '#C96F4A';
+    // Determine color based on message type
+    let textColor = '#C96F4A';
+    if (messageType === 'cmdFollow' || messageType === 'cmdUnfollow') {
+      textColor = '#8B6F47'; // Brown for follow/unfollow
+    } else if (messageType === 'modPromotion') {
+      textColor = '#8B6F47'; // Brown for moderator promotion
+    }
     
     return (
       <View style={styles.messageContainer}>

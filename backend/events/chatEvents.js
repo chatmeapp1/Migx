@@ -838,27 +838,14 @@ module.exports = (io, socket) => {
             // Add moderator
             await moderatorService.addModerator(roomId, targetUser.id);
 
-            // Broadcast announcement
+            // Broadcast announcement (public, visible to all)
             io.to(`room:${roomId}`).emit('chat:message', {
               id: generateMessageId(),
               roomId,
-              username: 'System',
-              message: `👑 ${targetUsername} is now a moderator of this room.`,
-              messageType: 'cmdMod',
-              type: 'system',
-              timestamp: new Date().toISOString(),
-              isSystem: true
-            });
-
-            // Send private confirmation
-            socket.emit('chat:message', {
-              id: generateMessageId(),
-              roomId,
-              message: `✅ ${targetUsername} has been promoted to moderator.`,
-              messageType: 'cmdMod',
-              type: 'notice',
-              timestamp: new Date().toISOString(),
-              isPrivate: true
+              message: `${targetUsername} Has Been Moderator in Chatroom ${roomInfo.name}`,
+              messageType: 'modPromotion',
+              type: 'cmd',
+              timestamp: new Date().toISOString()
             });
 
             console.log(`👑 ${username} made ${targetUsername} a moderator in room ${roomId}`);

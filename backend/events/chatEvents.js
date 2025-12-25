@@ -148,7 +148,7 @@ module.exports = (io, socket) => {
             await redis.set(`roll:target:${roomId}`, target, 'EX', 3600); // 1 hour expiry
             
             // Announce target being set
-            const formatted = `adi: Roll's target has been set to ${target} by ${username}.`;
+            const formatted = `${username}: Roll's target has been set to ${target} by ${username}.`;
             const systemMsg = {
               id: generateMessageId(),
               roomId,

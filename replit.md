@@ -57,6 +57,13 @@ The application includes an XP & Level System. A Merchant Commission System allo
 
 # Recent Feature Additions (December 25, 2025)
 
+## Admin Panel Super Admin Role Restriction
+- Admin panel login now requires `super_admin` role exclusively
+- Backend: `superAdminMiddleware` in `/middleware/auth.js` validates role on all `/api/admin/*` routes
+- Frontend: Admin login checks user role and rejects non-super_admin users with clear error message
+- Error message: "⛔ Admin access denied. Only super admin users can access this panel."
+- Security: Dual-layer validation (frontend + backend) ensures only super_admin can access sensitive admin functions
+
 ## Daily Login Streak System
 - Database: `login_streak` (INT) and `last_login_date` (DATE) columns on users table
 - Service (`streakService.js`): Tracks consecutive daily logins with reward multipliers

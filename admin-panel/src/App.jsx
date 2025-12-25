@@ -81,7 +81,13 @@ function LoginPage({ onLogin }) {
         throw new Error(data.message || 'Login failed');
       }
 
+      // Check if user is super_admin
+      if (!data.user || data.user.role !== 'super_admin') {
+        throw new Error('⛔ Admin access denied. Only super admin users can access this panel.');
+      }
+
       localStorage.setItem('adminToken', data.token);
+      localStorage.setItem('adminUser', JSON.stringify(data.user));
       onLogin();
     } catch (err) {
       setError(err.message);

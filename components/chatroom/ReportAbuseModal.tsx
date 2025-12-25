@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, Alert, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useThemeCustom } from '@/theme/provider';
 import API_BASE_URL from '@/utils/api';
 
@@ -72,16 +72,21 @@ export function ReportAbuseModal({
       animationType="slide"
       onRequestClose={onClose}
     >
-      <View style={[styles.overlay, { backgroundColor: 'rgba(0,0,0,0.7)' }]}>
-        <View style={[styles.modal, { backgroundColor: theme.card }]}>
-          <View style={[styles.header, { borderBottomColor: theme.border }]}>
-            <Text style={[styles.headerTitle, { color: theme.text }]}>Report Abuse</Text>
-            <TouchableOpacity onPress={onClose}>
-              <Text style={{ color: theme.text, fontSize: 20, fontWeight: 'bold' }}>✕</Text>
-            </TouchableOpacity>
-          </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
+        keyboardVerticalOffset={0}
+      >
+        <View style={[styles.overlay, { backgroundColor: 'rgba(0,0,0,0.7)' }]}>
+          <View style={[styles.modal, { backgroundColor: theme.card }]}>
+            <View style={[styles.header, { borderBottomColor: theme.border }]}>
+              <Text style={[styles.headerTitle, { color: theme.text }]}>Report Abuse</Text>
+              <TouchableOpacity onPress={onClose}>
+                <Text style={{ color: theme.text, fontSize: 20, fontWeight: 'bold' }}>✕</Text>
+              </TouchableOpacity>
+            </View>
 
-          <ScrollView style={styles.content} contentContainerStyle={{ flexGrow: 1 }}>
+            <ScrollView style={styles.content} contentContainerStyle={{ flexGrow: 1 }}>
             <Text style={[styles.label, { color: theme.text }]}>Room: {roomName}</Text>
 
             <Text style={[styles.label, { color: theme.text, marginTop: 12 }]}>Target Username *</Text>
@@ -133,14 +138,18 @@ export function ReportAbuseModal({
             >
               <Text style={styles.submitText}>{isSubmitting ? 'Submitting...' : 'Submit Report'}</Text>
             </TouchableOpacity>
-          </ScrollView>
+            </ScrollView>
+          </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   overlay: {
     flex: 1,
     justifyContent: 'flex-end',

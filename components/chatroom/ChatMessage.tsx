@@ -51,13 +51,14 @@ export function ChatMessage({
     return theme.text;
   };
 
-  const isErrorMessage = isError || messageType === 'error';
+  const isErrorMessage = isError || messageType === 'error' || messageType === 'notInRoom';
   
   if (isErrorMessage) {
+    const displayMessage = messageType === 'notInRoom' ? `Error:${message}` : `Error: ${message}`;
     return (
       <View style={styles.messageContainer}>
         <Text style={[styles.errorText]}>
-          Error: {message}
+          {displayMessage}
         </Text>
       </View>
     );

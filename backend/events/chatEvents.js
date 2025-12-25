@@ -1475,8 +1475,8 @@ module.exports = (io, socket) => {
           id: generateMessageId(),
           roomId,
           message: `you are not in the Chatroom ${roomName}`,
-          messageType: 'error',
-          type: 'error',
+          messageType: 'notInRoom',
+          type: 'notInRoom',
           timestamp: new Date().toISOString(),
           isPrivate: true
         });

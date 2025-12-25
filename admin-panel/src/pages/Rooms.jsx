@@ -204,6 +204,7 @@ export function Rooms() {
               <th>ID</th>
               <th>Name</th>
               <th>Category</th>
+              <th>Managed By</th>
               <th>Users</th>
               <th>Created</th>
               <th>Actions</th>
@@ -212,12 +213,15 @@ export function Rooms() {
           <tbody>
             {rooms.map((room) => (
               <tr key={room.id}>
-                <td>{room.id}</td>
-                <td>{room.name}</td>
-                <td>{room.category || 'general'}</td>
-                <td>{room.user_count || 0}</td>
-                <td>{new Date(room.created_at).toLocaleDateString()}</td>
-                <td>
+                <td data-label="ID">{room.id}</td>
+                <td data-label="Name">{room.name}</td>
+                <td data-label="Category">{room.category || 'general'}</td>
+                <td data-label="Managed By">
+                  {room.category === 'official' ? 'migx' : '-'}
+                </td>
+                <td data-label="Users">{room.user_count || 0}</td>
+                <td data-label="Created">{new Date(room.created_at).toLocaleDateString()}</td>
+                <td data-label="Actions">
                   <button
                     className="btn-delete"
                     onClick={() => handleDelete(room.id)}

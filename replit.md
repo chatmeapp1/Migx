@@ -93,6 +93,13 @@ The application includes an XP & Level System. A Merchant Commission System allo
 - Success/error messaging with form validation
 - Styling: Responsive modal with dark green theme matching admin panel design
 
+## Admin Panel Room Management - "Managed By" Column
+- Rooms table now displays "Managed By" column showing who manages each category
+- **Official rooms**: Shows "migx"
+- **Game rooms**: Shows "-" (no manager)
+- **Global rooms**: Shows "-" (no manager)
+- Conditional display based on room category to clarify room ownership structure
+
 ## Admin Panel Responsive Design
 - **Desktop (1024px+)**: Full layout with side-by-side navigation and content
 - **Tablet (768-1024px)**: Adjusted font sizes, optimized grid layouts, compact spacing

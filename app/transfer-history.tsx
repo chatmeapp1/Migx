@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -8,11 +8,14 @@ import {
   FlatList,
   TouchableOpacity,
   Image,
-  StatusBar
+  StatusBar,
+  ActivityIndicator
 } from 'react-native';
 import { router } from 'expo-router';
 import { useThemeCustom } from '@/theme/provider';
 import Svg, { Path } from 'react-native-svg';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_ENDPOINTS } from '@/utils/api';
 
 const BackIcon = ({ size = 24, color = '#fff' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -35,35 +38,47 @@ interface TransferItem {
   time: string;
 }
 
-const mockTransfers: TransferItem[] = [
-  {
-    id: '1',
-    type: 'sent',
-    username: 'JohnDoe',
-    amount: 500,
-    date: '2025-01-15',
-    time: '14:30',
-  },
-  {
-    id: '2',
-    type: 'received',
-    username: 'JaneSmith',
-    amount: 250,
-    date: '2025-01-14',
-    time: '10:15',
-  },
-  {
-    id: '3',
-    type: 'sent',
-    username: 'MikeWilson',
-    amount: 100,
-    date: '2025-01-13',
-    time: '16:45',
-  },
-];
-
 export default function TransferHistoryScreen() {
   const { theme } = useThemeCustom();
+  const [transfers, setTransfers] = useState<TransferItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadTransferHistory();
+  }, []);
+
+  const loadTransferHistory = async () => {
+    try {
+      setIsLoading(true);
+      const userDataStr = await AsyncStorage.getItem('user_data');
+      if (!userDataStr) {
+        setIsLoading(false);
+        return;
+      }
+      const userData = JSON.parse(userDataStr);
+      const response = await fetch(`${API_ENDPOINTS.CREDIT.HISTORY}/${userData.id}`);
+      const data = await response.json();
+      
+      if (data.transfers && Array.isArray(data.transfers)) {
+        const formattedTransfers = data.transfers.map((transfer: any) => {
+          const transferDate = new Date(transfer.created_at);
+          return {
+            id: transfer.id || Math.random().toString(),
+            type: transfer.from_user_id === userData.id ? 'sent' : 'received',
+            username: transfer.from_user_id === userData.id ? transfer.to_username : transfer.from_username,
+            amount: transfer.amount,
+            date: transferDate.toISOString().split('T')[0],
+            time: transferDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+          };
+        });
+        setTransfers(formattedTransfers);
+      }
+    } catch (error) {
+      console.error('Error loading transfer history:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const renderItem = ({ item }: { item: TransferItem }) => (
     <View style={[styles.historyItem, { backgroundColor: theme.card }]}>
@@ -113,13 +128,23 @@ export default function TransferHistoryScreen() {
       </View>
 
       <SafeAreaView style={styles.safeArea}>
-        <FlatList
-          data={mockTransfers}
-          renderItem={renderItem}
-          keyExtractor={item => item.id}
-          contentContainerStyle={styles.listContainer}
-          ItemSeparatorComponent={() => <View style={[styles.separator, { backgroundColor: theme.border }]} />}
-        />
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={theme.primary || '#4CAF50'} />
+          </View>
+        ) : transfers.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={[styles.emptyText, { color: theme.secondary }]}>No transfer history</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={transfers}
+            renderItem={renderItem}
+            keyExtractor={item => item.id}
+            contentContainerStyle={styles.listContainer}
+            ItemSeparatorComponent={() => <View style={[styles.separator, { backgroundColor: theme.border }]} />}
+          />
+        )}
       </SafeAreaView>
     </View>
   );
@@ -201,5 +226,18 @@ const styles = StyleSheet.create({
   separator: {
     height: 1,
     marginLeft: 52,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
   },
 });

@@ -13,6 +13,7 @@ const API_BASE_URL = Platform.OS === 'web'
 console.log('🌐 API_BASE_URL configured as:', API_BASE_URL);
 console.log('🔍 Backend Health Check:', `${API_BASE_URL}/health`);
 console.log('🔍 Backend Status Page:', `${API_BASE_URL}/status`);
+console.log('📡 Utils/api.ts loaded - Socket utilities ready');
 
 export const API_ENDPOINTS = {
   AUTH: {

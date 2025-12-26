@@ -34,6 +34,12 @@ The `/chat` namespace handles real-time events for room interactions, chat and p
 
 Key REST API endpoints cover authentication, user data, room management (including official, game, and favorite rooms), chatroom lifecycle, messages, credit transfers, merchant creation, profile management (follow/block), and admin functionalities for stats, reports, user, room, and gift management.
 
+**Credit Transfer (REST API):**
+- `POST /api/credit/transfer` - Transfer credits between users
+- Requires: `fromUserId`, `toUserId`, `amount`
+- Authentication: Bearer token required
+- Response: `{ success, transactionId, from, to, amount }`
+
 ### Chat Commands
 
 Users can use commands like `/f` (follow), `/uf` (unfollow), `/kick`, `/me`, `/roll`, `/goal`, `/go`, `/gift`, `/whois`, `/c` (claim credits), `/block`, `/unblock`. Admin-specific commands include `/unban`, `/suspend`, `/unsuspend`, and `/mod` and `/unmod` for room owners.
@@ -66,4 +72,22 @@ The application includes an XP & Level System, a Merchant Commission System for 
 
 ## API Configuration
 
-**API Base URL**: `https://c1a0709e-b20d-4687-ab11-e0584b9914f2-00-pfaqheie55z6.pike.replit.dev` (also used for Socket.IO).
+**API Base URL**: `https://d1a7ddfc-5415-44f9-92c0-a278e94f8f08-00-1i8qhqy6zm7hx.sisko.replit.dev` (also used for Socket.IO).
+
+# Recent Changes (December 26, 2025)
+
+## Credit Transfer Implementation
+- Fixed credit transfer feature that was stuck at "Processing..." state
+- **Original Issue:** Frontend attempted Socket.IO connection to `/chat` namespace but connection failed
+- **Solution:** Switched to REST API (`POST /api/credit/transfer`) instead of Socket.IO
+- **Why REST API:** More reliable, simpler implementation, proven to work with existing backend
+- **Updated Files:**
+  - `app/transfer-credit.tsx` - Changed from Socket.IO to REST API using fetch
+  - `utils/api.ts` - Added AsyncStorage import for getChatSocket (kept for future use), added detailed logging
+- **Result:** Credit transfers now use REST API which properly handles validation, authentication, and response
+
+## Code Quality Improvements
+- Removed unused Socket.IO imports from transfer-credit.tsx
+- Added comprehensive error handling with user-friendly alerts
+- Added console logging for debugging transfer attempts
+- Kept getChatSocket() in utils/api.ts for potential future Socket.IO real-time updates

@@ -14,7 +14,7 @@ import { router } from 'expo-router';
 import { useThemeCustom } from '@/theme/provider';
 import Svg, { Path } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_ENDPOINTS, getSocket, getChatSocket } from '@/utils/api';
+import { API_ENDPOINTS } from '@/utils/api';
 
 const BackIcon = ({ size = 24, color = '#fff' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -120,71 +120,46 @@ export default function TransferCreditScreen() {
         return;
       }
 
-      // Get authenticated chat socket (connects to /chat namespace with auth)
-      let chatSocket;
-      try {
-        chatSocket = await getChatSocket();
-        console.log('✅ Got chat socket successfully');
-      } catch (error) {
-        console.error('❌ Failed to get chat socket:', error);
-        Alert.alert('Error', 'Failed to connect to chat server. Please try again.');
+      // Use REST API for transfer (simpler & more reliable than Socket.IO)
+      console.log('📤 Sending transfer via REST API', { username, amountNum });
+      
+      const token = await AsyncStorage.getItem('auth_token');
+      const response = await fetch(`${API_ENDPOINTS.CREDIT.TRANSFER}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          fromUserId: userData.id,
+          toUserId: recipientData.id,
+          amount: amountNum
+        })
+      });
+
+      const result = await response.json();
+      
+      if (!response.ok || !result.success) {
+        console.error('❌ Transfer failed:', result);
+        Alert.alert('Error', result.error || result.message || 'Transfer failed');
         setIsLoading(false);
         return;
       }
-      
-      console.log('📤 Emitting credit:transfer to /chat namespace', { username, amountNum, pinLength: pin.length });
-      
-      // Use Socket.IO chat socket for transfer (backend listens on /chat namespace)
-      chatSocket.emit('credit:transfer', {
-        fromUserId: userData.id,
-        toUserId: recipientData.id,
-        toUsername: username,
-        amount: amountNum,
-        message: 'Credit transfer'
-      });
 
-      // Listen for success response
-      const handleSuccess = (response: any) => {
-        const formattedAmount = `Rp${amountNum.toLocaleString('id-ID')}`;
-        console.log('✅ Transfer successful:', response);
-        Alert.alert('Success', `Successfully transferred ${formattedAmount} to ${username}`, [
-          {
-            text: 'OK',
-            onPress: () => {
-              setUsername('');
-              setAmount('');
-              setPin('');
-              fetchBalance(userData.id);
-            }
+      const formattedAmount = `Rp${amountNum.toLocaleString('id-ID')}`;
+      console.log('✅ Transfer successful:', result);
+      Alert.alert('Success', `Successfully transferred ${formattedAmount} to ${username}`, [
+        {
+          text: 'OK',
+          onPress: () => {
+            setUsername('');
+            setAmount('');
+            setPin('');
+            fetchBalance(userData.id);
           }
-        ]);
-        setIsLoading(false);
-        chatSocket.off('credit:transfer:success', handleSuccess);
-        chatSocket.off('credit:transfer:error', handleError);
-      };
-
-      // Listen for error response - use specific event name
-      const handleError = (error: any) => {
-        console.error('❌ Transfer error:', error);
-        Alert.alert('Error', error.message || 'Transfer failed');
-        setIsLoading(false);
-        chatSocket.off('credit:transfer:success', handleSuccess);
-        chatSocket.off('credit:transfer:error', handleError);
-      };
-
-      chatSocket.on('credit:transfer:success', handleSuccess);
-      chatSocket.on('credit:transfer:error', handleError);
-
-      // Timeout if no response after 15 seconds
-      const timeoutId = setTimeout(() => {
-        if (isLoading) {
-          console.warn('⏱️ Transfer request timed out after 15 seconds');
-          Alert.alert('Error', 'Transfer request timed out. Please try again.');
-          setIsLoading(false);
-          chatSocket.off('credit:transfer:success', handleSuccess);
-          chatSocket.off('credit:transfer:error', handleError);
         }
-      }, 15000);
+      ]);
+      setIsLoading(false);
 
     } catch (error) {
       console.error('Transfer error:', error);

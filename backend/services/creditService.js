@@ -223,10 +223,6 @@ const validateTransfer = async (fromUserId, toUserId, amount) => {
     return { valid: false, error: 'Minimum transfer amount is 1,000' };
   }
   
-  if (amount > 1000000) {
-    return { valid: false, error: 'Maximum transfer amount is 1,000,000' };
-  }
-  
   const rateCheck = await checkTransferLimit(fromUserId);
   if (!rateCheck.allowed) {
     return { valid: false, error: rateCheck.message };

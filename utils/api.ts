@@ -2,6 +2,7 @@ import { io } from 'socket.io-client';
 import { Platform } from 'react-native';
 
 let socket: any = null;
+let chatSocket: any = null;
 
 // Backend URL - Replit handles port forwarding automatically
 const API_BASE_URL = Platform.OS === 'web'
@@ -142,6 +143,41 @@ export const createSocket = () => {
 
 export const getSocket = () => {
   return socket;
+};
+
+// ✅ Get authenticated chat socket for /chat namespace (credit transfer, etc)
+export const getChatSocket = async () => {
+  if (chatSocket && chatSocket.connected) {
+    return chatSocket;
+  }
+
+  // Get auth from AsyncStorage
+  const authData = await AsyncStorage.getItem('user_data');
+  const { id: userId, username } = authData ? JSON.parse(authData) : { id: null, username: 'Anonymous' };
+
+  console.log(`📌 Connecting to /chat namespace as ${username} (${userId})`);
+  
+  chatSocket = io(`${API_BASE_URL}/chat`, {
+    auth: {
+      userId,
+      username
+    },
+    transports: ['polling', 'websocket'],
+    reconnection: true,
+    reconnectionDelay: 1000,
+    reconnectionAttempts: 5,
+    timeout: 10000,
+  });
+
+  chatSocket.on('connect', () => {
+    console.log(`✅ Chat socket connected to /chat namespace! ID: ${chatSocket?.id}`);
+  });
+
+  chatSocket.on('connect_error', (err: Error) => {
+    console.error(`❌ Chat socket error: ${err.message}`);
+  });
+
+  return chatSocket;
 };
 
 export const disconnectSocket = () => {

@@ -121,7 +121,16 @@ export default function TransferCreditScreen() {
       }
 
       // Get authenticated chat socket (connects to /chat namespace with auth)
-      const chatSocket = await getChatSocket();
+      let chatSocket;
+      try {
+        chatSocket = await getChatSocket();
+        console.log('✅ Got chat socket successfully');
+      } catch (error) {
+        console.error('❌ Failed to get chat socket:', error);
+        Alert.alert('Error', 'Failed to connect to chat server. Please try again.');
+        setIsLoading(false);
+        return;
+      }
       
       console.log('📤 Emitting credit:transfer to /chat namespace', { username, amountNum, pinLength: pin.length });
       

@@ -321,6 +321,36 @@ const validatePIN = async (userId, providedPin) => {
   }
 };
 
+// 🔐 STEP 7: Enhanced Error Messages - Sanitize sensitive data from client, log details server-side
+const sanitizeErrorForClient = (errorType, originalError, userId = null, context = {}) => {
+  const timestamp = new Date().toISOString();
+  
+  // Log detailed error server-side with full context
+  const detailedLog = {
+    timestamp,
+    errorType,
+    userId,
+    context,
+    originalError: originalError?.message || originalError?.toString(),
+    stack: originalError?.stack
+  };
+  
+  console.error(`🔴 [${timestamp}] Credit Transfer Error - Type: ${errorType}`, detailedLog);
+  
+  // Return generic, safe message to client (never expose sensitive details)
+  const safeMessages = {
+    'DATABASE_ERROR': 'A system error occurred. Please try again later.',
+    'VALIDATION_ERROR': 'Invalid request parameters.',
+    'PIN_ERROR': 'PIN validation failed.',
+    'TRANSFER_ERROR': 'Transfer could not be completed.',
+    'INSUFFICIENT_BALANCE': 'Insufficient credits for this transfer.',
+    'RATE_LIMIT_ERROR': 'Too many transfer attempts. Please wait a moment.',
+    'UNKNOWN_ERROR': 'An unexpected error occurred. Please try again.'
+  };
+  
+  return safeMessages[errorType] || safeMessages['UNKNOWN_ERROR'];
+};
+
 module.exports = {
   transferCredits,
   addCredits,
@@ -329,5 +359,6 @@ module.exports = {
   getTransactionHistory,
   getTransferHistory,
   validateTransfer,
-  validatePIN
+  validatePIN,
+  sanitizeErrorForClient
 };

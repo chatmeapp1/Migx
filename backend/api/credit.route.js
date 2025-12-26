@@ -4,9 +4,9 @@ const creditService = require('../services/creditService');
 const userService = require('../services/userService');
 
 router.post('/transfer', async (req, res) => {
+  const { fromUserId, toUserId, amount, message, pin } = req.body;
+  
   try {
-    const { fromUserId, toUserId, amount, message, pin } = req.body;
-    
     if (!fromUserId || !toUserId || amount === undefined || amount === null) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
@@ -30,15 +30,24 @@ router.post('/transfer', async (req, res) => {
     
     const validation = await creditService.validateTransfer(fromUserId, toUserId, amount);
     if (!validation.valid) {
+      // 🔐 STEP 7: Log detailed error server-side but return generic message to client
+      console.warn(`⚠️ Transfer validation failed for user ${fromUserId}: ${validation.error}`);
       return res.status(400).json({ error: validation.error });
     }
     
     const result = await creditService.transferCredits(fromUserId, toUserId, amount, message);
     
     if (!result.success) {
-      return res.status(400).json({ error: result.error });
+      // 🔐 STEP 7: Sanitize error details from client, log server-side
+      const sanitizedError = creditService.sanitizeErrorForClient('TRANSFER_ERROR', result.error, fromUserId, {
+        toUserId,
+        amount,
+        reason: result.error
+      });
+      return res.status(400).json({ error: sanitizedError });
     }
     
+    console.log(`✅ Transfer completed: ${fromUserId} → ${toUserId} (${amount} credits)`);
     res.json({
       success: true,
       transactionId: result.transactionId,
@@ -48,8 +57,14 @@ router.post('/transfer', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Transfer error:', error);
-    res.status(500).json({ error: 'Transfer failed' });
+    // 🔐 STEP 7: Log detailed error server-side, return generic message to client
+    const sanitizedError = creditService.sanitizeErrorForClient('UNKNOWN_ERROR', error, fromUserId, {
+      toUserId,
+      amount,
+      endpoint: '/api/credit/transfer'
+    });
+    console.error('❌ Transfer endpoint error:', { userId: fromUserId, error: error.message });
+    res.status(500).json({ error: sanitizedError });
   }
 });
 

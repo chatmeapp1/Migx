@@ -78,12 +78,56 @@ export function UserProfileSection({
   useEffect(() => {
     if (!userData?.id) return;
 
-    // Load initial credits
-    loadCredits();
-
     // Create socket connection for real-time updates
     const socketInstance = createSocket();
     setSocket(socketInstance);
+
+    // Load initial credits via Socket.IO
+    const loadCreditsViaSocket = () => {
+      console.log('📡 Requesting balance via Socket.IO');
+      socketInstance?.emit('credit:balance:get', { userId: userData.id });
+    };
+
+    // Listen for credit balance response
+    const handleCreditBalance = (data: any) => {
+      if (data?.balance !== undefined) {
+        setCredits(data.balance);
+        console.log('💰 Credits loaded via Socket:', data.balance);
+      }
+    };
+
+    // Also try REST API as fallback
+    const loadCreditsViaRest = async () => {
+      try {
+        console.log('🔄 Requesting balance via REST API');
+        const response = await fetch(`${API_BASE_URL}/api/credit/balance/${userData.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setCredits(data.balance || 0);
+          console.log('💰 Credits loaded via REST:', data.balance);
+        } else {
+          console.warn('REST API returned:', response.status);
+        }
+      } catch (error) {
+        console.error('Error loading credits via REST:', error);
+      }
+    };
+
+    // Try Socket.IO first, then REST as fallback
+    if (socketInstance?.connected) {
+      loadCreditsViaSocket();
+    } else {
+      // Wait for socket to connect
+      const handleConnect = () => {
+        loadCreditsViaSocket();
+      };
+      socketInstance?.once('connect', handleConnect);
+    }
+
+    // Also load via REST immediately as backup
+    setTimeout(() => {
+      loadCreditsViaRest();
+    }, 500);
 
     // Listen for real-time credit updates
     const handleCreditReceived = (data: any) => {
@@ -93,10 +137,12 @@ export function UserProfileSection({
       setCredits(data.senderBalance || 0);
     };
 
+    socketInstance?.on('credit:balance', handleCreditBalance);
     socketInstance?.on('credit:received', handleCreditReceived);
     socketInstance?.on('credit:transfer:success', handleTransferSuccess);
 
     return () => {
+      socketInstance?.off('credit:balance', handleCreditBalance);
       socketInstance?.off('credit:received', handleCreditReceived);
       socketInstance?.off('credit:transfer:success', handleTransferSuccess);
     };
@@ -115,19 +161,6 @@ export function UserProfileSection({
       console.error('Error loading user data:', error);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const loadCredits = async () => {
-    if (!userData?.id) return;
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/credits/balance/${userData.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        setCredits(data.balance || 0);
-      }
-    } catch (error) {
-      console.error('Error loading credits:', error);
     }
   };
 

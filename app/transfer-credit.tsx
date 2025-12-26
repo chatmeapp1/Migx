@@ -14,7 +14,7 @@ import { router } from 'expo-router';
 import { useThemeCustom } from '@/theme/provider';
 import Svg, { Path } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_ENDPOINTS } from '@/utils/api';
+import { API_ENDPOINTS, getSocket } from '@/utils/api';
 
 const BackIcon = ({ size = 24, color = '#fff' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -115,25 +115,20 @@ export default function TransferCreditScreen() {
         return;
       }
 
-      // Verify PIN (you may need to add PIN verification endpoint)
-      // For now, we'll proceed with transfer
-
-      const transferResponse = await fetch(API_ENDPOINTS.CREDIT.TRANSFER, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          fromUserId: userData.id,
-          toUserId: recipientData.id,
-          amount: amountNum,
-          message: 'Credit transfer'
-        }),
+      // Get Socket.IO instance for real-time transfer
+      const socketInstance = getSocket();
+      
+      // Use Socket.IO for transfer to trigger real-time balance updates
+      socketInstance.emit('credit:transfer', {
+        fromUserId: userData.id,
+        toUserId: recipientData.id,
+        toUsername: username,
+        amount: amountNum,
+        message: 'Credit transfer'
       });
 
-      const transferData = await transferResponse.json();
-
-      if (transferResponse.ok && transferData.success) {
+      // Listen for success response
+      socketInstance.once('credit:transfer:success', (response: any) => {
         const formattedAmount = `Rp${amountNum.toLocaleString('id-ID')}`;
         Alert.alert('Success', `Successfully transferred ${formattedAmount} to ${username}`, [
           {
@@ -146,13 +141,23 @@ export default function TransferCreditScreen() {
             }
           }
         ]);
-      } else {
-        Alert.alert('Error', transferData.error || 'Transfer failed');
-      }
+        setIsLoading(false);
+      });
+
+      // Listen for error response
+      socketInstance.once('error', (error: any) => {
+        Alert.alert('Error', error.message || 'Transfer failed');
+        setIsLoading(false);
+      });
+
+      // Timeout if no response after 10 seconds
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 10000);
+
     } catch (error) {
       console.error('Transfer error:', error);
       Alert.alert('Error', 'Failed to transfer credits');
-    } finally {
       setIsLoading(false);
     }
   };

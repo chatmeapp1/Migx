@@ -134,7 +134,7 @@ export function UserProfileSection({
       setCredits(data.newBalance || data.balance || 0);
     };
     const handleTransferSuccess = (data: any) => {
-      setCredits(data.senderBalance || 0);
+      setCredits(data.newBalance || 0);
     };
 
     socketInstance?.on('credit:balance', handleCreditBalance);

@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useThemeCustom } from '@/theme/provider';
 import { usePresence, PresenceStatus } from '@/hooks/usePresence';
 import { PresenceSelector } from './PresenceSelector';
-import API_BASE_URL from '@/utils/api';
+import API_BASE_URL, { createSocket } from '@/utils/api';
 import { getLevelConfig } from '@/utils/levelMapping';
 
 const getAvatarUri = (avatar?: string) => {
@@ -68,10 +68,39 @@ export function UserProfileSection({
   const [showPresenceSelector, setShowPresenceSelector] = useState(false);
   const [userData, setUserData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [credits, setCredits] = useState(0);
+  const [socket, setSocket] = useState<any>(null);
 
   useEffect(() => {
     loadUserData();
   }, []);
+
+  useEffect(() => {
+    if (!userData?.id) return;
+
+    // Load initial credits
+    loadCredits();
+
+    // Create socket connection for real-time updates
+    const socketInstance = createSocket();
+    setSocket(socketInstance);
+
+    // Listen for real-time credit updates
+    const handleCreditReceived = (data: any) => {
+      setCredits(data.newBalance || data.balance || 0);
+    };
+    const handleTransferSuccess = (data: any) => {
+      setCredits(data.senderBalance || 0);
+    };
+
+    socketInstance?.on('credit:received', handleCreditReceived);
+    socketInstance?.on('credit:transfer:success', handleTransferSuccess);
+
+    return () => {
+      socketInstance?.off('credit:received', handleCreditReceived);
+      socketInstance?.off('credit:transfer:success', handleTransferSuccess);
+    };
+  }, [userData?.id]);
 
   const loadUserData = async () => {
     try {
@@ -86,6 +115,19 @@ export function UserProfileSection({
       console.error('Error loading user data:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadCredits = async () => {
+    if (!userData?.id) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/credits/balance/${userData.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setCredits(data.balance || 0);
+      }
+    } catch (error) {
+      console.error('Error loading credits:', error);
     }
   };
 
@@ -122,6 +164,11 @@ export function UserProfileSection({
   const level = userData?.level || propLevel || 1;
   const avatar = userData?.avatar || propAvatar;
   const avatarUri = getAvatarUri(avatar);
+
+  // Format credits with thousand separators
+  const formatCredits = (amount: number) => {
+    return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  };
 
   // Only initialize presence hook when we have a username
   const { status: presenceStatusFromHook, setStatus: setPresenceStatus } = usePresence(username || '');
@@ -165,7 +212,7 @@ export function UserProfileSection({
           />
         </TouchableOpacity>
 
-        {/* Username and level */}
+        {/* Username, level and credits */}
         <View style={styles.userInfo}>
           <View style={styles.nameRow}>
             <Text style={styles.username}>
@@ -180,6 +227,9 @@ export function UserProfileSection({
               <Text style={styles.levelNumber}>{level}</Text>
             </View>
           </View>
+          <Text style={styles.creditBalance}>
+            [Rp {formatCredits(credits)}]
+          </Text>
         </View>
       </View>
 
@@ -299,5 +349,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#999',
     padding: 0,
+  },
+  creditBalance: {
+    fontSize: 13,
+    color: '#FFD700',
+    fontWeight: '600',
+    marginTop: 4,
   },
 });

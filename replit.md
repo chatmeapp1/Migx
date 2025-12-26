@@ -77,7 +77,7 @@ The application includes an XP & Level System, a Merchant Commission System for 
 # Recent Changes (December 26, 2025)
 
 ## 🔒 Credit Transfer - Complete Security Hardening
-**Status:** 3 of 7 security layers implemented + 4 remaining for Autonomous mode
+**Status:** 4 of 7 security layers implemented + 3 remaining for Autonomous mode
 
 ### Completed Security Features:
 
@@ -101,8 +101,14 @@ The application includes an XP & Level System, a Merchant Commission System for 
 - Detailed console logging with emoji markers
 - Try-catch blocks wrap entire event handler
 
+**4️⃣ Redis Distributed Locks** ✅
+- Anti double-send protection using `lock:transfer:{userId}`
+- Lock acquired with NX (set if not exists) + EX (5 second expiry)
+- Returns "Transfer already in progress" error if lock exists
+- Lock released in finally block to ensure cleanup
+- Prevents button double-click and concurrent transfer attempts
+
 ### Remaining Security Layers (Autonomous Mode):
-4. **Redis Distributed Locks** - Anti double-send using `lock:transfer:{userId}` with NX+EX
 5. **Idempotency Tracking** - Add `request_id` UNIQUE column to `credit_logs` table
 6. **PIN Attempt Limiting** - Track failed PIN attempts with 10-minute cooldown via Redis
 7. **Enhanced Error Messages** - Hide sensitive errors from client, log details server-side
@@ -112,8 +118,8 @@ The application includes an XP & Level System, a Merchant Commission System for 
 - ✅ String concatenation bug in balance calculation (`"11010" + 1000`) → Now converts to numbers
 - ✅ Transfer history not showing → Fixed API endpoint mapping
 
-### Updated Files:
-- `backend/services/creditService.js` - Added MIN/MAX validation, number conversion
-- `backend/events/creditEvents.js` - Strict validation, type checking, improved logging
+### Updated Files (Turn 1-2):
+- `backend/services/creditService.js` - Added MIN/MAX validation, improved error messages
+- `backend/events/creditEvents.js` - Step 1-4: Strict validation → Redis locks with finally cleanup
 - `app/transfer-history.tsx` - Fixed API endpoint and response handling
 - `backend/api/credit.route.js` - Already complete with proper error responses

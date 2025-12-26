@@ -4,9 +4,14 @@ const userService = require('../services/userService');
 const notificationService = require('../services/notificationService');
 const { getUserSocket } = require('../utils/presence');
 const { addXp, XP_REWARDS } = require('../utils/xpLeveling');
+const { getRedisClient } = require('../redis');
 
 module.exports = (io, socket) => {
   const transferCredits = async (data) => {
+    let lockAcquired = false;
+    const lockKey = `lock:transfer:${data.fromUserId}`;
+    const lockTTL = 5; // 5 seconds lock timeout
+    
     try {
       const { fromUserId, toUserId, toUsername, amount, message } = data;
 
@@ -34,6 +39,26 @@ module.exports = (io, socket) => {
         console.warn(`[TRANSFER] ❌ Validation failed: ${validation.error}`);
         socket.emit('credit:transfer:error', { message: validation.error });
         return;
+      }
+
+      // 🔒 STEP 4: Redis Distributed Lock (prevent double-send)
+      const redis = getRedisClient();
+      if (redis) {
+        const lockSet = await redis.set(
+          lockKey,
+          '1',
+          'NX', // Only set if not exists
+          'EX', // Set expiry
+          lockTTL
+        );
+        
+        if (!lockSet) {
+          console.warn(`[TRANSFER] ❌ Double-send detected: Transfer already in progress for user ${fromUserId}`);
+          socket.emit('credit:transfer:error', { message: 'Transfer already in progress. Please wait.' });
+          return;
+        }
+        lockAcquired = true;
+        console.log(`[TRANSFER] 🔐 Lock acquired for user ${fromUserId}`);
       }
 
       let recipientUsername = toUsername;
@@ -131,6 +156,15 @@ module.exports = (io, socket) => {
     } catch (error) {
       console.error('[TRANSFER] Unexpected error:', error);
       socket.emit('credit:transfer:error', { message: 'Transfer failed: ' + (error.message || 'Unknown error') });
+    } finally {
+      // 🔐 Release lock in finally block to ensure cleanup
+      if (lockAcquired) {
+        const redis = getRedisClient();
+        if (redis) {
+          await redis.del(lockKey);
+          console.log(`[TRANSFER] 🔓 Lock released for user ${data.fromUserId}`);
+        }
+      }
     }
   };
 

@@ -22,8 +22,20 @@ const maskSensitiveData = (str) => {
   // Mask PINs (never show)
   str = str.replace(/"pin"\s*:\s*"[^"]*"/gi, '"pin":"***"');
   
-  // Mask passwords
+  // Mask passwords (never show)
   str = str.replace(/"password"\s*:\s*"[^"]*"/gi, '"password":"***"');
+  
+  // Mask OTP (never show)
+  str = str.replace(/"otp"\s*:\s*"[^"]*"/gi, '"otp":"***"');
+  str = str.replace(/"activation_code"\s*:\s*"[^"]*"/gi, '"activation_code":"***"');
+  
+  // Mask email (show first char + *** + domain)
+  str = str.replace(/"email"\s*:\s*"([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})"/gi, 
+    (match, local, domain) => `"email":"${local.charAt(0)}***@${domain}"`);
+  
+  // Mask balance (never show actual amount)
+  str = str.replace(/"balance"\s*:\s*\d+/gi, '"balance":"[MASKED]"');
+  str = str.replace(/"credits"\s*:\s*\d+/gi, '"credits":"[MASKED]"');
   
   // Mask device IDs (show first 8 chars only)
   str = str.replace(/[a-f0-9]{24}/gi, (match) => `${match.substring(0, 8)}...`);

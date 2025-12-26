@@ -119,7 +119,12 @@ router.post('/login', async (req, res, next) => {
       { expiresIn: '7d' }
     );
 
-    logger.info('TOKENS_GENERATED: Access + Refresh tokens created', { userId: user.id, endpoint: '/api/auth/login' });
+    logger.info('TOKENS_GENERATED: Access + Refresh tokens created', { 
+      userId: user.id, 
+      email: user.email,
+      credits: user.credits,
+      endpoint: '/api/auth/login' 
+    });
 
     res.status(200).json({
       success: true,

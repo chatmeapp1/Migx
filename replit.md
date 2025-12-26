@@ -201,12 +201,14 @@ Prevents data leakage while maintaining audit capability:
 ```
 
 ### Data Masking Features:
-✅ **Token Masking:** First 10 + last 4 chars only
-✅ **PIN Protection:** Never logged (shows "***")
-✅ **Password Protection:** Never logged (shows "***")
-✅ **Device ID Masking:** First 8 chars only
-✅ **Request Amount:** Marked as "[MASKED]" in fraud logs
-✅ **Authorization Header:** Shows "[MASKED]" in logs
+✅ **Token Masking:** First 10 + last 4 chars only (e.g., `eyJhbGc...Kd2d`)
+✅ **PIN Protection:** Never logged (shows `"pin":"***"`)
+✅ **Password Protection:** Never logged (shows `"password":"***"`)
+✅ **OTP/Activation Code:** Never logged (shows `"otp":"***"`)
+✅ **Email Masking:** Show first char + domain (e.g., `u***@gmail.com`)
+✅ **Balance/Credits:** Never logged (shows `"balance":"[MASKED]"`)
+✅ **Device ID Masking:** First 8 chars only (e.g., `abc12def...`)
+✅ **Authorization Header:** Shows `"authorization":"[MASKED]"` in logs
 
 ### Log Format (Structured):
 ```json
@@ -235,8 +237,21 @@ Prevents data leakage while maintaining audit capability:
 - **Production:** Minimal logging, only critical events
 - **Never:** Full request bodies, raw tokens, PINs, passwords
 
-### Updated Endpoints:
-- `backend/api/auth.route.js` - Login logging with security events
-- `backend/api/credit.route.js` - Transfer logging + fraud detection
-- `backend/services/creditService.js` - Transfer completion/failure
-- `backend/middleware/auth.js` - Device binding validation logs
+### Endpoints with Logging:
+- **Authentication:**
+  - `backend/api/auth.route.js` - Login logging (email/credits masked in logs)
+  - `backend/middleware/auth.js` - Device binding validation logs
+- **Credit Operations:**
+  - `backend/api/credit.route.js` - Transfer logging + fraud detection
+  - `backend/services/creditService.js` - Transfer completion/failure
+- **Profile Operations:**
+  - `backend/api/viewprofile.route.js` - View profile errors logged safely
+  - `backend/api/user.route.js` - User search/leaderboard errors logged safely
+
+### Masking During Login & Profile:
+- **Login Response:** API shows real email + credits to user (needed for UI)
+- **Login Logs:** Email + credits masked automatically via logger
+- **Profile Response:** API shows real data to authenticated user
+- **Profile Logs:** All sensitive fields masked automatically via logger
+
+**Key Principle:** Users see their own real data in API responses, but logs never expose sensitive information regardless of endpoint.

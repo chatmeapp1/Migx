@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const userService = require('../services/userService');
 const { getUserLevel, getLeaderboard } = require('../utils/xpLeveling');
+const logger = require('../utils/logger');
 
 // Search users (must come BEFORE /:id route)
 router.get('/search', async (req, res) => {
@@ -16,7 +17,7 @@ router.get('/search', async (req, res) => {
     res.json(users);
 
   } catch (error) {
-    console.error('Search users error:', error);
+    logger.error('SEARCH_USERS_ERROR: Failed to search users', error, {});
     res.json([]);
   }
 });
@@ -33,7 +34,7 @@ router.get('/online', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get online users error:', error);
+    logger.error('GET_ONLINE_USERS_ERROR: Failed to get online users', error, {});
     res.status(500).json({ error: 'Failed to get online users' });
   }
 });
@@ -49,7 +50,7 @@ router.get('/leaderboard', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get leaderboard error:', error);
+    logger.error('GET_LEADERBOARD_ERROR: Failed to get leaderboard', error, {});
     res.status(500).json({ error: 'Failed to get leaderboard' });
   }
 });

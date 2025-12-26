@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const { query } = require('../db/db');
 const profileService = require('../services/profileService');
+const logger = require('../utils/logger');
 
 // Get user profile by ID
 router.get('/:userId', async (req, res) => {
@@ -63,7 +64,7 @@ router.get('/:userId', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Get view profile error:', error);
+    logger.error('VIEWPROFILE_ERROR: Failed to get user profile', error, { userId });
     res.status(500).json({ error: 'Failed to get user profile' });
   }
 });

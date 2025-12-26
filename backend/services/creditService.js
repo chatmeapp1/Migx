@@ -21,6 +21,26 @@ const transferCredits = async (fromUserId, toUserId, amount, description = null,
       }
     }
     
+    // 🔐 STEP 10: Log to immutable audit log with "pending" status at start
+    const senderResult = await client.query(
+      'SELECT username FROM users WHERE id = $1',
+      [fromUserId]
+    );
+    const recipientResult = await client.query(
+      'SELECT username FROM users WHERE id = $1',
+      [toUserId]
+    );
+    const fromUsername = senderResult.rows[0]?.username || 'unknown';
+    const toUsername = recipientResult.rows[0]?.username || 'unknown';
+    
+    if (requestId) {
+      await client.query(
+        `INSERT INTO audit_logs (request_id, from_user_id, from_username, to_user_id, to_username, amount, status)
+         VALUES ($1, $2, $3, $4, $5, $6, 'pending')`,
+        [requestId, fromUserId, fromUsername, toUserId, toUsername, amount]
+      );
+    }
+    
     const fromResult = await client.query(
       'SELECT id, username, credits FROM users WHERE id = $1 FOR UPDATE',
       [fromUserId]
@@ -66,10 +86,20 @@ const transferCredits = async (fromUserId, toUserId, amount, description = null,
       [fromUserId, toUserId, sender.username, recipient.username, amount, description, requestId]
     );
     
+    // 🔐 STEP 10: Update audit log to "completed" on success (immutable after this)
+    if (requestId) {
+      await client.query(
+        `UPDATE audit_logs SET status = 'completed' WHERE request_id = $1`,
+        [requestId]
+      );
+    }
+    
     await client.query('COMMIT');
     
     const newFromCredits = Number(sender.credits) - Number(amount);
     const newToCredits = Number(recipient.credits) + Number(amount);
+    
+    console.log(`🔐 Audit log recorded: ${requestId} | ${sender.username} → ${recipient.username} (${amount} credits) | Status: COMPLETED`);
     
     return {
       success: true,
@@ -87,8 +117,21 @@ const transferCredits = async (fromUserId, toUserId, amount, description = null,
       amount
     };
   } catch (error) {
+    // 🔐 STEP 10: Update audit log to "failed" with error reason
+    if (requestId) {
+      try {
+        await client.query(
+          `UPDATE audit_logs SET status = 'failed', error_reason = $1 WHERE request_id = $2`,
+          [error.message, requestId]
+        );
+      } catch (auditError) {
+        console.error('Failed to update audit log:', auditError);
+      }
+    }
+    
     await client.query('ROLLBACK');
     console.error('Error transferring credits:', error);
+    console.log(`🔐 Audit log recorded: ${requestId} | Status: FAILED | Reason: ${error.message}`);
     return { success: false, error: 'Transfer failed' };
   } finally {
     client.release();

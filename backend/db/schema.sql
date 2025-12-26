@@ -140,6 +140,27 @@ CREATE TABLE IF NOT EXISTS credit_logs (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 🔐 STEP 10: Immutable audit log table for transaction disputes & fraud investigation
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id BIGSERIAL PRIMARY KEY,
+  request_id VARCHAR(100) NOT NULL UNIQUE,
+  from_user_id BIGINT NOT NULL,
+  from_username VARCHAR(50) NOT NULL,
+  to_user_id BIGINT NOT NULL,
+  to_username VARCHAR(50) NOT NULL,
+  amount BIGINT NOT NULL,
+  status VARCHAR(20) NOT NULL CHECK (status IN ('pending', 'completed', 'failed')),
+  error_reason TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes for audit log queries
+CREATE INDEX IF NOT EXISTS idx_audit_logs_request_id ON audit_logs(request_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_from_user ON audit_logs(from_user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_to_user ON audit_logs(to_user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_status ON audit_logs(status);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at DESC);
+
 -- Merchants table
 CREATE TABLE IF NOT EXISTS merchants (
   id BIGSERIAL PRIMARY KEY,

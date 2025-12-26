@@ -2,9 +2,13 @@ const express = require('express');
 const router = express.Router();
 const creditService = require('../services/creditService');
 const userService = require('../services/userService');
+const crypto = require('crypto');
 
 router.post('/transfer', async (req, res) => {
   const { fromUserId, toUserId, amount, message, pin } = req.body;
+  
+  // 🔐 STEP 10: Generate unique request_id for immutable audit logging
+  const requestId = crypto.randomBytes(16).toString('hex');
   
   try {
     if (!fromUserId || !toUserId || amount === undefined || amount === null) {
@@ -55,8 +59,8 @@ router.post('/transfer', async (req, res) => {
       return res.status(400).json({ error: validation.error });
     }
     
-    // Use normalized amount throughout transfer process
-    const result = await creditService.transferCredits(fromUserId, toUserId, normalizedAmount, message);
+    // Use normalized amount throughout transfer process + pass requestId for audit logging
+    const result = await creditService.transferCredits(fromUserId, toUserId, normalizedAmount, message, requestId);
     
     if (!result.success) {
       // 🔐 STEP 7: Sanitize error details from client, log server-side

@@ -97,6 +97,16 @@ export default function TransferCreditScreen() {
       return;
     }
 
+    if (amountNum < 1000) {
+      Alert.alert('Error', 'Minimum transfer amount is 1.000');
+      return;
+    }
+
+    if (amountNum > 1000000) {
+      Alert.alert('Error', 'Maximum transfer amount is 1.000.000');
+      return;
+    }
+
     if (!pin.trim() || pin.length !== 6) {
       Alert.alert('Error', 'Please enter 6-digit PIN');
       return;

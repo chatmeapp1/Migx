@@ -218,6 +218,10 @@ const validateTransfer = async (fromUserId, toUserId, amount) => {
   if (amount <= 0) {
     return { valid: false, error: 'Amount must be positive' };
   }
+
+  if (amount < 1000) {
+    return { valid: false, error: 'Minimum transfer amount is 1,000' };
+  }
   
   if (amount > 1000000) {
     return { valid: false, error: 'Maximum transfer amount is 1,000,000' };

@@ -55,8 +55,8 @@ const transferCredits = async (fromUserId, toUserId, amount, description = null)
     
     await client.query('COMMIT');
     
-    const newFromCredits = sender.credits - amount;
-    const newToCredits = recipient.credits + amount;
+    const newFromCredits = Number(sender.credits) - Number(amount);
+    const newToCredits = Number(recipient.credits) + Number(amount);
     
     return {
       success: true,

@@ -249,16 +249,9 @@ export default function FeedScreen() {
       const userData = userDataStr ? JSON.parse(userDataStr) : null;
       const token = userData?.token;
 
-      // Validasi token JWT format
-      if (!token || typeof token !== 'string' || token.trim() === '') {
+      // Simple token check - backend will validate properly
+      if (!token) {
         Alert.alert('Error', 'Please login to create a post');
-        setPosting(false);
-        return;
-      }
-
-      const tokenParts = token.split('.');
-      if (tokenParts.length !== 3) {
-        Alert.alert('Error', 'Invalid session. Please login again.');
         setPosting(false);
         return;
       }

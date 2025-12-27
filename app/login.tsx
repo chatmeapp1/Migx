@@ -73,17 +73,30 @@ export default function LoginScreen() {
       return;
     }
 
+    if (!password || password.trim().length === 0) {
+      Alert.alert('Error', 'Please enter your password');
+      return;
+    }
+
     setLoading(true);
     try {
-      // Clear any existing session data before new login to prevent stale data
-      await AsyncStorage.multiRemove(['auth_token', 'user_data', 'device_id']);
+      // CRITICAL: Clear ALL session data before new login to prevent token reuse
+      const allKeys = await AsyncStorage.getAllKeys();
+      const sessionKeys = allKeys.filter(key => 
+        key !== 'saved_username' && 
+        key !== 'saved_password' && 
+        key !== 'remember_me'
+      );
+      if (sessionKeys.length > 0) {
+        await AsyncStorage.multiRemove(sessionKeys);
+      }
       
       const response = await fetch(API_ENDPOINTS.AUTH.LOGIN, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          username: username.toLowerCase(),
-          password,
+          username: username.toLowerCase().trim(),
+          password: password,
           rememberMe,
           invisible
         })
@@ -102,10 +115,11 @@ export default function LoginScreen() {
           await AsyncStorage.removeItem('remember_me');
         }
 
-        // Store authentication token
-        await AsyncStorage.setItem('auth_token', data.token || data.accessToken);
+        // Store authentication tokens (access + refresh)
+        await AsyncStorage.setItem('auth_token', data.accessToken);
+        await AsyncStorage.setItem('refresh_token', data.refreshToken);
         
-        // Ensure user_data is correctly structured
+        // Store user data
         const userDataToStore = {
           id: data.user.id,
           username: data.user.username,
@@ -114,7 +128,8 @@ export default function LoginScreen() {
           level: data.user.level,
           role: data.user.role,
           statusMessage: data.user.statusMessage,
-          token: data.token || data.accessToken
+          credits: data.user.credits,
+          status: data.user.status
         };
         
         console.log('💾 Storing user_data for user:', userDataToStore.username);

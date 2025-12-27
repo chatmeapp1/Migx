@@ -45,13 +45,21 @@ router.post('/login', async (req, res, next) => {
       return res.status(403).json({ success: false, error: 'Account not activated. Please check your email.' });
     }
 
-    // Verify password if provided
-    if (password && user.password_hash) {
-      const isValidPassword = await bcrypt.compare(password, user.password_hash);
-      if (!isValidPassword) {
-        logger.warn('LOGIN_FAILED: Invalid password', { username, endpoint: '/api/auth/login' });
-        return res.status(400).json({ success: false, error: 'Invalid username or password' });
-      }
+    // CRITICAL: Always require and verify password
+    if (!password || password.trim().length === 0) {
+      logger.warn('LOGIN_FAILED: Password missing', { username, endpoint: '/api/auth/login' });
+      return res.status(400).json({ success: false, error: 'Password is required' });
+    }
+
+    if (!user.password_hash) {
+      logger.error('LOGIN_FAILED: User has no password hash', { username, endpoint: '/api/auth/login' });
+      return res.status(500).json({ success: false, error: 'Account configuration error' });
+    }
+
+    const isValidPassword = await bcrypt.compare(password, user.password_hash);
+    if (!isValidPassword) {
+      logger.warn('LOGIN_FAILED: Invalid password', { username, endpoint: '/api/auth/login' });
+      return res.status(400).json({ success: false, error: 'Invalid username or password' });
     }
 
     // Check if user is suspended

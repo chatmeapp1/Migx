@@ -52,33 +52,27 @@ export default function ProfileScreen() {
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Logout',
+        style: 'destructive',
         onPress: async () => {
           try {
-            // Clear all auth and user data
-            await AsyncStorage.multiRemove([
-              'auth_token',
-              'user_data',
-              'authToken',
-              'device_id',
-              'current_user_id',
-              'current_username'
-            ]);
-            
-            // Clear store and socket
-            const store = useRoomTabsStore.getState();
-            if (store.socket) {
-              store.socket.disconnect();
-              store.setSocket(null);
+            // Clear ALL session data except saved credentials
+            const allKeys = await AsyncStorage.getAllKeys();
+            const sessionKeys = allKeys.filter(key => 
+              key !== 'saved_username' && 
+              key !== 'saved_password' && 
+              key !== 'remember_me'
+            );
+            if (sessionKeys.length > 0) {
+              await AsyncStorage.multiRemove(sessionKeys);
             }
-            store.clearAllRooms();
-            
-            // Redirect to login
+            console.log('✅ All session data cleared');
             router.replace('/login');
           } catch (error) {
             console.error('Logout error:', error);
+            Alert.alert('Error', 'Failed to logout properly');
           }
-        },
-      },
+        }
+      }
     ]);
   };
 

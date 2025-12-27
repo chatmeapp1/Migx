@@ -41,6 +41,21 @@ const normalizeFeedItem = async (feedData, feedId, redis) => {
   try {
     const feed = typeof feedData === 'string' ? JSON.parse(feedData) : feedData;
 
+    // Get user details from PostgreSQL to ensure fresh avatar/role/level
+    const { query } = require('../db/db');
+    const userResult = await query(
+      'SELECT avatar, role, username_color FROM users WHERE id = $1',
+      [feed.userId || feed.user_id]
+    );
+    const user = userResult.rows[0];
+
+    // Get level from user_levels
+    const levelResult = await query(
+      'SELECT level FROM user_levels WHERE user_id = $1',
+      [feed.userId || feed.user_id]
+    );
+    const level = levelResult.rows[0]?.level || 1;
+
     // Get like count from Redis
     const likeKey = `feed:${feedId}:likes`;
     const likesCount = await redis.get(likeKey);
@@ -61,11 +76,12 @@ const normalizeFeedItem = async (feedData, feedId, redis) => {
       comments_count: commentsArray.length ?? 0,
       is_liked: false,
       created_at: feed.created_at ?? feed.createdAt ?? new Date().toISOString(),
-      avatar_url: feed.avatar_url || 'https://via.placeholder.com/40',
+      avatar_url: user?.avatar || feed.avatar_url || 'https://via.placeholder.com/40',
       userId: feed.userId ?? feed.user_id,
       user_id: feed.userId ?? feed.user_id,
-      level: feed.level || 1, // Default level to 1 if not provided
-      role: feed.role || 'user', // Default role to 'user' if not provided
+      level: level,
+      role: user?.role || feed.role || 'user',
+      username_color: user?.username_color || feed.username_color || null
     };
   } catch (e) {
     console.error(`❌ Error normalizing feed item:`, e.message);

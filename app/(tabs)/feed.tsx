@@ -424,10 +424,11 @@ export default function FeedScreen() {
       if (!avatar) return null;
       if (avatar.startsWith('http')) return avatar;
       if (avatar.startsWith('/uploads')) return `${API_ENDPOINTS.BASE}${avatar}`;
+      // Check if it's a Cloudinary URL or similar from the backend
       return avatar;
     };
 
-    const avatarUri = getAvatarUri(item.avatar_url);
+    const avatarUri = getAvatarUri(item.avatar_url || (item as any).avatar);
 
     // Get level config
     const getLevelConfig = (level: number) => {

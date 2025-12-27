@@ -34,6 +34,7 @@ export default function AdminPanelScreen() {
   const [users, setUsers] = useState<any[]>([]);
   const [pagination, setPagination] = useState<any>({ page: 1, totalPages: 1 });
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTab, setSelectedTab] = useState<'users' | 'rooms' | 'announcements'>('users');
   
   const [menuVisible, setMenuVisible] = useState(false);
   const [addCoinModalVisible, setAddCoinModalVisible] = useState(false);

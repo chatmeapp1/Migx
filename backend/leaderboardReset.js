@@ -169,6 +169,43 @@ const checkAndResetLeaderboard = async () => {
         await query("INSERT INTO leaderboard_reset_log (category) VALUES ('top_footprint')");
         logger.info('LEADERBOARD_RESET_COMPLETE', { category: 'top_footprint' });
       }
+
+      // 5. TOP MERCHANT MONTHLY RESET & REWARD
+      // Run on the 1st of every month
+      if (now.getDate() === 1 && hours === 0) {
+        const lastMerchantReset = await query(
+          "SELECT reset_at FROM leaderboard_reset_log WHERE category = 'top_merchant_monthly' ORDER BY reset_at DESC LIMIT 1"
+        );
+        
+        const merchantResetNeeded = !lastMerchantReset.rows.length || 
+          (new Date() - new Date(lastMerchantReset.rows[0].reset_at)) > 24 * 60 * 60 * 1000;
+
+        if (merchantResetNeeded) {
+          logger.info('LEADERBOARD_RESET_START', { category: 'top_merchant_monthly' });
+          
+          const topMerchant = await query(
+            `SELECT u.id FROM users u
+             LEFT JOIN merchant_leaderboard ml ON u.id = ml.user_id
+             WHERE u.role = 'merchant' AND ml.month_year = TO_CHAR(NOW() - INTERVAL '1 month', 'YYYY-MM')
+             ORDER BY ml.total_spent DESC LIMIT 1`
+          );
+
+          if (topMerchant.rows.length) {
+            const userId = topMerchant.rows[0].id;
+            const expiry = new Date();
+            expiry.setDate(expiry.getDate() + 15);
+
+            await query(
+              "UPDATE users SET has_top_merchant_badge = true, top_merchant_badge_expiry = $1 WHERE id = $2",
+              [expiry, userId]
+            );
+            logger.info('TOP1_MERCHANT_REWARD_GRANTED', { userId, expiry });
+          }
+
+          await query("INSERT INTO leaderboard_reset_log (category) VALUES ('top_merchant_monthly')");
+          logger.info('LEADERBOARD_RESET_COMPLETE', { category: 'top_merchant_monthly' });
+        }
+      }
     }
   } catch (error) {
     logger.error('LEADERBOARD_RESET_ERROR', error);

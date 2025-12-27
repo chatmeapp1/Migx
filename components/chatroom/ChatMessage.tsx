@@ -17,7 +17,16 @@ interface ChatMessageProps {
   userType?: 'creator' | 'admin' | 'normal' | 'mentor' | 'merchant' | 'moderator';
   isOwnMessage?: boolean;
   messageType?: string;
+  hasTopMerchantBadge?: boolean;
 }
+
+const BadgeTop1 = () => (
+  <Image 
+    source={require('@/assets/badge role/bd-top1.png')} 
+    style={{ width: 16, height: 16, marginLeft: 4 }}
+    resizeMode="contain"
+  />
+);
 
 export function ChatMessage({
   username,
@@ -101,7 +110,7 @@ export function ChatMessage({
       <View style={styles.messageContainer}>
         <Text style={styles.messageWrapper}>
           <Text style={[styles.username, { color: getUsernameColor() }]}>
-            {username} :{' '}
+            {username} {hasTopMerchantBadge && <BadgeTop1 />} :{' '}
           </Text>
           <Text style={[styles.message, { color: getMessageColor() }]}>
             {message}
@@ -115,7 +124,7 @@ export function ChatMessage({
     <View style={styles.messageContainer}>
       <Text style={styles.messageWrapper}>
         <Text style={[styles.username, { color: getUsernameColor() }]}>
-          {username} :{' '}
+          {username} {hasTopMerchantBadge && <BadgeTop1 />} :{' '}
         </Text>
         {parsedMessage.map((item, index) => {
           if (item.type === 'emoji') {

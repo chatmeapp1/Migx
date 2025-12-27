@@ -86,6 +86,18 @@ const transferCredits = async (fromUserId, toUserId, amount, description = null,
        VALUES ($1, $2, $3, $4, $5, 'transfer', $6, $7)`,
       [fromUserId, toUserId, sender.username, recipient.username, amount, description, requestId]
     );
+
+    // Update merchant leaderboard if sender is merchant
+    if (sender.role === 'merchant') {
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      await client.query(
+        `INSERT INTO merchant_leaderboard (user_id, username, total_spent, month_year)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (user_id, month_year) 
+         DO UPDATE SET total_spent = merchant_leaderboard.total_spent + $3, updated_at = CURRENT_TIMESTAMP`,
+        [fromUserId, sender.username, amount, currentMonth]
+      );
+    }
     
     // 🔐 STEP 10: Update audit log to "completed" on success (immutable after this)
     if (requestId) {

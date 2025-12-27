@@ -80,6 +80,18 @@ const DiamondIcon = ({ size = 24, color = '#00BCD4' }: { size?: number; color?: 
   </Svg>
 );
 
+const MerchantIcon = ({ size = 24, color = '#9C27B0' }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M3 3h18v18H3V3Zm0 6h18M9 3v18M15 3v18"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
 const ChevronDownIcon = ({ size = 20, color = '#666' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
@@ -214,6 +226,14 @@ export default function LeaderboardPage() {
       textColor: '#fff',
       count: leaderboardData.top_get?.length || 0,
     },
+    {
+      id: 'top_merchant',
+      title: 'TOP MERCHANT MONTHLY (5)',
+      icon: <MerchantIcon size={22} color="#fff" />,
+      backgroundColor: '#082919',
+      textColor: '#fff',
+      count: leaderboardData.top_merchant?.length || 0,
+    },
   ];
 
   const fetchLeaderboards = async () => {
@@ -256,16 +276,19 @@ export default function LeaderboardPage() {
         return `${user.total_games || 0} games`;
       case 'top_get':
         return `${user.total_winnings || 0} coins`;
+      case 'top_merchant':
+        return `${(user as any).total_spent || 0} spent`;
       default:
         return '';
     }
   };
 
   const renderUserItem = (user: LeaderboardUser, index: number, categoryId: string) => {
-    const roleColor = ROLE_COLORS[user.role || 'user'];
+    let roleColor = ROLE_COLORS[user.role || 'user'];
+    if (user.role === 'merchant') roleColor = '#9C27B0'; // Override for leaderboard requirements
     const showRank = index < 3;
-    const isTop1 = index === 0 && categoryId === 'top_level';
-    const userNameColor = isTop1 ? '#FF69B4' : (user.username_color || theme.text);
+    const isTop1 = index === 0 && (categoryId === 'top_level' || categoryId === 'top_merchant');
+    const userNameColor = isTop1 ? (categoryId === 'top_merchant' ? '#9C27B0' : '#FF69B4') : (user.username_color || theme.text);
 
     return (
       <View

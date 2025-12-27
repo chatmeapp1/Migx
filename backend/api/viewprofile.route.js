@@ -27,6 +27,9 @@ router.get('/:userId', async (req, res) => {
     
     const user = userResult.rows[0];
     
+    // Check badge expiry
+    const hasBadge = user.has_top_merchant_badge && user.top_merchant_badge_expiry > new Date();
+    
     // Get stats
     const [postCount, giftCount, followersCount, followingCount] = await Promise.all([
       profileService.getPostCount(userId),
@@ -68,7 +71,8 @@ router.get('/:userId', async (req, res) => {
         gender: user.gender,
         level: user.level || 1,
         xp: user.xp || 0,
-        createdAt: user.created_at
+        createdAt: user.created_at,
+        hasTopMerchantBadge: hasBadge
       },
       stats: {
         postCount,

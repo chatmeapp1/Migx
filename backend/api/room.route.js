@@ -677,9 +677,15 @@ router.post('/join', async (req, res) => {
       return res.status(400).json(result);
     }
     
+    // Check if user has top merchant badge
+    const userService = require('../services/userService');
+    const user = await userService.getUserById(userId);
+    const hasBadge = user && user.has_top_merchant_badge && user.top_merchant_badge_expiry > new Date();
+    
     res.json({
       success: true,
-      room: result.room
+      room: result.room,
+      hasBadge
     });
     
   } catch (error) {

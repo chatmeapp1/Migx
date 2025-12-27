@@ -202,13 +202,47 @@ router.get('/top-get', async (req, res) => {
   }
 });
 
+// Get top merchants (monthly)
+router.get('/top-merchant', async (req, res) => {
+  try {
+    const { limit = 5 } = req.query;
+    const currentMonth = new Date().toISOString().slice(0, 7);
+
+    const result = await query(
+      `SELECT u.id, u.username, u.avatar, u.gender, u.role, u.country,
+              ul.level,
+              COALESCE(ml.total_spent, 0) as total_spent
+       FROM users u
+       LEFT JOIN merchant_leaderboard ml ON u.id = ml.user_id AND ml.month_year = $1
+       LEFT JOIN user_levels ul ON u.id = ul.user_id
+       WHERE u.is_active = true AND u.role = 'merchant'
+       GROUP BY u.id, u.username, u.avatar, u.gender, u.role, u.country, ul.level, ml.total_spent
+       HAVING COALESCE(ml.total_spent, 0) > 0
+       ORDER BY total_spent DESC
+       LIMIT $2`,
+      [currentMonth, Math.min(parseInt(limit), 5)]
+    );
+
+    res.json({
+      category: 'top_merchant_monthly',
+      users: result.rows,
+      count: result.rows.length
+    });
+
+  } catch (error) {
+    console.error('Get top merchant error:', error);
+    res.status(500).json({ error: 'Failed to get top merchant users' });
+  }
+});
+
 // Get all leaderboards at once
 router.get('/all', async (req, res) => {
   try {
     const { limit = 10 } = req.query;
     const limitInt = parseInt(limit);
+    const currentMonth = new Date().toISOString().slice(0, 7);
 
-    const [topLevel, topGiftSender, topGiftReceiver, topFootprint, topGamer, topGet] = await Promise.all([
+    const [topLevel, topGiftSender, topGiftReceiver, topFootprint, topGamer, topGet, topMerchant] = await Promise.all([
       query(
         `SELECT u.id, u.username, u.avatar, u.gender, u.role, u.country, u.username_color,
                 COALESCE(ul.level, 1) as level, COALESCE(ul.xp, 0) as xp
@@ -277,8 +311,8 @@ router.get('/all', async (req, res) => {
          GROUP BY u.id, u.username, u.avatar, u.gender, u.role, u.country, ul.level
          HAVING COUNT(gh.id) > 0
          ORDER BY total_games DESC, wins DESC
-         LIMIT $1`,
-        [limitInt]
+         LIMIT 5`,
+        []
       ),
       query(
         `SELECT u.id, u.username, u.avatar, u.gender, u.role, u.country,
@@ -295,8 +329,22 @@ router.get('/all', async (req, res) => {
          GROUP BY u.id, u.username, u.avatar, u.gender, u.role, u.country, ul.level
          HAVING SUM(gh.reward_amount) > 0
          ORDER BY total_winnings DESC, wins DESC
-         LIMIT $1`,
-        [limitInt]
+         LIMIT 5`,
+        []
+      ),
+      query(
+        `SELECT u.id, u.username, u.avatar, u.gender, u.role, u.country,
+                ul.level,
+                COALESCE(ml.total_spent, 0) as total_spent
+         FROM users u
+         LEFT JOIN merchant_leaderboard ml ON u.id = ml.user_id AND ml.month_year = $1
+         LEFT JOIN user_levels ul ON u.id = ul.user_id
+         WHERE u.is_active = true AND u.role = 'merchant'
+         GROUP BY u.id, u.username, u.avatar, u.gender, u.role, u.country, ul.level, ml.total_spent
+         HAVING COALESCE(ml.total_spent, 0) > 0
+         ORDER BY total_spent DESC
+         LIMIT 5`,
+        [currentMonth]
       )
     ]);
 
@@ -306,7 +354,8 @@ router.get('/all', async (req, res) => {
       top_gift_receiver: topGiftReceiver.rows,
       top_footprint: topFootprint.rows,
       top_gamer: topGamer.rows,
-      top_get: topGet.rows
+      top_get: topGet.rows,
+      top_merchant: topMerchant.rows
     });
 
   } catch (error) {

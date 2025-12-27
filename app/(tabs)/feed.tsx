@@ -455,6 +455,17 @@ export default function FeedScreen() {
     const levelConfig = getLevelConfig(userLevel);
     const roleBadge = getRoleBadge(userRole);
 
+    const usernameColor = () => {
+      if ((item as any).hasTopLikeReward) {
+        const expiry = (item as any).topLikeRewardExpiry;
+        if (expiry && new Date(expiry) > new Date()) {
+          return '#FF69B4'; // Pink
+        }
+      }
+      if (userRole === 'merchant') return '#9C27B0';
+      return (item as any).username_color || (item as any).usernameColor || theme.text;
+    };
+
     return (
     <View style={[styles.postCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
       <View style={styles.postHeader}>
@@ -470,7 +481,7 @@ export default function FeedScreen() {
         )}
         <View style={styles.postHeaderText}>
           <View style={styles.usernameRow}>
-            <Text style={[styles.username, { color: theme.text }]}>{item.username}</Text>
+            <Text style={[styles.username, { color: usernameColor() }]}>{item.username}</Text>
             {/* Level Badge */}
             <View style={styles.levelBadgeContainer}>
               <Image source={levelConfig.icon} style={styles.levelBadgeIcon} />

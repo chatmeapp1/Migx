@@ -80,6 +80,15 @@ const DiamondIcon = ({ size = 24, color = '#00BCD4' }: { size?: number; color?: 
   </Svg>
 );
 
+const HeartIcon = ({ size = 24, color = '#E91E63' }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35Z"
+      fill={color}
+    />
+  </Svg>
+);
+
 const MerchantIcon = ({ size = 24, color = '#9C27B0' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
@@ -234,6 +243,14 @@ export default function LeaderboardPage() {
       textColor: '#fff',
       count: leaderboardData.top_merchant?.length || 0,
     },
+    {
+      id: 'top_likes',
+      title: 'TOP LIKES (WEEKLY) (5)',
+      icon: <HeartIcon size={22} color="#fff" />,
+      backgroundColor: '#082919',
+      textColor: '#fff',
+      count: leaderboardData.top_likes?.length || 0,
+    },
   ];
 
   const fetchLeaderboards = async () => {
@@ -278,6 +295,8 @@ export default function LeaderboardPage() {
         return `${user.total_winnings || 0} coins`;
       case 'top_merchant':
         return `${(user as any).total_spent || 0} spent`;
+      case 'top_likes':
+        return `${(user as any).likes_count || 0} likes`;
       default:
         return '';
     }
@@ -288,7 +307,17 @@ export default function LeaderboardPage() {
     if (user.role === 'merchant') roleColor = '#9C27B0'; // Override for leaderboard requirements
     const showRank = index < 3;
     const isTop1 = index === 0 && (categoryId === 'top_level' || categoryId === 'top_merchant');
-    const userNameColor = isTop1 ? (categoryId === 'top_merchant' ? '#9C27B0' : '#FF69B4') : (user.username_color || theme.text);
+    
+    let userNameColor = user.username_color || theme.text;
+    if (isTop1) {
+      userNameColor = categoryId === 'top_merchant' ? '#9C27B0' : '#FF69B4';
+    } else {
+      // Pink Reward Logic (Leaderboard Item)
+      const hasActiveLikeReward = (user as any).has_top_like_reward && new Date((user as any).top_like_reward_expiry) > new Date();
+      if (hasActiveLikeReward && user.role !== 'merchant') {
+        userNameColor = '#FF69B4';
+      }
+    }
 
     return (
       <View

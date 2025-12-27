@@ -206,6 +206,49 @@ const checkAndResetLeaderboard = async () => {
           logger.info('LEADERBOARD_RESET_COMPLETE', { category: 'top_merchant_monthly' });
         }
       }
+      
+      // 6. TOP LIKE WEEKLY RESET & REWARD
+      // Run every Monday at 00:00
+      if (day === 1 && hours === 0) {
+        const lastLikeReset = await query(
+          "SELECT reset_at FROM leaderboard_reset_log WHERE category = 'top_like_weekly' ORDER BY reset_at DESC LIMIT 1"
+        );
+        
+        const likeResetNeeded = !lastLikeReset.rows.length || 
+          (new Date() - new Date(lastLikeReset.rows[0].reset_at)) > 24 * 60 * 60 * 1000;
+
+        if (likeResetNeeded) {
+          logger.info('LEADERBOARD_RESET_START', { category: 'top_like_weekly' });
+          
+          // Find top users from last week
+          const lastWeek = new Date();
+          lastWeek.setDate(lastWeek.getDate() - 7);
+          const lastWeekNum = Math.ceil(lastWeek.getDate() / 7);
+          const lastWeekYear = `${lastWeek.getFullYear()}-W${lastWeekNum}`;
+
+          const topLikers = await query(
+            `SELECT user_id FROM user_likes_leaderboard 
+             WHERE week_year = $1
+             ORDER BY likes_count DESC LIMIT 5`,
+            [lastWeekYear]
+          );
+
+          if (topLikers.rows.length) {
+            const userIds = topLikers.rows.map(r => r.user_id);
+            const expiry = new Date();
+            expiry.setDate(expiry.getDate() + 3);
+
+            await query(
+              "UPDATE users SET has_top_like_reward = true, top_like_reward_expiry = $1 WHERE id = ANY($2)",
+              [expiry, userIds]
+            );
+            logger.info('TOP_LIKE_REWARD_GRANTED', { userIds, expiry });
+          }
+
+          await query("INSERT INTO leaderboard_reset_log (category) VALUES ('top_like_weekly')");
+          logger.info('LEADERBOARD_RESET_COMPLETE', { category: 'top_like_weekly' });
+        }
+      }
     }
   } catch (error) {
     logger.error('LEADERBOARD_RESET_ERROR', error);

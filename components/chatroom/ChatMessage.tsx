@@ -18,6 +18,8 @@ interface ChatMessageProps {
   isOwnMessage?: boolean;
   messageType?: string;
   hasTopMerchantBadge?: boolean;
+  hasTopLikeReward?: boolean;
+  topLikeRewardExpiry?: string;
 }
 
 const BadgeTop1 = () => (
@@ -48,6 +50,17 @@ export function ChatMessage({
   const getUsernameColor = () => {
     if (isSystem) return '#FF8C00';
     if (isPresence) return '#FF8C00';
+    
+    // Pink Reward Logic (Chatroom)
+    if (hasTopLikeReward && topLikeRewardExpiry) {
+      const expiry = new Date(topLikeRewardExpiry);
+      if (expiry > new Date()) {
+        if (userType !== 'merchant') {
+          return '#FF69B4'; // Pink
+        }
+      }
+    }
+
     if (usernameColor) return usernameColor;
     if (isOwnMessage) return roleColors.own;
     if (userType === 'creator') return roleColors.creator;

@@ -27,12 +27,21 @@ router.post('/:roomId/join', async (req, res) => {
     
     const userCount = await getRoomUserCount(roomId);
     
+    // Check if user has top merchant badge or like reward
+    const user = await userService.getUserById(userId);
+    const now = new Date();
+    const hasMerchantBadge = user && user.has_top_merchant_badge && user.top_merchant_badge_expiry > now;
+    const hasLikeReward = user && user.has_top_like_reward && user.top_like_reward_expiry > now;
+    
     console.log(`[Chatroom API] User ${username} joined room ${roomId}. User count: ${userCount}`);
     
     res.json({
       success: true,
       room: result.room,
-      userCount
+      userCount,
+      hasBadge: hasMerchantBadge,
+      hasLikeReward,
+      topLikeRewardExpiry: user?.top_like_reward_expiry
     });
     
   } catch (error) {
@@ -90,11 +99,39 @@ router.get('/:roomId/participants', async (req, res) => {
     const participantUsernames = await getRoomParticipants(roomId);
     const userCount = await getRoomUserCount(roomId);
     
-    // Participants are already usernames stored in Redis Set
-    const participants = participantUsernames.map(username => ({
-      username,
-      role: 'user'
-    }));
+    // Get full user details for rewards/badges
+    const { query } = require('../db/db');
+    const userDetailsResult = await query(
+      `SELECT u.username, u.role, u.username_color,
+              u.has_top_merchant_badge, u.top_merchant_badge_expiry,
+              u.has_top_like_reward, u.top_like_reward_expiry
+       FROM users u
+       WHERE u.username = ANY($1)`,
+      [participantUsernames]
+    );
+
+    const userMap = new Map();
+    userDetailsResult.rows.forEach(u => userMap.set(u.username, u));
+
+    const now = new Date();
+    const participants = participantUsernames.map(username => {
+      const u = userMap.get(username);
+      let color = u?.username_color;
+      const hasLikeReward = u?.has_top_like_reward && new Date(u.top_like_reward_expiry) > now;
+      
+      if (hasLikeReward && u?.role !== 'merchant') {
+        color = '#FF69B4'; // Pink
+      }
+
+      return {
+        username,
+        role: u?.role || 'user',
+        usernameColor: color,
+        hasTopMerchantBadge: u?.has_top_merchant_badge && new Date(u.top_merchant_badge_expiry) > now,
+        hasTopLikeReward: hasLikeReward,
+        topLikeRewardExpiry: u?.top_like_reward_expiry
+      };
+    });
     
     res.json({
       success: true,

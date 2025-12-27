@@ -309,6 +309,28 @@ router.post('/:feedId/like', authMiddleware, async (req, res) => {
       // Like
       await redis.set(userLikeKey, '1', { EX: 86400 }); // Same TTL as feed (24h)
       await redis.incr(likeKey);
+
+      // Track for leaderboard (PostgreSQL)
+      try {
+        const feed = JSON.parse(feedData);
+        if (feed.userId) {
+          const now = new Date();
+          const weekNum = Math.ceil(now.getDate() / 7);
+          const weekYear = `${now.getFullYear()}-W${weekNum}`;
+          
+          const { query } = require('../db/db');
+          await query(
+            `INSERT INTO user_likes_leaderboard (user_id, username, likes_count, week_year)
+             VALUES ($1, $2, 1, $3)
+             ON CONFLICT (user_id, week_year) 
+             DO UPDATE SET likes_count = user_likes_leaderboard.likes_count + 1, updated_at = CURRENT_TIMESTAMP`,
+            [feed.userId, feed.username, weekYear]
+          );
+        }
+      } catch (err) {
+        console.error('Leaderboard like tracking error:', err);
+      }
+
       res.json({ success: true, action: 'liked' });
     }
   } catch (error) {

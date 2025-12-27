@@ -14,7 +14,8 @@ router.get('/:userId', async (req, res) => {
     // Get user basic info
     const userResult = await query(
       `SELECT u.id, u.username, u.avatar, u.role, u.status, u.status_message, 
-              u.gender, u.created_at, u.username_color, ul.level, ul.xp
+              u.gender, u.created_at, u.username_color, ul.level, ul.xp,
+              u.has_top_like_reward, u.top_like_reward_expiry
        FROM users u
        LEFT JOIN user_levels ul ON u.id = ul.user_id
        WHERE u.id = $1`,
@@ -29,6 +30,12 @@ router.get('/:userId', async (req, res) => {
     
     // Check badge expiry
     const hasBadge = user.has_top_merchant_badge && user.top_merchant_badge_expiry > new Date();
+    const hasLikeReward = user.has_top_like_reward && user.top_like_reward_expiry > new Date();
+    
+    let usernameColor = user.username_color;
+    if (hasLikeReward && user.role !== 'merchant') {
+      usernameColor = '#FF69B4'; // Pink
+    }
     
     // Get stats
     const [postCount, giftCount, followersCount, followingCount] = await Promise.all([
@@ -63,7 +70,7 @@ router.get('/:userId', async (req, res) => {
       user: {
         id: user.id,
         username: user.username,
-        usernameColor: user.username_color,
+        usernameColor: usernameColor,
         avatar: user.avatar,
         role: user.role,
         status: user.status,
@@ -72,7 +79,9 @@ router.get('/:userId', async (req, res) => {
         level: user.level || 1,
         xp: user.xp || 0,
         createdAt: user.created_at,
-        hasTopMerchantBadge: hasBadge
+        hasTopMerchantBadge: hasBadge,
+        hasTopLikeReward: hasLikeReward,
+        topLikeRewardExpiry: user.top_like_reward_expiry
       },
       stats: {
         postCount,

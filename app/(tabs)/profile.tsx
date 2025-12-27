@@ -159,7 +159,7 @@ export default function ProfileScreen() {
 
               <ProfileMenuItem 
                 icon={<SettingsIcon size={24} />}
-                title="Settings"
+                title="Security"
                 onPress={handleSettings}
               />
 

@@ -117,9 +117,8 @@ export default function FeedScreen() {
 
     setLoading(true);
     try {
-      const userDataStr = await AsyncStorage.getItem('user_data');
-      const userData = userDataStr ? JSON.parse(userDataStr) : null;
-      const token = userData?.token;
+      // Get token from correct storage key
+      const token = await AsyncStorage.getItem('auth_token');
 
       // Validasi token JWT format sebelum request
       if (!token || typeof token !== 'string' || token.trim() === '') {
@@ -245,9 +244,7 @@ export default function FeedScreen() {
 
     setPosting(true);
     try {
-      const userDataStr = await AsyncStorage.getItem('user_data');
-      const userData = userDataStr ? JSON.parse(userDataStr) : null;
-      const token = userData?.token;
+      const token = await AsyncStorage.getItem('auth_token');
 
       // Simple token check - backend will validate properly
       if (!token) {
@@ -314,19 +311,10 @@ export default function FeedScreen() {
 
   const handleLike = async (postId: number) => {
     try {
-      const userDataStr = await AsyncStorage.getItem('user_data');
-      const userData = userDataStr ? JSON.parse(userDataStr) : null;
-      const token = userData?.token;
+      const token = await AsyncStorage.getItem('auth_token');
 
-      // Validasi token JWT format
-      if (!token || typeof token !== 'string' || token.trim() === '') {
+      if (!token) {
         console.warn('⚠️ Feed: No token for like action');
-        return;
-      }
-
-      const tokenParts = token.split('.');
-      if (tokenParts.length !== 3) {
-        console.warn('⚠️ Feed: Invalid JWT format for like action');
         return;
       }
 
@@ -367,19 +355,10 @@ export default function FeedScreen() {
 
   const fetchComments = async (postId: number) => {
     try {
-      const userDataStr = await AsyncStorage.getItem('user_data');
-      const userData = userDataStr ? JSON.parse(userDataStr) : null;
-      const token = userData?.token;
+      const token = await AsyncStorage.getItem('auth_token');
 
-      // Validasi token JWT format
-      if (!token || typeof token !== 'string' || token.trim() === '') {
+      if (!token) {
         console.warn('⚠️ Feed: No token for fetching comments');
-        return;
-      }
-
-      const tokenParts = token.split('.');
-      if (tokenParts.length !== 3) {
-        console.warn('⚠️ Feed: Invalid JWT format for fetching comments');
         return;
       }
 
@@ -413,19 +392,10 @@ export default function FeedScreen() {
     if (!commentText.trim() || !selectedPost) return;
 
     try {
-      const userDataStr = await AsyncStorage.getItem('user_data');
-      const userData = userDataStr ? JSON.parse(userDataStr) : null;
-      const token = userData?.token;
+      const token = await AsyncStorage.getItem('auth_token');
 
-      // Validasi token JWT format
-      if (!token || typeof token !== 'string' || token.trim() === '') {
+      if (!token) {
         console.warn('⚠️ Feed: No token for sending comment');
-        return;
-      }
-
-      const tokenParts = token.split('.');
-      if (tokenParts.length !== 3) {
-        console.warn('⚠️ Feed: Invalid JWT format for sending comment');
         return;
       }
 

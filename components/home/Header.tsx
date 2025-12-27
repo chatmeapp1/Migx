@@ -9,6 +9,7 @@ import { SearchUserModal } from './SearchUserModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import API_BASE_URL, { createSocket } from '@/utils/api';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Audio } from 'expo-av';
 
 const UserIcon = ({ size = 24, color = '#4A90E2' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -46,26 +47,49 @@ export function Header() {
   const [username, setUsername] = useState('');
   const [userData, setUserData] = useState<any>(null);
   const [socket, setSocket] = useState<any>(null);
+  const [sound, setSound] = useState<any>(null);
 
   useEffect(() => {
     loadUserData();
+    return () => {
+      if (sound) {
+        sound.unloadAsync();
+      }
+    };
   }, []);
+
+  const playNotificationSound = async () => {
+    try {
+      const { sound: newSound } = await Audio.Sound.createAsync(
+        require('@/assets/sound/notification.mp3')
+      );
+      setSound(newSound);
+      await newSound.playAsync();
+    } catch (error) {
+      console.error('Error playing notification sound:', error);
+    }
+  };
 
   useEffect(() => {
     if (username) {
       const socketInstance = createSocket();
       setSocket(socketInstance);
 
-      socketInstance.on('notif:credit', fetchNotificationCount);
-      socketInstance.on('notif:gift', fetchNotificationCount);
-      socketInstance.on('notif:follow', fetchNotificationCount);
+      const handleNotif = () => {
+        fetchNotificationCount();
+        playNotificationSound();
+      };
+
+      socketInstance.on('notif:credit', handleNotif);
+      socketInstance.on('notif:gift', handleNotif);
+      socketInstance.on('notif:follow', handleNotif);
 
       fetchNotificationCount();
 
       return () => {
-        socketInstance.off('notif:credit');
-        socketInstance.off('notif:gift');
-        socketInstance.off('notif:follow');
+        socketInstance.off('notif:credit', handleNotif);
+        socketInstance.off('notif:gift', handleNotif);
+        socketInstance.off('notif:follow', handleNotif);
       };
     }
   }, [username]);

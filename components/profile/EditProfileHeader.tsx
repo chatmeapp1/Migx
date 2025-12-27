@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: 12,
+    top: 44,
     left: 12,
     width: 40,
     height: 40,
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
   },
   titleContainer: {
     position: 'absolute',
-    top: 12,
+    top: 44,
     left: 0,
     right: 0,
     alignItems: 'center',

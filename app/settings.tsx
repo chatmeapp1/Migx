@@ -190,8 +190,7 @@ export default function SettingsScreen() {
         
         const updatedUser = { 
           ...userData, 
-          email: newEmail,
-          token: userData.token
+          email: newEmail
         };
         await AsyncStorage.setItem('user_data', JSON.stringify(updatedUser));
         setUserData(updatedUser);

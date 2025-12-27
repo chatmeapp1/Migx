@@ -43,14 +43,7 @@ export default function EditRoomScreen() {
 
     setLoading(true);
     try {
-      const userData = await AsyncStorage.getItem('user_data');
-      if (!userData) {
-        Alert.alert('Error', 'Session expired. Please log in again.');
-        return;
-      }
-
-      const parsedData = JSON.parse(userData);
-      const token = parsedData?.token;
+      const token = await AsyncStorage.getItem('auth_token');
       const deviceId = await AsyncStorage.getItem('device_id');
 
       if (!token) {

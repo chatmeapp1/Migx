@@ -63,10 +63,9 @@ export default function AdminPanelScreen() {
 
   useEffect(() => {
     const loadToken = async () => {
-      const userData = await AsyncStorage.getItem('user_data');
-      if (userData) {
-        const parsed = JSON.parse(userData);
-        setAdminToken(parsed.token);
+      const token = await AsyncStorage.getItem('auth_token');
+      if (token) {
+        setAdminToken(token);
       }
     };
     loadToken();
@@ -78,16 +77,7 @@ export default function AdminPanelScreen() {
 
   const fetchUsers = async () => {
     try {
-      const userData = await AsyncStorage.getItem('user_data');
-      
-      if (!userData) {
-        Alert.alert('Error', 'Session expired. Please log in again.');
-        setLoading(false);
-        return;
-      }
-
-      const parsedData = JSON.parse(userData);
-      const token = parsedData.token;
+      const token = await AsyncStorage.getItem('auth_token');
       const deviceId = await AsyncStorage.getItem('device_id');
 
       if (!token) {
@@ -116,15 +106,7 @@ export default function AdminPanelScreen() {
 
   const handleChangeRole = async (userId: number, newRole: string) => {
     try {
-      const userData = await AsyncStorage.getItem('user_data');
-      
-      if (!userData) {
-        Alert.alert('Error', 'Session expired. Please log in again.');
-        return;
-      }
-
-      const parsedData = JSON.parse(userData);
-      const token = parsedData.token;
+      const token = await AsyncStorage.getItem('auth_token');
       const deviceId = await AsyncStorage.getItem('device_id');
 
       if (!token) {
@@ -165,15 +147,7 @@ export default function AdminPanelScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              const userData = await AsyncStorage.getItem('user_data');
-              
-              if (!userData) {
-                Alert.alert('Error', 'Session expired. Please log in again.');
-                return;
-              }
-
-              const parsedData = JSON.parse(userData);
-              const token = parsedData.token;
+              const token = await AsyncStorage.getItem('auth_token');
               const deviceId = await AsyncStorage.getItem('device_id');
 
               if (!token) {
@@ -229,15 +203,10 @@ export default function AdminPanelScreen() {
 
     setRoomModalLoading(true);
     try {
-      const userData = await AsyncStorage.getItem('user_data');
-      if (!userData) {
-        Alert.alert('Error', 'Session expired. Please log in again.');
-        return;
-      }
-
-      const parsedData = JSON.parse(userData);
-      const token = parsedData.token;
+      const token = await AsyncStorage.getItem('auth_token');
       const deviceId = await AsyncStorage.getItem('device_id');
+      const userDataStr = await AsyncStorage.getItem('user_data');
+      const userData = userDataStr ? JSON.parse(userDataStr) : null;
 
       if (!token) {
         Alert.alert('Error', 'Session expired. Please log in again.');
@@ -251,9 +220,9 @@ export default function AdminPanelScreen() {
         category: roomCategory,
       };
 
-      if (roomCategory === 'managed') {
-        payload.owner_id = parsedData.id;
-        payload.owner_name = parsedData.username;
+      if (roomCategory === 'managed' && userData) {
+        payload.owner_id = userData.id;
+        payload.owner_name = userData.username;
       }
 
       const response = await fetch(`${API_BASE_URL}/api/admin/rooms/create`, {
@@ -296,14 +265,7 @@ export default function AdminPanelScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              const userData = await AsyncStorage.getItem('user_data');
-              if (!userData) {
-                Alert.alert('Error', 'Session expired. Please log in again.');
-                return;
-              }
-
-              const parsedData = JSON.parse(userData);
-              const token = parsedData.token;
+              const token = await AsyncStorage.getItem('auth_token');
               const deviceId = await AsyncStorage.getItem('device_id');
 
               if (!token) {
@@ -369,16 +331,7 @@ export default function AdminPanelScreen() {
 
     setCoinLoading(true);
     try {
-      const userData = await AsyncStorage.getItem('user_data');
-      
-      if (!userData) {
-        Alert.alert('Error', 'Session expired. Please log in again.');
-        setCoinLoading(false);
-        return;
-      }
-
-      const parsedData = JSON.parse(userData);
-      const token = parsedData.token;
+      const token = await AsyncStorage.getItem('auth_token');
       const deviceId = await AsyncStorage.getItem('device_id');
 
       if (!token) {
@@ -436,16 +389,7 @@ export default function AdminPanelScreen() {
 
     setCreateLoading(true);
     try {
-      const userData = await AsyncStorage.getItem('user_data');
-      
-      if (!userData) {
-        Alert.alert('Error', 'Session expired. Please log in again.');
-        setCreateLoading(false);
-        return;
-      }
-
-      const parsedData = JSON.parse(userData);
-      const token = parsedData.token;
+      const token = await AsyncStorage.getItem('auth_token');
       const deviceId = await AsyncStorage.getItem('device_id');
 
       if (!token) {

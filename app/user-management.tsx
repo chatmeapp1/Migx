@@ -60,15 +60,7 @@ export default function UserManagementScreen() {
 
     setSearchLoading(true);
     try {
-      const userData = await AsyncStorage.getItem('user_data');
-      if (!userData) {
-        Alert.alert('Error', 'Session expired. Please log in again.');
-        setSearchLoading(false);
-        return;
-      }
-
-      const parsedData = JSON.parse(userData);
-      const token = parsedData.token;
+      const token = await AsyncStorage.getItem('auth_token');
       const deviceId = await AsyncStorage.getItem('device_id');
 
       if (!token) {
@@ -114,15 +106,7 @@ export default function UserManagementScreen() {
 
     setLoading(true);
     try {
-      const userData = await AsyncStorage.getItem('user_data');
-      if (!userData) {
-        Alert.alert('Error', 'Session expired. Please log in again.');
-        setLoading(false);
-        return;
-      }
-
-      const parsedData = JSON.parse(userData);
-      const token = parsedData.token;
+      const token = await AsyncStorage.getItem('auth_token');
       const deviceId = await AsyncStorage.getItem('device_id');
 
       if (!token) {
@@ -170,15 +154,7 @@ export default function UserManagementScreen() {
 
     setPwdLoading(true);
     try {
-      const userData = await AsyncStorage.getItem('user_data');
-      if (!userData) {
-        Alert.alert('Error', 'Session expired. Please log in again.');
-        setPwdLoading(false);
-        return;
-      }
-
-      const parsedData = JSON.parse(userData);
-      const token = parsedData.token;
+      const token = await AsyncStorage.getItem('auth_token');
       const deviceId = await AsyncStorage.getItem('device_id');
 
       if (!token) {
@@ -249,15 +225,7 @@ export default function UserManagementScreen() {
 
     setEmailLoading(true);
     try {
-      const userData = await AsyncStorage.getItem('user_data');
-      if (!userData) {
-        Alert.alert('Error', 'Session expired. Please log in again.');
-        setEmailLoading(false);
-        return;
-      }
-
-      const parsedData = JSON.parse(userData);
-      const token = parsedData.token;
+      const token = await AsyncStorage.getItem('auth_token');
       const deviceId = await AsyncStorage.getItem('device_id');
 
       if (!token) {
@@ -327,15 +295,7 @@ export default function UserManagementScreen() {
 
     setPinLoading(true);
     try {
-      const userData = await AsyncStorage.getItem('user_data');
-      if (!userData) {
-        Alert.alert('Error', 'Session expired. Please log in again.');
-        setPinLoading(false);
-        return;
-      }
-
-      const parsedData = JSON.parse(userData);
-      const token = parsedData.token;
+      const token = await AsyncStorage.getItem('auth_token');
       const deviceId = await AsyncStorage.getItem('device_id');
 
       if (!token) {

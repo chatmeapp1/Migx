@@ -40,8 +40,10 @@ const checkAndResetLeaderboard = async () => {
           logger.info('TOP1_REWARD_GRANTED', { userId, expiry });
         }
         
-        // 2. Reset XP (set to level 1 baseline)
-        await query("UPDATE user_levels SET xp = 0, level = 1");
+        // 2. Clear weekly leaderboard logs to start fresh
+        // Instead of resetting levels, we log that a new weekly cycle has started.
+        // The Top Gamer and Top Get categories usually depend on a weekly timeframe.
+        // We ensure the reset log reflects the new week.
         
         // 3. Log reset
         await query("INSERT INTO leaderboard_reset_log (category) VALUES ('top_level')");

@@ -30,9 +30,6 @@ function authMiddleware(req, res, next) {
     
     // 🔐 STEP 11: Validate device_id (device binding - prevent token theft)
     // DISABLED FOR DEVELOPMENT - To prevent "Invalid or expired token" errors
-    /*
-    if (!clientDeviceId) {
-    */
     
     req.user = decoded;
     logger.info('AUTH_SUCCESS: Authentication verified', { 

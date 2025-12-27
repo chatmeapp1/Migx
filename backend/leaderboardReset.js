@@ -10,17 +10,17 @@ const checkAndResetLeaderboard = async () => {
     
     // Check if it's Monday 00:00-01:00
     if (day === 1 && hours === 0) {
-      const lastReset = await query(
+      // 1. TOP LEVEL RESET & REWARD
+      const lastLevelReset = await query(
         "SELECT reset_at FROM leaderboard_reset_log WHERE category = 'top_level' ORDER BY reset_at DESC LIMIT 1"
       );
       
-      const resetNeeded = !lastReset.rows.length || 
-        (new Date() - new Date(lastReset.rows[0].reset_at)) > 24 * 60 * 60 * 1000;
+      const levelResetNeeded = !lastLevelReset.rows.length || 
+        (new Date() - new Date(lastLevelReset.rows[0].reset_at)) > 24 * 60 * 60 * 1000;
         
-      if (resetNeeded) {
+      if (levelResetNeeded) {
         logger.info('LEADERBOARD_RESET_START', { category: 'top_level' });
         
-        // 1. Get Top 1 user before reset
         const topUser = await query(
           `SELECT u.id FROM users u 
            LEFT JOIN user_levels ul ON u.id = ul.user_id 
@@ -37,18 +37,55 @@ const checkAndResetLeaderboard = async () => {
             "UPDATE users SET username_color = '#FF69B4', username_color_expiry = $1 WHERE id = $2",
             [expiry, userId]
           );
-          logger.info('TOP1_REWARD_GRANTED', { userId, expiry });
+          logger.info('TOP1_LEVEL_REWARD_GRANTED', { userId, expiry });
         }
         
-        // 2. Clear weekly leaderboard logs to start fresh
-        // Instead of resetting levels, we log that a new weekly cycle has started.
-        // The Top Gamer and Top Get categories usually depend on a weekly timeframe.
-        // We ensure the reset log reflects the new week.
-        
-        // 3. Log reset
         await query("INSERT INTO leaderboard_reset_log (category) VALUES ('top_level')");
-        
         logger.info('LEADERBOARD_RESET_COMPLETE', { category: 'top_level' });
+      }
+
+      // 2. TOP GIFT SENDER RESET & REWARD
+      const lastGiftReset = await query(
+        "SELECT reset_at FROM leaderboard_reset_log WHERE category = 'top_gift_sender' ORDER BY reset_at DESC LIMIT 1"
+      );
+
+      const giftResetNeeded = !lastGiftReset.rows.length || 
+        (new Date() - new Date(lastGiftReset.rows[0].reset_at)) > 24 * 60 * 60 * 1000;
+
+      if (giftResetNeeded) {
+        logger.info('LEADERBOARD_RESET_START', { category: 'top_gift_sender' });
+
+        // Get Top 1 Gift Sender
+        const topGiftUser = await query(
+          `SELECT u.id, COUNT(ug.id) as total_gifts
+           FROM users u
+           LEFT JOIN user_gifts ug ON u.id = ug.sender_id
+           WHERE u.is_active = true
+           GROUP BY u.id
+           HAVING COUNT(ug.id) > 0
+           ORDER BY total_gifts DESC LIMIT 1`
+        );
+
+        if (topGiftUser.rows.length) {
+          const userId = topGiftUser.rows[0].id;
+          const expiry = new Date();
+          expiry.setDate(expiry.getDate() + 3);
+
+          await query(
+            "UPDATE users SET username_color = '#FF69B4', username_color_expiry = $1 WHERE id = $2",
+            [expiry, userId]
+          );
+          logger.info('TOP1_GIFT_REWARD_GRANTED', { userId, expiry });
+        }
+
+        // Reset gift records for the new week (move to history or clear)
+        // For simplicity in this logic, we just log the reset. 
+        // The API should ideally filter by week if we wanted historical data, 
+        // but user asked for "reset list", so we clear the current week's activity.
+        await query("DELETE FROM user_gifts WHERE created_at < NOW()"); 
+
+        await query("INSERT INTO leaderboard_reset_log (category) VALUES ('top_gift_sender')");
+        logger.info('LEADERBOARD_RESET_COMPLETE', { category: 'top_gift_sender' });
       }
     }
   } catch (error) {

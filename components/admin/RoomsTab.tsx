@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  TextInput,
 } from 'react-native';
 
 interface Room {
@@ -25,6 +26,8 @@ interface RoomsTabProps {
   onCreateRoom: () => void;
   onEditRoom: (room: Room) => void;
   onDeleteRoom: (room: Room) => void;
+  searchQuery: string;
+  onSearchChange: (text: string) => void;
 }
 
 export function RoomsTab({
@@ -34,10 +37,21 @@ export function RoomsTab({
   onCreateRoom,
   onEditRoom,
   onDeleteRoom,
+  searchQuery,
+  onSearchChange,
 }: RoomsTabProps) {
   return (
     <>
       <View style={[styles.roomHeader, { backgroundColor: theme.card }]}>
+        <View style={styles.searchContainer}>
+          <TextInput
+            style={[styles.searchInput, { color: theme.text, borderColor: theme.border }]}
+            placeholder="Search rooms..."
+            placeholderTextColor={theme.textSecondary}
+            value={searchQuery}
+            onChangeText={onSearchChange}
+          />
+        </View>
         <TouchableOpacity
           style={[styles.createButton, { backgroundColor: '#0a5229' }]}
           onPress={onCreateRoom}
@@ -101,6 +115,17 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
+    gap: 12,
+  },
+  searchContainer: {
+    width: '100%',
+  },
+  searchInput: {
+    height: 44,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    fontSize: 14,
   },
   createButton: {
     paddingHorizontal: 16,
@@ -116,6 +141,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 16,
+    paddingTop: 16,
   },
   loadingContainer: {
     flex: 1,

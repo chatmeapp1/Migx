@@ -46,6 +46,49 @@ router.get('/reports', superAdminMiddleware, async (req, res) => {
   }
 });
 
+// Get rooms with pagination and search
+router.get('/rooms', superAdminMiddleware, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const search = req.query.search || '';
+    const limit = 20;
+    const offset = (page - 1) * limit;
+
+    let query = 'SELECT * FROM rooms';
+    let countQuery = 'SELECT COUNT(*) FROM rooms';
+    const params = [];
+    const countParams = [];
+
+    if (search) {
+      query += ' WHERE name ILIKE $1';
+      countQuery += ' WHERE name ILIKE $1';
+      params.push(`%${search}%`);
+      countParams.push(`%${search}%`);
+    }
+
+    query += ` ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+    params.push(limit);
+    params.push(offset);
+
+    const rooms = await db.query(query, params);
+    const totalCountResult = await db.query(countQuery, countParams);
+    const totalRooms = parseInt(totalCountResult.rows[0].count);
+
+    res.json({ 
+      rooms: rooms.rows,
+      pagination: {
+        total: totalRooms,
+        page,
+        limit,
+        totalPages: Math.ceil(totalRooms / limit)
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching rooms:', error);
+    res.status(500).json({ message: 'Error fetching rooms' });
+  }
+});
+
 // Update report status
 router.patch('/reports/:id/status', superAdminMiddleware, async (req, res) => {
   try {

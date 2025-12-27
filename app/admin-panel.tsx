@@ -54,6 +54,8 @@ export default function AdminPanelScreen() {
 
   const [rooms, setRooms] = useState<any[]>([]);
   const [roomsLoading, setRoomsLoading] = useState(false);
+  const [roomPagination, setRoomPagination] = useState<any>({ page: 1, totalPages: 1 });
+  const [roomSearchQuery, setRoomSearchQuery] = useState('');
   const [createRoomModalVisible, setCreateRoomModalVisible] = useState(false);
   
   const [roomName, setRoomName] = useState('');
@@ -70,11 +72,12 @@ export default function AdminPanelScreen() {
       }
     };
     loadToken();
-    fetchUsers(pagination.page);
-    if (selectedTab === 'rooms') {
-      fetchRooms();
+    if (selectedTab === 'users') {
+      fetchUsers(pagination.page);
+    } else if (selectedTab === 'rooms') {
+      fetchRooms(roomPagination.page, roomSearchQuery);
     }
-  }, [selectedTab, pagination.page]);
+  }, [selectedTab, pagination.page, roomPagination.page, roomSearchQuery]);
 
   const fetchUsers = async (page = 1) => {
     try {
@@ -192,18 +195,43 @@ export default function AdminPanelScreen() {
     );
   };
 
-  const fetchRooms = async () => {
+  const fetchRooms = async (page = 1, search = '') => {
     try {
       setRoomsLoading(true);
-      const response = await fetch(`${API_BASE_URL}/api/rooms`);
+      const token = await AsyncStorage.getItem('auth_token');
+      const deviceId = await AsyncStorage.getItem('device_id');
+
+      if (!token) return;
+
+      const response = await fetch(`${API_BASE_URL}/api/admin/rooms?page=${page}&search=${encodeURIComponent(search)}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'x-device-id': deviceId || '',
+        },
+      });
       const data = await response.json();
       if (data.rooms) {
         setRooms(data.rooms);
+        if (data.pagination) {
+          setRoomPagination(data.pagination);
+        }
       }
     } catch (error) {
       console.error('Error fetching rooms:', error);
     } finally {
       setRoomsLoading(false);
+    }
+  };
+
+  const handleRoomNextPage = () => {
+    if (roomPagination.page < roomPagination.totalPages) {
+      setRoomPagination({ ...roomPagination, page: roomPagination.page + 1 });
+    }
+  };
+
+  const handleRoomPrevPage = () => {
+    if (roomPagination.page > 1) {
+      setRoomPagination({ ...roomPagination, page: roomPagination.page - 1 });
     }
   };
 
@@ -604,20 +632,43 @@ export default function AdminPanelScreen() {
       )}
 
       {selectedTab === 'rooms' && (
-        <RoomsTab
-          theme={theme}
-          loading={roomsLoading}
-          rooms={rooms}
-          onCreateRoom={() => {
-            setRoomName('');
-            setRoomDescription('');
-            setRoomCapacity('');
-            setRoomCategory('global');
-            setCreateRoomModalVisible(true);
-          }}
-          onEditRoom={openEditModal}
-          onDeleteRoom={handleDeleteRoom}
-        />
+        <>
+          <RoomsTab
+            theme={theme}
+            loading={roomsLoading}
+            rooms={rooms}
+            onCreateRoom={() => {
+              setRoomName('');
+              setRoomDescription('');
+              setRoomCapacity('');
+              setRoomCategory('global');
+              setCreateRoomModalVisible(true);
+            }}
+            onEditRoom={openEditModal}
+            onDeleteRoom={handleDeleteRoom}
+            searchQuery={roomSearchQuery}
+            onSearchChange={setRoomSearchQuery}
+          />
+          <View style={styles.paginationContainer}>
+            <TouchableOpacity 
+              style={[styles.pageButton, roomPagination.page <= 1 && styles.disabledButton]} 
+              onPress={handleRoomPrevPage}
+              disabled={roomPagination.page <= 1}
+            >
+              <Text style={styles.pageButtonText}>Prev</Text>
+            </TouchableOpacity>
+            <Text style={styles.pageInfoText}>
+              Page {roomPagination.page} of {roomPagination.totalPages}
+            </Text>
+            <TouchableOpacity 
+              style={[styles.pageButton, roomPagination.page >= roomPagination.totalPages && styles.disabledButton]} 
+              onPress={handleRoomNextPage}
+              disabled={roomPagination.page >= roomPagination.totalPages}
+            >
+              <Text style={styles.pageButtonText}>Next</Text>
+            </TouchableOpacity>
+          </View>
+        </>
       )}
 
       {selectedTab === 'announcements' && (

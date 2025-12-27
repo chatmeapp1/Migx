@@ -107,11 +107,11 @@ export default function LoginScreen() {
           level: data.user.level,
           role: data.user.role,
           statusMessage: data.user.statusMessage,
-          token: data.token
+          token: data.token || data.accessToken
         };
         
         // 🔐 STEP 11: Store device_id for device binding (prevent token theft)
-        await AsyncStorage.setItem('auth_token', data.accessToken);
+        await AsyncStorage.setItem('auth_token', data.token || data.accessToken);
         await AsyncStorage.setItem('device_id', data.deviceId);
         
         console.log('💾 Storing user_data with token + device binding:', {

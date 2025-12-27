@@ -220,8 +220,8 @@ const resetPinHandler = async (req, res) => {
   try {
     const pin = req.body.pin || req.body.newPin;
     
-    if (!pin || !/^\d{4}$/.test(pin)) {
-      return res.status(400).json({ message: 'PIN must be exactly 4 digits' });
+    if (!pin || pin.length < 6 || !/^\d+$/.test(pin)) {
+      return res.status(400).json({ message: 'PIN must be at least 6 digits' });
     }
 
     const hashedPin = await bcrypt.hash(pin, 10);

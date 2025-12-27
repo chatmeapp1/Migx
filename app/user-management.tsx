@@ -288,8 +288,8 @@ export default function UserManagementScreen() {
       return;
     }
 
-    if (!/^\d{4}$/.test(newPin)) {
-      Alert.alert('Error', 'PIN must be exactly 4 digits');
+    if (newPin.length < 6 || !/^\d+$/.test(newPin)) {
+      Alert.alert('Error', 'PIN must be at least 6 digits');
       return;
     }
 
@@ -596,12 +596,12 @@ export default function UserManagementScreen() {
 
             <TextInput
               style={[styles.input, { backgroundColor: theme.background, color: theme.text, marginBottom: 12 }]}
-              placeholder="Enter new PIN (4 digits)"
+              placeholder="Enter new PIN (min 6 digits)"
               placeholderTextColor={theme.text}
               value={newPin}
               onChangeText={setNewPin}
               keyboardType="numeric"
-              maxLength={4}
+              maxLength={12}
               secureTextEntry
               editable={!pinLoading}
             />

@@ -221,6 +221,8 @@ export default function FeedScreen() {
       const formData = new FormData();
       formData.append('content', postContent);
 
+      const deviceId = await AsyncStorage.getItem('device_id');
+
       if (selectedImage) {
         const filename = selectedImage.split('/').pop() || 'image.jpg';
         const match = /\.(\w+)$/.exec(filename);
@@ -249,6 +251,7 @@ export default function FeedScreen() {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
+          'x-device-id': deviceId || '',
         },
         body: formData,
       });

@@ -29,7 +29,7 @@ function authMiddleware(req, res, next) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'migx-secret-key-2024');
     
     // 🔐 STEP 11: Validate device_id (device binding - prevent token theft)
-    // DISABLED FOR DEVELOPMENT
+    // DISABLED FOR DEVELOPMENT - To prevent "Invalid or expired token" errors when device_id is missing or inconsistent
     /*
     if (!clientDeviceId) {
       logger.security('DEVICE_BINDING_FAILED: Device ID missing', { 

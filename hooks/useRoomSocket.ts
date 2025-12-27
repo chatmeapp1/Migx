@@ -55,6 +55,10 @@ export function useRoomSocket({ roomId, onRoomJoined, onUsersUpdated }: UseRoomS
       isCmd: isCommandMessage,
       isPresence: isPresenceMessage,
       timestamp: data.timestamp,
+      // Pass reward data to Message object
+      hasTopMerchantBadge: data.hasTopMerchantBadge,
+      hasTopLikeReward: data.hasTopLikeReward,
+      topLikeRewardExpiry: data.topLikeRewardExpiry,
     };
     
     addMessage(targetRoomId, newMessage);

@@ -12,6 +12,9 @@ export interface Message {
   isCmd?: boolean;
   isPresence?: boolean;
   timestamp?: string;
+  hasTopMerchantBadge?: boolean;
+  hasTopLikeReward?: boolean;
+  topLikeRewardExpiry?: string;
 }
 
 export interface OpenRoom {

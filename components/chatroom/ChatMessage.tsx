@@ -42,7 +42,10 @@ export function ChatMessage({
   isError,
   userType,
   isOwnMessage,
-  messageType
+  messageType,
+  hasTopMerchantBadge,
+  hasTopLikeReward,
+  topLikeRewardExpiry
 }: ChatMessageProps) {
   
   const { theme } = useThemeCustom();

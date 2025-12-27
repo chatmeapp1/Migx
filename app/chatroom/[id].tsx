@@ -119,23 +119,38 @@ export default function ChatRoomScreen() {
         const userDataStr = await AsyncStorage.getItem('user_data');
         if (userDataStr) {
           const userData = JSON.parse(userDataStr);
+          console.log('📱 [Chatroom] Loaded user_data for userInfo:', userData.username);
           setUserInfo(userData.username || 'guest', userData.id || 'guest-id');
         } else {
+          console.warn('📱 [Chatroom] No user_data found in AsyncStorage for userInfo');
           setUserInfo('guest', 'guest-id');
         }
       } catch (error) {
+        console.error('📱 [Chatroom] Error loading user_data for userInfo:', error);
         setUserInfo('guest', 'guest-id');
       }
     };
     loadUserData();
   }, [setUserInfo]);
 
+  // Re-run connection if userInfo changes and avoid stale socket
   useEffect(() => {
-    if (!currentUsername || !currentUserId) {
+    if (!currentUsername || !currentUserId || currentUsername === 'guest') {
       return;
     }
 
-    if (!socket && !socketInitialized.current) {
+    console.log('🔌 [Chatroom] Checking socket initialization for:', currentUsername);
+    
+    // If socket exists but username doesn't match, disconnect and recreate
+    if (socket && (socket as any).auth?.username !== currentUsername) {
+      console.log('🔌 [Chatroom] Socket username mismatch, disconnecting old socket');
+      socket.disconnect();
+      setSocket(null);
+      socketInitialized.current = false;
+    }
+
+    if (!socketInitialized.current) {
+      console.log('🔌 [Chatroom] Initializing fresh socket for:', currentUsername);
       socketInitialized.current = true;
       
       const newSocket = io(`${API_BASE_URL}/chat`, {

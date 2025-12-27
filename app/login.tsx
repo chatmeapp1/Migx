@@ -99,9 +99,8 @@ export default function LoginScreen() {
           await AsyncStorage.removeItem('remember_me');
         }
 
-        // 🔐 STEP 11: Store device_id for device binding (prevent token theft)
+        // Store authentication token
         await AsyncStorage.setItem('auth_token', data.token || data.accessToken);
-        await AsyncStorage.setItem('device_id', data.deviceId);
         
         // Ensure user_data is correctly structured
         const userDataToStore = {

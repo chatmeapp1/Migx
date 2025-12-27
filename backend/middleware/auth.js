@@ -5,7 +5,6 @@ const logger = require('../utils/logger');
 
 function authMiddleware(req, res, next) {
   const authHeader = req.headers['authorization'];
-  const clientDeviceId = req.headers['x-device-id'];
   
   if (!authHeader) {
     logger.warn('AUTH_FAILED: Missing authorization header', { endpoint: req.path });
@@ -27,9 +26,6 @@ function authMiddleware(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'migx-secret-key-2024');
-    
-    // 🔐 STEP 11: Validate device_id (device binding - prevent token theft)
-    // DISABLED FOR DEVELOPMENT - To prevent "Invalid or expired token" errors
     
     req.user = decoded;
     logger.info('AUTH_SUCCESS: Authentication verified', { 

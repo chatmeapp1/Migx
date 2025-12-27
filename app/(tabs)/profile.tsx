@@ -44,6 +44,41 @@ export default function ProfileScreen() {
   const userRole = userData?.role || 'user';
   const isMerchant = userRole === 'merchant';
 
+  const handleLogout = async () => {
+    Alert.alert('Logout', 'Are you sure you want to logout?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Logout',
+        onPress: async () => {
+          try {
+            // Clear all auth and user data
+            await AsyncStorage.multiRemove([
+              'auth_token',
+              'user_data',
+              'authToken',
+              'device_id',
+              'current_user_id',
+              'current_username'
+            ]);
+            
+            // Clear store and socket
+            const store = useRoomTabsStore.getState();
+            if (store.socket) {
+              store.socket.disconnect();
+              store.setSocket(null);
+            }
+            store.clearAllRooms();
+            
+            // Redirect to login
+            router.replace('/login');
+          } catch (error) {
+            console.error('Logout error:', error);
+          }
+        },
+      },
+    ]);
+  };
+
   const handleEditProfile = () => {
     console.log('Edit profile pressed');
     router.push('/edit-profile');
@@ -132,6 +167,13 @@ export default function ProfileScreen() {
               />
 
               <ModeToggle />
+
+              <ProfileMenuItem 
+                icon={<Ionicons name="log-out-outline" size={24} color="#FF3B30" />}
+                title="Logout"
+                onPress={handleLogout}
+                showDivider={false}
+              />
 
               {isMerchant && (
                 <ProfileMenuItem 

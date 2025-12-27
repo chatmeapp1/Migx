@@ -80,27 +80,6 @@ router.post('/login', async (req, res, next) => {
 
     const levelData = await getUserLevel(user.id);
 
-    // Check if username color expired
-    if (user.username_color_expiry && new Date(user.username_color_expiry) < new Date()) {
-      await query(
-        'UPDATE users SET username_color = NULL, username_color_expiry = NULL WHERE id = $1',
-        [user.id]
-      );
-      user.username_color = null;
-    }
-    
-    // Check and update daily login streak
-    let streakInfo = {};
-    try {
-      streakInfo = await streakService.updateStreak(user.id);
-    } catch (err) {
-      console.error('Error updating streak:', err);
-    }
-
-    // 🔐 STEP 11: Generate device_id for device binding (prevent token theft)
-    const deviceId = crypto.randomBytes(16).toString('hex'); 
-    logger.info('LOGIN_SUCCESS: Unique Device ID generated', { userId: user.id, username: user.username, endpoint: '/api/auth/login' });
-
     // 🔐 STEP 8: Generate JWT tokens with SHORT expiry (anti token reuse)
     // Access token: 15 minutes (short-lived, used for API requests)
     const accessToken = jwt.sign(
@@ -108,8 +87,7 @@ router.post('/login', async (req, res, next) => {
         id: user.id,
         userId: user.id,
         username: user.username,
-        type: 'access',
-        deviceId: deviceId
+        type: 'access'
       },
       process.env.JWT_SECRET || 'migx-secret-key-2024',
       { expiresIn: '15m' }
@@ -121,8 +99,7 @@ router.post('/login', async (req, res, next) => {
         id: user.id,
         userId: user.id,
         username: user.username,
-        type: 'refresh',
-        deviceId: deviceId
+        type: 'refresh'
       },
       process.env.JWT_SECRET || 'migx-secret-key-2024',
       { expiresIn: '7d' }
@@ -130,8 +107,7 @@ router.post('/login', async (req, res, next) => {
 
     logger.info('TOKENS_GENERATED: Access + Refresh tokens created', { 
       userId: user.id, 
-      email: user.email,
-      credits: user.credits,
+      username: user.username,
       endpoint: '/api/auth/login' 
     });
 
@@ -139,7 +115,6 @@ router.post('/login', async (req, res, next) => {
       success: true,
       accessToken: accessToken,
       refreshToken: refreshToken,
-      deviceId: deviceId,
       tokenType: 'Bearer',
       expiresIn: 900, // 15 minutes in seconds
       user: {

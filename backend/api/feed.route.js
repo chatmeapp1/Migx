@@ -65,6 +65,8 @@ const normalizeFeedItem = async (feedData, feedId, redis) => {
     const commentsData = await redis.get(commentsKey);
     const commentsArray = commentsData ? JSON.parse(commentsData) : [];
 
+    const baseUrl = process.env.BASE_URL || `https://${process.env.REPLIT_DEV_DOMAIN}`;
+    
     return {
       id: feed.id ?? feedId ?? '',
       username: feed.username ?? null,
@@ -76,6 +78,7 @@ const normalizeFeedItem = async (feedData, feedId, redis) => {
       comments_count: commentsArray.length ?? 0,
       is_liked: false,
       created_at: feed.created_at ?? feed.createdAt ?? new Date().toISOString(),
+      avatarUrl: user?.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${baseUrl}${user.avatar.startsWith('/') ? '' : '/'}${user.avatar}`) : 'https://via.placeholder.com/40',
       avatar_url: user?.avatar || feed.avatar_url || 'https://via.placeholder.com/40',
       avatar: user?.avatar || feed.avatar_url || 'https://via.placeholder.com/40',
       userId: feed.userId ?? feed.user_id,

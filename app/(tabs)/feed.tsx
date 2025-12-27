@@ -46,10 +46,11 @@ const CloseIcon = ({ size = 24, color = '#000' }: { size?: number; color?: strin
 );
 
 interface Post {
-  id: number;
+  id: string | number;
   user_id?: number;
   userId?: number;
   username: string;
+  avatarUrl?: string;
   avatar_url?: string;
   content: string;
   image_url?: string;
@@ -428,7 +429,7 @@ export default function FeedScreen() {
       return avatar;
     };
 
-    const avatarUri = getAvatarUri(item.avatar_url || (item as any).avatar);
+    const avatarUri = item.avatarUrl || getAvatarUri(item.avatar_url || (item as any).avatar);
     console.log(`[Feed] Post by ${item.username}, avatarUri: ${avatarUri}`);
 
     // Get level config

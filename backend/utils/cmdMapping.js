@@ -1,4 +1,14 @@
 const MIG33_CMD = {
+  mod: {
+    requiresTarget: true,
+    message: (u, t) => `${u} promoted ${t} to moderator`,
+    type: 'modPromotion'
+  },
+  unmod: {
+    requiresTarget: true,
+    message: (u, t) => `${u} removed ${t} from moderator`,
+    type: 'modRemoval'
+  },
   thank: { requiresTarget: false, message: (u) => `${u} thanks everyone.` },
   agree: { requiresTarget: false, message: (u) => `${u} agrees.` },
   apologizes: { requiresTarget: false, message: (u) => `${u} apologizes sincerely.` },

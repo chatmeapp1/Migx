@@ -287,8 +287,20 @@ module.exports = (io, socket) => {
         usernameColor,
         message,
         messageType: 'chat',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        userType: sender?.role === 'admin' ? 'admin' : (sender?.role === 'creator' ? 'creator' : 'normal'),
       };
+
+      // Check for moderator status in this room
+      const roomService = require('../services/roomService');
+      const isMod = await roomService.isRoomAdmin(roomId, userId);
+      const room = await roomService.getRoomById(roomId);
+      
+      if (userId == room?.owner_id) {
+        messageData.userType = 'creator';
+      } else if (isMod) {
+        messageData.userType = 'moderator';
+      }
 
       console.log('📤 Sending message with color:', username, usernameColor);
       io.to(`room:${roomId}`).emit('chat:message', messageData);

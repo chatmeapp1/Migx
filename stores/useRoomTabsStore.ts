@@ -15,6 +15,7 @@ export interface Message {
   hasTopMerchantBadge?: boolean;
   hasTopLikeReward?: boolean;
   topLikeRewardExpiry?: string;
+  userType?: 'creator' | 'admin' | 'normal' | 'mentor' | 'merchant' | 'moderator';
 }
 
 export interface OpenRoom {

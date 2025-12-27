@@ -99,33 +99,47 @@ router.get('/:roomId/participants', async (req, res) => {
     const participantUsernames = await getRoomParticipants(roomId);
     const userCount = await getRoomUserCount(roomId);
     
-    // Get full user details for rewards/badges
+    // Get full user details for rewards/badges and check room_admins for moderator status
     const { query } = require('../db/db');
     const userDetailsResult = await query(
-      `SELECT u.username, u.role, u.username_color,
+      `SELECT u.id, u.username, u.role, u.username_color,
               u.has_top_merchant_badge, u.top_merchant_badge_expiry,
-              u.has_top_like_reward, u.top_like_reward_expiry
+              u.has_top_like_reward, u.top_like_reward_expiry,
+              EXISTS(SELECT 1 FROM room_admins ra WHERE ra.user_id = u.id AND ra.room_id = $2) as is_mod
        FROM users u
        WHERE u.username = ANY($1)`,
-      [participantUsernames]
+      [participantUsernames, roomId]
     );
 
     const userMap = new Map();
     userDetailsResult.rows.forEach(u => userMap.set(u.username, u));
 
+    const room = await roomService.getRoomById(roomId);
     const now = new Date();
     const participants = participantUsernames.map(username => {
       const u = userMap.get(username);
+      
       let color = u?.username_color;
       const hasLikeReward = u?.has_top_like_reward && new Date(u.top_like_reward_expiry) > now;
       
       if (hasLikeReward && u?.role !== 'merchant') {
         color = '#FF69B4'; // Pink
+      } else if (!color) {
+        // Apply role colors
+        if (u?.id == room?.owner_id) {
+          color = '#FFD700'; // Yellow for Creator
+        } else if (u?.is_mod) {
+          color = '#FFD700'; // Yellow for Moderator
+        } else if (u?.role === 'admin') {
+          color = '#FF9800'; // Orange
+        }
       }
 
       return {
         username,
         role: u?.role || 'user',
+        isModerator: u?.is_mod || false,
+        isCreator: u?.id == room?.owner_id,
         usernameColor: color,
         hasTopMerchantBadge: u?.has_top_merchant_badge && new Date(u.top_merchant_badge_expiry) > now,
         hasTopLikeReward: hasLikeReward,
@@ -232,6 +246,48 @@ router.post('/:roomId/min-level', async (req, res) => {
       res.json({ success: true, minLevel: updated.min_level });
     } else {
       res.status(500).json({ success: false, error: 'Failed to update level' });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+router.post('/:roomId/mod', async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const { targetUserId, adminId } = req.body;
+
+    const isAdmin = await roomService.isRoomAdmin(roomId, adminId);
+    if (!isAdmin) {
+      return res.status(403).json({ success: false, error: 'Only owner or moderator can promote others' });
+    }
+
+    const success = await roomService.addRoomAdmin(roomId, targetUserId);
+    if (success) {
+      res.json({ success: true });
+    } else {
+      res.status(500).json({ success: false, error: 'Failed to promote user' });
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+});
+
+router.post('/:roomId/unmod', async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const { targetUserId, adminId } = req.body;
+
+    const isAdmin = await roomService.isRoomAdmin(roomId, adminId);
+    if (!isAdmin) {
+      return res.status(403).json({ success: false, error: 'Only owner or moderator can remove others' });
+    }
+
+    const success = await roomService.removeRoomAdmin(roomId, targetUserId);
+    if (success) {
+      res.json({ success: true });
+    } else {
+      res.status(500).json({ success: false, error: 'Failed to remove user' });
     }
   } catch (error) {
     res.status(500).json({ success: false, error: 'Server error' });

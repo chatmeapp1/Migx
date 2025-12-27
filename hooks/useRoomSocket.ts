@@ -59,6 +59,7 @@ export function useRoomSocket({ roomId, onRoomJoined, onUsersUpdated }: UseRoomS
       hasTopMerchantBadge: data.hasTopMerchantBadge,
       hasTopLikeReward: data.hasTopLikeReward,
       topLikeRewardExpiry: data.topLikeRewardExpiry,
+      userType: data.userType || (data.isModerator ? 'moderator' : (data.isCreator ? 'creator' : 'normal')),
     };
     
     addMessage(targetRoomId, newMessage);

@@ -103,12 +103,13 @@ const updateUserInvisible = async (userId, invisible) => {
 
 const getUserByUsername = async (username) => {
   try {
+    if (!username) return null;
     const result = await query(
       `SELECT u.*, ul.xp, ul.level 
        FROM users u
        LEFT JOIN user_levels ul ON u.id = ul.user_id
-       WHERE u.username = $1`,
-      [username]
+       WHERE LOWER(u.username) = LOWER($1)`,
+      [username.trim()]
     );
     return result.rows[0] || null;
   } catch (error) {

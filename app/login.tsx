@@ -99,6 +99,11 @@ export default function LoginScreen() {
           await AsyncStorage.removeItem('remember_me');
         }
 
+        // 🔐 STEP 11: Store device_id for device binding (prevent token theft)
+        await AsyncStorage.setItem('auth_token', data.token || data.accessToken);
+        await AsyncStorage.setItem('device_id', data.deviceId);
+        
+        // Ensure user_data is correctly structured
         const userDataToStore = {
           id: data.user.id,
           username: data.user.username,
@@ -110,17 +115,7 @@ export default function LoginScreen() {
           token: data.token || data.accessToken
         };
         
-        // 🔐 STEP 11: Store device_id for device binding (prevent token theft)
-        await AsyncStorage.setItem('auth_token', data.token || data.accessToken);
-        await AsyncStorage.setItem('device_id', data.deviceId);
-        
-        console.log('💾 Storing user_data with token + device binding:', {
-          id: userDataToStore.id,
-          username: userDataToStore.username,
-          hasToken: !!userDataToStore.token,
-          hasDeviceId: !!data.deviceId
-        });
-        
+        console.log('💾 Storing user_data for user:', userDataToStore.username);
         await AsyncStorage.setItem('user_data', JSON.stringify(userDataToStore));
         router.replace('/(tabs)');
       } else {

@@ -98,9 +98,8 @@ router.post('/login', async (req, res, next) => {
     }
 
     // 🔐 STEP 11: Generate device_id for device binding (prevent token theft)
-    // DISABLED FOR DEVELOPMENT
-    const deviceId = 'dev-device-id'; 
-    logger.info('LOGIN_SUCCESS: Development Device ID used', { userId: user.id, endpoint: '/api/auth/login' });
+    const deviceId = crypto.randomBytes(16).toString('hex'); 
+    logger.info('LOGIN_SUCCESS: Unique Device ID generated', { userId: user.id, username: user.username, endpoint: '/api/auth/login' });
 
     // 🔐 STEP 8: Generate JWT tokens with SHORT expiry (anti token reuse)
     // Access token: 15 minutes (short-lived, used for API requests)

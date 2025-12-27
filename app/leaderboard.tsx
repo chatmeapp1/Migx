@@ -167,7 +167,7 @@ export default function LeaderboardPage() {
   const CATEGORIES: LeaderboardCategory[] = [
     {
       id: 'top_level',
-      title: 'TOP LEVEL (5)',
+      title: 'TOP LEVEL (10)',
       icon: <TrophyIcon size={22} color="#fff" />,
       backgroundColor: '#082919',
       textColor: '#fff',

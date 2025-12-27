@@ -1,19 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Image,
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
+  AppState,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Video, ResizeMode } from 'expo-av';
+import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 
 interface FeedMediaProps {
   mediaUrl?: string;
   mediaType?: 'image' | 'video' | string | null;
   onPress?: () => void;
-  // Support legacy props if any
   url?: string;
   type?: string;
 }
@@ -21,15 +21,39 @@ interface FeedMediaProps {
 const FeedMedia: React.FC<FeedMediaProps> = ({ mediaUrl, mediaType, url, type, onPress }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
+  const videoRef = useRef<Video>(null);
 
   const finalUrl = mediaUrl || url;
   const finalType = mediaType || type || 'image';
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState !== 'active' && videoRef.current) {
+        videoRef.current.pauseAsync();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+      if (videoRef.current) {
+        videoRef.current.stopAsync();
+      }
+    };
+  }, []);
 
   if (!finalUrl) {
     return null;
   }
 
   const isVideo = finalType === 'video' || (typeof finalUrl === 'string' && finalUrl.match(/\.(mp4|mov|avi|wmv)$|video/i));
+
+  const handlePlaybackStatusUpdate = (status: AVPlaybackStatus) => {
+    if (status.isLoaded) {
+      if (!status.isPlaying && status.positionMillis > 0) {
+        videoRef.current?.setIsMutedAsync(true);
+      }
+    }
+  };
 
   return (
     <TouchableOpacity
@@ -52,14 +76,17 @@ const FeedMedia: React.FC<FeedMediaProps> = ({ mediaUrl, mediaType, url, type, o
       ) : (
         <View style={styles.videoContainer}>
           <Video
+            ref={videoRef}
             source={{ uri: finalUrl }}
             style={styles.media}
             useNativeControls
             resizeMode={ResizeMode.COVER}
-            isLooping
+            isLooping={false}
             shouldPlay={false}
+            isMuted={false}
             onLoadStart={() => setLoading(true)}
             onLoad={() => setLoading(false)}
+            onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
             onError={() => {
               setError(true);
               setLoading(false);

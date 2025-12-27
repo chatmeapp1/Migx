@@ -196,6 +196,14 @@ export const useRoomTabsStore = create<RoomTabsStore>((set, get) => ({
     const activeRoomId = state.openRoomIds[state.activeIndex];
     const isActiveRoom = activeRoomId === roomId;
     
+    // Play sound for incoming private messages or PMs
+    if (!processedMessage.isOwnMessage && (roomId.startsWith('pm_') || roomId.startsWith('direct_'))) {
+       const playPrivateSound = (window as any).__PLAY_PRIVATE_SOUND__;
+       if (typeof playPrivateSound === 'function') {
+         playPrivateSound();
+       }
+    }
+
     let newOpenRoomsById = state.openRoomsById;
     if (state.openRoomsById[roomId] && !isActiveRoom && !processedMessage.isOwnMessage) {
       const room = state.openRoomsById[roomId];

@@ -13,6 +13,7 @@ import { useThemeCustom } from '@/theme/provider';
 import { io } from 'socket.io-client';
 import API_BASE_URL from '@/utils/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Audio } from 'expo-av';
 
 import { ChatRoomHeader } from '@/components/chatroom/ChatRoomHeader';
 import { ChatRoomTabs } from '@/components/chatroom/ChatRoomTabs';
@@ -72,6 +73,36 @@ export default function ChatRoomScreen() {
   const [isConnected, setIsConnected] = useState(() => socket?.connected || false);
   const socketInitialized = useRef(false);
   const roomInitialized = useRef(false);
+  const soundRef = useRef<Audio.Sound | null>(null);
+
+  useEffect(() => {
+    async function loadSound() {
+      try {
+        const { sound } = await Audio.Sound.createAsync(
+          require('@/assets/sound/privatechat.mp3')
+        );
+        soundRef.current = sound;
+        (window as any).__PLAY_PRIVATE_SOUND__ = async () => {
+          try {
+            if (soundRef.current) {
+              await soundRef.current.replayAsync();
+            }
+          } catch (e) {
+            console.error('Error playing private chat sound:', e);
+          }
+        };
+      } catch (e) {
+        console.error('Error loading private chat sound:', e);
+      }
+    }
+    loadSound();
+    return () => {
+      if (soundRef.current) {
+        soundRef.current.unloadAsync();
+      }
+      delete (window as any).__PLAY_PRIVATE_SOUND__;
+    };
+  }, []);
 
   const currentActiveRoomId = activeRoomId || roomId;
   const isPrivateChat = currentActiveRoomId?.startsWith('pm_') || false;

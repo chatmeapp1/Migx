@@ -7,6 +7,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -17,11 +18,10 @@ interface TransactionHistoryModalProps {
   onClose: () => void;
 }
 
-type TransactionCategory = 'game' | 'gift' | 'transfer';
-
 interface Transaction {
   id: number;
   type: string;
+  category: 'game' | 'gift' | 'transfer';
   amount: number;
   username: string;
   description: string;
@@ -30,45 +30,33 @@ interface Transaction {
 
 export function TransactionHistoryModal({ onClose }: TransactionHistoryModalProps) {
   const { theme } = useThemeCustom();
-  const [activeCategory, setActiveCategory] = useState<TransactionCategory>('game');
+  const [searchUsername, setSearchUsername] = useState('');
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    loadTransactions();
-  }, [activeCategory]);
+  const [searched, setSearched] = useState(false);
 
   const loadTransactions = async () => {
-    setLoading(true);
-    try {
-      const userData = await AsyncStorage.getItem('user_data');
-      if (!userData) {
-        Alert.alert('Error', 'Session expired');
-        setLoading(false);
-        return;
-      }
+    if (!searchUsername.trim()) {
+      Alert.alert('Error', 'Please enter a username');
+      return;
+    }
 
-      const parsedData = JSON.parse(userData);
-      const token = parsedData?.token;
+    setLoading(true);
+    setSearched(true);
+    try {
+      const token = await AsyncStorage.getItem('auth_token');
+      const deviceId = await AsyncStorage.getItem('device_id');
 
       if (!token) {
-        Alert.alert('Error', 'Session expired');
+        Alert.alert('Error', 'Session expired. Please log in again.');
         setLoading(false);
         return;
       }
 
-      let endpoint = '';
-      if (activeCategory === 'game') {
-        endpoint = '/api/admin/transactions/game';
-      } else if (activeCategory === 'gift') {
-        endpoint = '/api/admin/transactions/gift';
-      } else if (activeCategory === 'transfer') {
-        endpoint = '/api/admin/transactions/transfer';
-      }
-
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/transactions/all?username=${encodeURIComponent(searchUsername.trim())}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
+          'x-device-id': deviceId || '',
         },
       });
 
@@ -76,17 +64,20 @@ export function TransactionHistoryModal({ onClose }: TransactionHistoryModalProp
         const data = await response.json();
         setTransactions(data.transactions || []);
       } else {
-        Alert.alert('Error', 'Failed to load transactions');
+        const errorData = await response.json();
+        Alert.alert('Error', errorData.error || 'Failed to load transactions');
+        setTransactions([]);
       }
     } catch (error) {
       console.error('Error loading transactions:', error);
       Alert.alert('Error', 'Failed to load transactions');
+      setTransactions([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const getCategoryIcon = (category: TransactionCategory) => {
+  const getCategoryIcon = (category: string) => {
     switch (category) {
       case 'game':
         return 'dice-outline';
@@ -99,7 +90,7 @@ export function TransactionHistoryModal({ onClose }: TransactionHistoryModalProp
     }
   };
 
-  const getCategoryColor = (category: TransactionCategory) => {
+  const getCategoryColor = (category: string) => {
     switch (category) {
       case 'game':
         return '#E74C3C';
@@ -112,50 +103,35 @@ export function TransactionHistoryModal({ onClose }: TransactionHistoryModalProp
     }
   };
 
-  const getTransactionIcon = (type: string) => {
-    if (activeCategory === 'game') {
-      return type === 'bet' ? 'arrow-up-outline' : 'arrow-down-outline';
+  const getTypeLabel = (tx: Transaction) => {
+    const { category, type } = tx;
+    if (category === 'game') {
+      if (type === 'bet') return 'Game Bet';
+      if (type === 'win') return 'Game Win';
+      if (type === 'refund') return 'Game Refund';
+      return `Game ${type}`;
     }
-    if (activeCategory === 'gift') {
-      return type === 'send' ? 'arrow-up-outline' : 'arrow-down-outline';
+    if (category === 'gift') {
+      return type === 'send' ? 'Gift Sent' : 'Gift Received';
     }
-    if (activeCategory === 'transfer') {
-      return type === 'send' ? 'arrow-up-outline' : 'arrow-down-outline';
-    }
-    return 'cash-outline';
-  };
-
-  const getTypeLabel = (type: string) => {
-    if (activeCategory === 'game') {
-      return type === 'bet' ? 'Bet' : 'Win';
-    }
-    if (activeCategory === 'gift') {
-      return type === 'send' ? 'Send Gift' : 'Receive Gift';
-    }
-    if (activeCategory === 'transfer') {
-      return type === 'send' ? 'Send Credit' : 'Receive Credit';
+    if (category === 'transfer') {
+      return type === 'send' ? 'Credit Sent' : 'Credit Received';
     }
     return type;
   };
 
-  const getAmountColor = (type: string) => {
-    if (activeCategory === 'game') {
-      return type === 'bet' ? '#E74C3C' : '#27AE60';
+  const getAmountPrefix = (tx: Transaction) => {
+    const { category, type } = tx;
+    if (category === 'game') {
+      return type === 'bet' ? '-' : '+';
     }
-    if (activeCategory === 'gift') {
-      return type === 'send' ? '#E74C3C' : '#27AE60';
-    }
-    if (activeCategory === 'transfer') {
-      return type === 'send' ? '#E74C3C' : '#27AE60';
-    }
-    return '#333';
+    return type === 'send' ? '-' : '+';
   };
 
-  const categories: Array<{ id: TransactionCategory; label: string }> = [
-    { id: 'game', label: 'Game' },
-    { id: 'gift', label: 'Gift' },
-    { id: 'transfer', label: 'Transfer' },
-  ];
+  const getAmountColor = (tx: Transaction) => {
+    const prefix = getAmountPrefix(tx);
+    return prefix === '-' ? '#E74C3C' : '#27AE60';
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -166,87 +142,92 @@ export function TransactionHistoryModal({ onClose }: TransactionHistoryModalProp
         </TouchableOpacity>
       </View>
 
-      <View style={[styles.categoryTabs, { backgroundColor: theme.background }]}>
-        {categories.map((cat) => (
-          <TouchableOpacity
-            key={cat.id}
-            style={[
-              styles.categoryTab,
-              activeCategory === cat.id && styles.categoryTabActive,
-              activeCategory === cat.id && {},
-              { borderColor: activeCategory === cat.id ? getCategoryColor(cat.id) : theme.border, backgroundColor: activeCategory === cat.id ? getCategoryColor(cat.id) : theme.card },
-            ]}
-            onPress={() => setActiveCategory(cat.id)}
-          >
-            <Ionicons
-              name={getCategoryIcon(cat.id)}
-              size={20}
-              color={activeCategory === cat.id ? '#fff' : getCategoryColor(cat.id)}
-            />
-            <Text
-              style={[
-                styles.categoryTabText,
-                activeCategory === cat.id && styles.categoryTabTextActive,
-                { color: activeCategory === cat.id ? '#fff' : theme.text },
-              ]}
-            >
-              {cat.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
+      <View style={[styles.searchContainer, { backgroundColor: theme.card }]}>
+        <TextInput
+          style={[styles.searchInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
+          placeholder="Enter username to search..."
+          placeholderTextColor={theme.secondary}
+          value={searchUsername}
+          onChangeText={setSearchUsername}
+          autoCapitalize="none"
+        />
+        <TouchableOpacity
+          style={[styles.searchButton, { backgroundColor: '#0a5229' }]}
+          onPress={loadTransactions}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Ionicons name="search" size={20} color="#fff" />
+          )}
+        </TouchableOpacity>
       </View>
 
       <ScrollView style={[styles.transactionList, { backgroundColor: theme.background }]}>
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={getCategoryColor(activeCategory)} />
+            <ActivityIndicator size="large" color="#0a5229" />
+          </View>
+        ) : !searched ? (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="search-outline" size={48} color={theme.secondary} />
+            <Text style={[styles.emptyText, { color: theme.secondary }]}>
+              Enter a username to view their transaction history
+            </Text>
           </View>
         ) : transactions.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Ionicons
-              name={getCategoryIcon(activeCategory)}
-              size={48}
-              color={theme.secondary}
-            />
-            <Text style={[styles.emptyText, { color: theme.secondary }]}>No transactions found</Text>
+            <Ionicons name="document-outline" size={48} color={theme.secondary} />
+            <Text style={[styles.emptyText, { color: theme.secondary }]}>
+              No transactions found for "{searchUsername}"
+            </Text>
           </View>
         ) : (
-          transactions.map((tx) => (
-            <View key={tx.id} style={[styles.transactionItem, { borderBottomColor: theme.border }]}>
-              <View style={styles.transactionLeft}>
-                <View
-                  style={[
-                    styles.iconCircle,
-                    { backgroundColor: getCategoryColor(activeCategory) + '20' },
-                  ]}
-                >
-                  <Ionicons
-                    name={getTransactionIcon(tx.type)}
-                    size={20}
-                    color={getAmountColor(tx.type)}
-                  />
+          <>
+            <Text style={[styles.resultCount, { color: theme.secondary }]}>
+              {transactions.length} transaction{transactions.length !== 1 ? 's' : ''} found for "{searchUsername}"
+            </Text>
+            {transactions.map((tx) => (
+              <View key={`${tx.category}-${tx.id}`} style={[styles.transactionItem, { borderBottomColor: theme.border }]}>
+                <View style={styles.transactionLeft}>
+                  <View
+                    style={[
+                      styles.iconCircle,
+                      { backgroundColor: getCategoryColor(tx.category) + '20' },
+                    ]}
+                  >
+                    <Ionicons
+                      name={getCategoryIcon(tx.category)}
+                      size={20}
+                      color={getCategoryColor(tx.category)}
+                    />
+                  </View>
+                  <View style={styles.transactionInfo}>
+                    <View style={styles.typeRow}>
+                      <Text style={[styles.transactionType, { color: theme.text }]}>
+                        {getTypeLabel(tx)}
+                      </Text>
+                      <View style={[styles.categoryBadge, { backgroundColor: getCategoryColor(tx.category) }]}>
+                        <Text style={styles.categoryBadgeText}>{tx.category.toUpperCase()}</Text>
+                      </View>
+                    </View>
+                    {tx.description && (
+                      <Text style={[styles.transactionDesc, { color: theme.secondary }]} numberOfLines={1}>
+                        {tx.description}
+                      </Text>
+                    )}
+                    <Text style={[styles.transactionTime, { color: theme.secondary }]}>
+                      {new Date(tx.created_at).toLocaleString()}
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.transactionInfo}>
-                  <Text style={[styles.transactionType, { color: theme.text }]}>
-                    {getTypeLabel(tx.type)}
-                  </Text>
-                  <Text style={[styles.transactionUsername, { color: theme.secondary }]}>{tx.username}</Text>
-                  <Text style={[styles.transactionTime, { color: theme.secondary }]}>
-                    {new Date(tx.created_at).toLocaleString()}
-                  </Text>
-                </View>
+                <Text style={[styles.transactionAmount, { color: getAmountColor(tx) }]}>
+                  {getAmountPrefix(tx)}{tx.amount}
+                </Text>
               </View>
-              <Text
-                style={[
-                  styles.transactionAmount,
-                  { color: getAmountColor(tx.type) },
-                ]}
-              >
-                {tx.type === 'bet' || tx.type === 'send' ? '-' : '+'}
-                {tx.amount}
-              </Text>
-            </View>
-          ))
+            ))}
+          </>
         )}
       </ScrollView>
     </View>
@@ -271,31 +252,26 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     flex: 1,
   },
-  categoryTabs: {
+  searchContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     paddingVertical: 12,
-    gap: 8,
+    gap: 10,
   },
-  categoryTab: {
+  searchInput: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
+    height: 44,
+    borderRadius: 8,
     paddingHorizontal: 12,
-    borderRadius: 20,
-    borderWidth: 2,
-    gap: 6,
+    fontSize: 14,
+    borderWidth: 1,
   },
-  categoryTabActive: {
-  },
-  categoryTabText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  categoryTabTextActive: {
-    color: '#fff',
+  searchButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   transactionList: {
     flex: 1,
@@ -311,11 +287,18 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 40,
+    paddingVertical: 60,
   },
   emptyText: {
     fontSize: 14,
     marginTop: 12,
+    textAlign: 'center',
+    paddingHorizontal: 20,
+  },
+  resultCount: {
+    fontSize: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
   },
   transactionItem: {
     flexDirection: 'row',
@@ -341,12 +324,26 @@ const styles = StyleSheet.create({
   transactionInfo: {
     flex: 1,
   },
+  typeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   transactionType: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
   },
-  transactionUsername: {
+  categoryBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  categoryBadgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  transactionDesc: {
     fontSize: 12,
     marginTop: 2,
   },
@@ -357,7 +354,7 @@ const styles = StyleSheet.create({
   transactionAmount: {
     fontSize: 14,
     fontWeight: '700',
-    minWidth: 60,
+    minWidth: 70,
     textAlign: 'right',
   },
 });

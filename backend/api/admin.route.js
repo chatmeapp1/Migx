@@ -240,4 +240,173 @@ const resetPinHandler = async (req, res) => {
 router.patch('/users/:id/pin', superAdminMiddleware, resetPinHandler);
 router.put('/users/:id/pin', superAdminMiddleware, resetPinHandler);
 
+// Get all transactions for a user (admin)
+router.get('/transactions/all', superAdminMiddleware, async (req, res) => {
+  try {
+    const { username } = req.query;
+    
+    if (!username) {
+      return res.status(400).json({ error: 'Username is required' });
+    }
+
+    // Find user by username
+    const userResult = await db.query(
+      'SELECT id, username FROM users WHERE LOWER(username) = LOWER($1)',
+      [username]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = userResult.rows[0];
+    const userId = user.id;
+    const transactions = [];
+
+    // Get credit transfers (sent and received)
+    const transfersResult = await db.query(`
+      SELECT 
+        cl.id,
+        cl.amount,
+        cl.created_at,
+        cl.from_user_id,
+        cl.to_user_id,
+        fu.username as from_username,
+        tu.username as to_username
+      FROM credit_logs cl
+      LEFT JOIN users fu ON cl.from_user_id = fu.id
+      LEFT JOIN users tu ON cl.to_user_id = tu.id
+      WHERE cl.from_user_id = $1 OR cl.to_user_id = $1
+      ORDER BY cl.created_at DESC
+      LIMIT 100
+    `, [userId]);
+
+    for (const row of transfersResult.rows) {
+      const isSent = row.from_user_id === userId;
+      transactions.push({
+        id: row.id,
+        type: isSent ? 'send' : 'receive',
+        category: 'transfer',
+        amount: row.amount,
+        username: isSent ? row.to_username : row.from_username,
+        description: isSent ? `To ${row.to_username}` : `From ${row.from_username}`,
+        created_at: row.created_at,
+      });
+    }
+
+    // Get game history (bet, win, refund)
+    const gameResult = await db.query(`
+      SELECT 
+        id,
+        game_type,
+        bet_amount,
+        win_amount,
+        result,
+        created_at
+      FROM game_history
+      WHERE user_id = $1
+      ORDER BY created_at DESC
+      LIMIT 100
+    `, [userId]);
+
+    for (const row of gameResult.rows) {
+      // Add bet transaction
+      if (row.bet_amount > 0) {
+        transactions.push({
+          id: `game-bet-${row.id}`,
+          type: 'bet',
+          category: 'game',
+          amount: row.bet_amount,
+          username: user.username,
+          description: `${row.game_type} - ${row.result}`,
+          created_at: row.created_at,
+        });
+      }
+      // Add win transaction
+      if (row.win_amount > 0) {
+        transactions.push({
+          id: `game-win-${row.id}`,
+          type: 'win',
+          category: 'game',
+          amount: row.win_amount,
+          username: user.username,
+          description: `${row.game_type} Win`,
+          created_at: row.created_at,
+        });
+      }
+    }
+
+    // Get gift transactions if gifts table exists
+    try {
+      const giftsSentResult = await db.query(`
+        SELECT 
+          g.id,
+          g.created_at,
+          gi.name as gift_name,
+          gi.price as amount,
+          ru.username as receiver_username
+        FROM gifts g
+        JOIN gift_items gi ON g.gift_id = gi.id
+        JOIN users ru ON g.receiver_id = ru.id
+        WHERE g.sender_id = $1
+        ORDER BY g.created_at DESC
+        LIMIT 50
+      `, [userId]);
+
+      for (const row of giftsSentResult.rows) {
+        transactions.push({
+          id: `gift-sent-${row.id}`,
+          type: 'send',
+          category: 'gift',
+          amount: row.amount,
+          username: row.receiver_username,
+          description: `Sent ${row.gift_name}`,
+          created_at: row.created_at,
+        });
+      }
+
+      const giftsReceivedResult = await db.query(`
+        SELECT 
+          g.id,
+          g.created_at,
+          gi.name as gift_name,
+          gi.price as amount,
+          su.username as sender_username
+        FROM gifts g
+        JOIN gift_items gi ON g.gift_id = gi.id
+        JOIN users su ON g.sender_id = su.id
+        WHERE g.receiver_id = $1
+        ORDER BY g.created_at DESC
+        LIMIT 50
+      `, [userId]);
+
+      for (const row of giftsReceivedResult.rows) {
+        transactions.push({
+          id: `gift-recv-${row.id}`,
+          type: 'receive',
+          category: 'gift',
+          amount: row.amount,
+          username: row.sender_username,
+          description: `Received ${row.gift_name}`,
+          created_at: row.created_at,
+        });
+      }
+    } catch (giftErr) {
+      // Gifts table may not exist, skip
+      console.log('Gift transactions skipped:', giftErr.message);
+    }
+
+    // Sort all transactions by date (newest first)
+    transactions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    res.json({ 
+      transactions: transactions.slice(0, 200),
+      username: user.username 
+    });
+  } catch (error) {
+    console.error('Error fetching all transactions:', error);
+    res.status(500).json({ error: 'Failed to fetch transactions' });
+  }
+});
+
 module.exports = router;

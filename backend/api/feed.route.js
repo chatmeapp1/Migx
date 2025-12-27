@@ -108,61 +108,33 @@ const normalizeFeedItem = async (feedData, feedId, redis) => {
   }
 };
 
-// Get feed posts from PostgreSQL
+// Get feed posts from Redis (Ephemeral storage)
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
-    const offset = (pageNum - 1) * limitNum;
+    const redis = getRedisClient();
+    const feedKey = 'feed:global';
 
-    // Get posts with user details
-    const result = await db.query(
-      `SELECT p.*, u.avatar, u.role, u.username_color,
-              (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id) as likes_count,
-              (SELECT COUNT(*) FROM post_comments WHERE post_id = p.id) as comments_count,
-              EXISTS(SELECT 1 FROM post_likes WHERE post_id = p.id AND user_id = $1) as is_liked
-       FROM posts p
-       JOIN users u ON p.user_id = u.id
-       ORDER BY p.created_at DESC
-       LIMIT $2 OFFSET $3`,
-      [req.user.id, limitNum, offset]
-    );
+    // Get all items from Redis list
+    const feedItems = await redis.lRange(feedKey, 0, 49);
 
-    const totalResult = await db.query('SELECT COUNT(*) FROM posts');
-    const totalPosts = parseInt(totalResult.rows[0].count);
+    if (!feedItems || feedItems.length === 0) {
+      return res.json({
+        success: true,
+        posts: [],
+        hasMore: false,
+        currentPage: 1,
+        totalPages: 0
+      });
+    }
 
-    const posts = result.rows.map(post => {
-      const baseUrl = (process.env.BASE_URL || `https://${process.env.REPLIT_DEV_DOMAIN}`).replace(/\/$/, '');
-      let avatarUrl = 'https://via.placeholder.com/40';
-      if (post.avatar) {
-        if (post.avatar.startsWith('http')) {
-          avatarUrl = post.avatar;
-        } else {
-          const cleanPath = post.avatar.startsWith('/') ? post.avatar : `/${post.avatar}`;
-          avatarUrl = `${baseUrl}${cleanPath}`;
-        }
-      }
-      
-      // Ensure we use the correct field for media
-      const finalMediaUrl = post.media_url || post.image_url || null;
-      
-      return {
-        ...post,
-        id: post.id.toString(), // Ensure ID is a string for frontend consistency
-        avatarUrl: avatarUrl,
-        image_url: finalMediaUrl,
-        mediaUrl: finalMediaUrl,
-        created_at: post.created_at
-      };
-    });
+    const posts = feedItems.map(item => JSON.parse(item));
 
     res.json({
       success: true,
       posts,
-      hasMore: offset + limitNum < totalPosts,
-      currentPage: pageNum,
-      totalPages: Math.ceil(totalPosts / limitNum)
+      hasMore: false,
+      currentPage: 1,
+      totalPages: 1
     });
   } catch (error) {
     console.error('❌ Error fetching feed:', error);
@@ -170,7 +142,7 @@ router.get('/', authMiddleware, async (req, res) => {
   }
 });
 
-// Create new post in PostgreSQL
+// Create new post in Redis (In-memory only)
 router.post('/create', authMiddleware, handleUpload, async (req, res) => {
   try {
     const { content } = req.body;
@@ -182,8 +154,6 @@ router.post('/create', authMiddleware, handleUpload, async (req, res) => {
     if (req.file) {
       try {
         console.log(`📤 Uploading file to Cloudinary: ${req.file.originalname} (${req.file.mimetype})`);
-
-        // Determine resource type based on MIME type
         let resourceType = 'auto';
         if (req.file.mimetype.startsWith('video/')) {
           resourceType = 'video';
@@ -214,19 +184,21 @@ router.post('/create', authMiddleware, handleUpload, async (req, res) => {
       }
     }
 
-    const result = await db.query(
-      `INSERT INTO posts (user_id, username, content, image_url, media_url, media_type)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING *`,
-      [userId, username, content || '', mediaUrl, mediaUrl, mediaType]
-    );
+    if (!content && !mediaUrl) {
+      return res.status(400).json({ success: false, error: 'Content or media required' });
+    }
 
-    // Get user details for immediate display
-    const userDetails = await db.query(
+    // Prepare feed data
+    const feedId = crypto.randomBytes(8).toString('hex');
+    const createdAt = new Date().toISOString();
+    
+    // Get user details for profile consistency
+    const { query } = require('../db/db');
+    const userResult = await query(
       'SELECT avatar, role, username_color FROM users WHERE id = $1',
       [userId]
     );
-    const user = userDetails.rows[0];
+    const user = userResult.rows[0];
     
     const baseUrl = (process.env.BASE_URL || `https://${process.env.REPLIT_DEV_DOMAIN}`).replace(/\/$/, '');
     let avatarUrl = 'https://via.placeholder.com/40';
@@ -239,9 +211,15 @@ router.post('/create', authMiddleware, handleUpload, async (req, res) => {
       }
     }
 
-    const newPost = {
-      ...result.rows[0],
-      id: result.rows[0].id.toString(),
+    const feedData = {
+      id: feedId,
+      userId,
+      username,
+      content: content || '',
+      image_url: mediaUrl,
+      mediaUrl: mediaUrl,
+      mediaType,
+      created_at: createdAt,
       avatarUrl,
       role: user?.role || 'user',
       username_color: user?.username_color,
@@ -250,9 +228,17 @@ router.post('/create', authMiddleware, handleUpload, async (req, res) => {
       is_liked: false
     };
 
+    // Save to Redis Global List
+    const redis = getRedisClient();
+    const feedKey = 'feed:global';
+    
+    await redis.lPush(feedKey, JSON.stringify(feedData));
+    await redis.lTrim(feedKey, 0, 49); // Keep only 50 latest
+    await redis.expire(feedKey, 86400); // 24 hours TTL
+
     res.json({
       success: true,
-      post: newPost
+      post: feedData
     });
   } catch (error) {
     console.error('❌ Error creating post:', error);
@@ -260,34 +246,28 @@ router.post('/create', authMiddleware, handleUpload, async (req, res) => {
   }
 });
 
-// Like/Unlike post (PostgreSQL)
+// Like/Unlike post (Redis only)
 router.post('/:feedId/like', authMiddleware, async (req, res) => {
   try {
     const { feedId } = req.params;
     const userId = req.user.id;
+    const redis = getRedisClient();
+    
+    // In Redis list-based feed, we don't have an easy way to update count inside the JSON string
+    // without O(N) operations. For this ephemeral implementation, we'll just track likes
+    // in separate keys.
+    const likeKey = `feed:${feedId}:likes`;
+    const userLikeKey = `feed:${feedId}:likes:${userId}`;
 
-    // Check if post exists
-    const postResult = await db.query('SELECT * FROM posts WHERE id = $1', [feedId]);
-    if (postResult.rows.length === 0) {
-      return res.status(404).json({ success: false, error: 'Post not found' });
-    }
+    const isLiked = await redis.exists(userLikeKey);
 
-    // Check if already liked
-    const likeCheck = await db.query(
-      'SELECT id FROM post_likes WHERE post_id = $1 AND user_id = $2',
-      [feedId, userId]
-    );
-
-    if (likeCheck.rows.length > 0) {
-      // Unlike
-      await db.query('DELETE FROM post_likes WHERE post_id = $1 AND user_id = $2', [feedId, userId]);
+    if (isLiked) {
+      await redis.del(userLikeKey);
+      await redis.decr(likeKey);
       res.json({ success: true, action: 'unliked' });
     } else {
-      // Like
-      await db.query(
-        'INSERT INTO post_likes (post_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-        [feedId, userId]
-      );
+      await redis.set(userLikeKey, '1', { EX: 86400 });
+      await redis.incr(likeKey);
       res.json({ success: true, action: 'liked' });
     }
   } catch (error) {
@@ -296,25 +276,15 @@ router.post('/:feedId/like', authMiddleware, async (req, res) => {
   }
 });
 
-// Get comments for a post (PostgreSQL)
+// Get comments for a post (Redis only)
 router.get('/:feedId/comments', authMiddleware, async (req, res) => {
   try {
     const { feedId } = req.params;
+    const redis = getRedisClient();
+    const commentsKey = `feed:${feedId}:comments`;
     
-    const result = await db.query(
-      `SELECT c.*, u.avatar, u.username_color 
-       FROM post_comments c
-       JOIN users u ON c.user_id = u.id
-       WHERE c.post_id = $1
-       ORDER BY c.created_at ASC`,
-      [feedId]
-    );
-
-    const baseUrl = (process.env.BASE_URL || `https://${process.env.REPLIT_DEV_DOMAIN}`).replace(/\/$/, '');
-    const comments = result.rows.map(comment => ({
-      ...comment,
-      avatarUrl: comment.avatar ? (comment.avatar.startsWith('http') ? comment.avatar : `${baseUrl}${comment.avatar.startsWith('/') ? '' : '/'}${comment.avatar}`) : 'https://via.placeholder.com/40'
-    }));
+    const commentsData = await redis.get(commentsKey);
+    const comments = commentsData ? JSON.parse(commentsData) : [];
 
     res.json({
       success: true,
@@ -326,28 +296,37 @@ router.get('/:feedId/comments', authMiddleware, async (req, res) => {
   }
 });
 
-// Add comment to post (PostgreSQL)
+// Add comment to post (Redis only)
 router.post('/:feedId/comment', authMiddleware, async (req, res) => {
   try {
     const { feedId } = req.params;
     const { content } = req.body;
     const userId = req.user.id;
     const username = req.user.username;
+    const redis = getRedisClient();
 
     if (!content || !content.trim()) {
       return res.status(400).json({ success: false, error: 'Comment content required' });
     }
 
-    const result = await db.query(
-      `INSERT INTO post_comments (post_id, user_id, username, content)
-       VALUES ($1, $2, $3, $4)
-       RETURNING *`,
-      [feedId, userId, username, content.trim()]
-    );
+    const commentsKey = `feed:${feedId}:comments`;
+    const commentsData = await redis.get(commentsKey);
+    const comments = commentsData ? JSON.parse(commentsData) : [];
+
+    const newComment = {
+      id: crypto.randomBytes(4).toString('hex'),
+      userId,
+      username,
+      content: content.trim(),
+      created_at: new Date().toISOString()
+    };
+
+    comments.push(newComment);
+    await redis.set(commentsKey, JSON.stringify(comments.slice(-20)), { EX: 86400 });
 
     res.json({
       success: true,
-      comment: result.rows[0]
+      comment: newComment
     });
   } catch (error) {
     console.error('❌ Error adding comment:', error);
@@ -355,24 +334,29 @@ router.post('/:feedId/comment', authMiddleware, async (req, res) => {
   }
 });
 
-// Delete post (PostgreSQL)
+// Delete post (Redis only)
 router.delete('/:feedId', authMiddleware, async (req, res) => {
   try {
     const { feedId } = req.params;
     const userId = req.user.id;
+    const redis = getRedisClient();
+    const feedKey = 'feed:global';
 
-    // Check ownership
-    const postResult = await db.query('SELECT user_id FROM posts WHERE id = $1', [feedId]);
-    if (postResult.rows.length === 0) {
-      return res.status(404).json({ success: false, error: 'Post not found' });
+    // Get list, find item, check ownership, and remove
+    const items = await redis.lRange(feedKey, 0, -1);
+    const itemToRemove = items.find(item => {
+      const parsed = JSON.parse(item);
+      return parsed.id === feedId && parsed.userId === userId;
+    });
+
+    if (itemToRemove) {
+      await redis.lRem(feedKey, 1, itemToRemove);
+      await redis.del(`feed:${feedId}:likes`);
+      await redis.del(`feed:${feedId}:comments`);
+      return res.json({ success: true, message: 'Post deleted' });
     }
 
-    if (postResult.rows[0].user_id !== userId) {
-      return res.status(403).json({ success: false, error: 'Not authorized' });
-    }
-
-    await db.query('DELETE FROM posts WHERE id = $1', [feedId]);
-    res.json({ success: true, message: 'Post deleted' });
+    res.status(404).json({ success: false, error: 'Post not found or unauthorized' });
   } catch (error) {
     console.error('❌ Error deleting post:', error);
     res.status(500).json({ success: false, error: 'Failed to delete post' });

@@ -7,11 +7,11 @@ This project is a cross-platform mobile chat application built with React Native
 Preferred communication style: Simple, everyday language.
 
 ### Feed System
-The feed system was migrated from Redis (ephemeral) to PostgreSQL (persistent) to ensure post visibility and reliability.
-- **Table:** `posts` stores all user posts, including content and media URLs.
-- **Table:** `post_likes` tracks user interactions.
-- **Table:** `post_comments` handles social engagement.
-Initial seed data has been added to the `posts` table to ensure the feed is not empty on fresh installations.
+The feed system uses Redis (in-memory) for real-time ephemeral storage.
+- **Storage:** Redis list `feed:global`.
+- **Retention:** Max 50 latest posts, 24-hour TTL.
+- **Database:** No persistent database storage is used for feed content.
+- **Real-time:** Updates are pushed via Redis and served through the `/api/feed` endpoint.
 
 # System Architecture
 

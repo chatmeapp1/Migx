@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { Modal, View, TextInput, TouchableOpacity, ScrollView, Text, StyleSheet, ActivityIndicator, Image } from 'react-native';
 import { useThemeCustom } from '@/theme/provider';
 import { API_ENDPOINTS } from '@/utils/api';
+import API_BASE_URL from '@/utils/api';
 import { useRouter } from 'expo-router';
 import Svg, { Path, Circle } from 'react-native-svg';
 
@@ -104,15 +105,20 @@ export function SearchUserModal({ visible, onClose }: SearchUserModalProps) {
               <ActivityIndicator size="large" color={theme.primary} />
             </View>
           ) : searchResults.length > 0 ? (
-            searchResults.map((user) => (
+            searchResults.map((user) => {
+              const avatarUri = user.avatar
+                ? (user.avatar.startsWith('http') ? user.avatar : `${API_BASE_URL}${user.avatar.startsWith('/') ? '' : '/'}${user.avatar}`)
+                : null;
+              
+              return (
               <TouchableOpacity
                 key={user.id}
                 style={[styles.userItem, { backgroundColor: theme.card, borderBottomColor: theme.border }]}
                 onPress={() => handleUserPress(user.id)}
               >
-                {user.avatar ? (
+                {avatarUri ? (
                   <Image
-                    source={{ uri: user.avatar }}
+                    source={{ uri: avatarUri }}
                     style={styles.avatar}
                   />
                 ) : (
@@ -129,7 +135,8 @@ export function SearchUserModal({ visible, onClose }: SearchUserModalProps) {
                   </View>
                 )}
               </TouchableOpacity>
-            ))
+            );
+            })
           ) : searchQuery.trim().length > 0 ? (
             <View style={styles.emptyContainer}>
               <Text style={[styles.emptyText, { color: theme.secondary }]}>No users found</Text>

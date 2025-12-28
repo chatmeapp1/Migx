@@ -17,7 +17,7 @@ import { useThemeCustom } from '@/theme/provider';
 import { LinearGradient } from 'expo-linear-gradient';
 import { API_ENDPOINTS } from '@/utils/api';
 
-export default function SettingsScreen() {
+export default function SecurityScreen() {
   const { theme } = useThemeCustom();
   const [currentPin, setCurrentPin] = useState('');
   const [newPin, setNewPin] = useState('');
@@ -231,7 +231,7 @@ export default function SettingsScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Text style={[styles.backText, { color: theme.primary }]}>← Back</Text>
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: theme.text }]}>Settings</Text>
+          <Text style={[styles.headerTitle, { color: theme.text }]}>Security</Text>
           <View style={styles.placeholder} />
         </View>
 

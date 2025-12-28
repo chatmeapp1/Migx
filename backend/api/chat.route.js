@@ -3,6 +3,7 @@ const router = express.Router();
 const { getRedisClient } = require('../redis');
 const roomService = require('../services/roomService');
 
+// REDIS-ONLY chatlist - NO DATABASE QUERIES for real-time performance
 router.get('/list/:username', async (req, res) => {
   try {
     const { username } = req.params;
@@ -14,11 +15,12 @@ router.get('/list/:username', async (req, res) => {
       });
     }
 
-    // Get user by username
-    const userService = require('../services/userService');
-    const user = await userService.getUserByUsername(username);
+    const redis = getRedisClient();
     
-    if (!user) {
+    // ONLY use Redis for active rooms - NO DATABASE QUERY
+    const redisRoomsRaw = await redis.sMembers(`user:rooms:${username}`);
+    
+    if (!redisRoomsRaw || redisRoomsRaw.length === 0) {
       return res.json({
         success: true,
         rooms: [],
@@ -26,94 +28,81 @@ router.get('/list/:username', async (req, res) => {
       });
     }
 
-    // Fetch room history from DATABASE (secondary source)
-    const dbRooms = await roomService.getUserRoomHistory(user.id, 50);
-
-    // Fetch active joined rooms from Redis (primary source for active tabs)
-    const redis = getRedisClient();
-    const redisRoomsRaw = await redis.sMembers(`user:rooms:${username}`);
-    const activeRoomIds = new Set();
-    
-    const redisRooms = redisRoomsRaw.map(r => {
-      try { 
-        const parsed = JSON.parse(r); 
-        if (parsed && (parsed.id || parsed.roomId)) {
-          activeRoomIds.add((parsed.id || parsed.roomId).toString());
-        }
-        return parsed; 
-      } catch(e) { 
-        // If not JSON, it might be just the ID string
-        if (r) activeRoomIds.add(r.toString());
-        return null; 
-      }
-    }).filter(r => r !== null);
-
-    // Merge rooms, ONLY INCLUDE ACTIVE ROOMS
-    const combinedRooms = [];
+    // Parse Redis room data
+    const activeRooms = [];
     const seenIds = new Set();
-
-    // Add active rooms from Redis
-    redisRooms.forEach(room => {
-      const id = room.id || room.roomId;
-      if (id && !seenIds.has(id.toString())) {
-        combinedRooms.push({
-          id: id.toString(),
-          name: room.name || room.roomName,
-          lastJoinedAt: room.joinedAt || new Date().toISOString(),
-          isActive: true
-        });
-        seenIds.add(id.toString());
+    
+    for (const r of redisRoomsRaw) {
+      try {
+        const parsed = JSON.parse(r);
+        const id = parsed.id || parsed.roomId;
+        if (id && !seenIds.has(id.toString())) {
+          activeRooms.push({
+            id: id.toString(),
+            name: parsed.name || parsed.roomName,
+            lastJoinedAt: parsed.joinedAt || Date.now()
+          });
+          seenIds.add(id.toString());
+        }
+      } catch (e) {
+        // If not JSON, treat as room ID string
+        if (r && !seenIds.has(r.toString())) {
+          activeRooms.push({
+            id: r.toString(),
+            name: null,
+            lastJoinedAt: Date.now()
+          });
+          seenIds.add(r.toString());
+        }
       }
-    });
+    }
 
-    // Also check dbRooms but ONLY if they are active in Redis
-    dbRooms.forEach(room => {
-      const idStr = room.id.toString();
-      if (activeRoomIds.has(idStr) && !seenIds.has(idStr)) {
-        combinedRooms.push({
-          id: idStr,
-          name: room.name,
-          lastJoinedAt: room.last_joined_at,
-          isActive: true
-        });
-        seenIds.add(idStr);
-      }
-    });
-
-    // Enrich with Redis data (viewer count, last message)
+    // Enrich with Redis data (viewer count, last message) + room name from cache
     const enrichedRooms = await Promise.all(
-      combinedRooms.map(async (room) => {
+      activeRooms.map(async (room) => {
         try {
           // Get viewer count from Redis
           let viewerCount = 0;
           try {
-            const count = await redis.sCard(`room:participants:${room.id}`);
+            const count = await redis.sCard(`room:${room.id}:participants`);
             viewerCount = count || 0;
           } catch (err) {}
 
+          // Get room name from cache or DB only if missing
+          let roomName = room.name;
+          if (!roomName) {
+            try {
+              const roomInfo = await roomService.getRoomById(room.id);
+              roomName = roomInfo?.name || `Room ${room.id}`;
+            } catch (err) {
+              roomName = `Room ${room.id}`;
+            }
+          }
+
           // Get last message from Redis
-          let lastMessage = room.isActive ? 'Active now' : 'No messages yet';
-          let lastUsername = room.name;
+          let lastMessage = 'Active now';
+          let lastUsername = roomName;
           let timestamp = room.lastJoinedAt;
           
           try {
-            const msgData = await redis.hGetAll(`room:lastmsg:${room.id}`);
-            if (msgData && msgData.message) {
-              lastMessage = msgData.message;
-              lastUsername = msgData.username || room.name;
-              timestamp = msgData.timestamp || room.lastJoinedAt;
+            const msgData = await redis.get(`room:lastmsg:${room.id}`);
+            if (msgData) {
+              const parsed = JSON.parse(msgData);
+              lastMessage = parsed.message || lastMessage;
+              lastUsername = parsed.username || roomName;
+              timestamp = parsed.timestamp || room.lastJoinedAt;
             }
           } catch (err) {}
 
           return {
             id: room.id,
-            name: room.name,
+            name: roomName,
             lastMessage,
             lastUsername,
             timestamp,
             viewerCount,
             lastJoinedAt: room.lastJoinedAt,
-            isActive: room.isActive
+            isActive: true
           };
         } catch (err) {
           return null;
@@ -123,7 +112,7 @@ router.get('/list/:username', async (req, res) => {
 
     const validRooms = enrichedRooms.filter(r => r !== null);
 
-    console.log(`✅ Returning ${validRooms.length} rooms for ${username} from DATABASE`);
+    console.log(`✅ Returning ${validRooms.length} rooms for ${username} from REDIS`);
 
     res.json({
       success: true,

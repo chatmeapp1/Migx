@@ -135,7 +135,14 @@ export const PrivateChatInstance = React.memo(function PrivateChatInstance({
 
   const handleCloseChat = useCallback((rId: string) => {
     closeRoom(rId);
-  }, [closeRoom]);
+    // Use router to go back to the main tabs if this was the last or only private chat
+    // If it's a dedicated private chat screen (opened via view profile), we should navigate back
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
+  }, [closeRoom, router]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>

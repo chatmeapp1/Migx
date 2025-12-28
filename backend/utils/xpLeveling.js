@@ -13,46 +13,62 @@ const XP_REWARDS = {
 
 const LEVEL_THRESHOLDS = [
   0,      // Level 1
-  100,    // Level 2
-  300,    // Level 3
-  600,    // Level 4
-  1000,   // Level 5
-  1500,   // Level 6
-  2200,   // Level 7
-  3000,   // Level 8
-  4000,   // Level 9
-  5200,   // Level 10
-  6600,   // Level 11
-  8200,   // Level 12
-  10000,  // Level 13
-  12000,  // Level 14
-  14500,  // Level 15
-  17500,  // Level 16
-  21000,  // Level 17
-  25000,  // Level 18
-  30000,  // Level 19
-  36000   // Level 20
+  20,     // Level 2 - Very easy
+  50,     // Level 3
+  100,    // Level 4
+  160,    // Level 5
+  240,    // Level 6
+  340,    // Level 7
+  460,    // Level 8
+  600,    // Level 9
+  800,    // Level 10 - ~4 days active use
+  1100,   // Level 11
+  1500,   // Level 12
+  2000,   // Level 13
+  2600,   // Level 14
+  3300,   // Level 15
+  4100,   // Level 16
+  5000,   // Level 17
+  6000,   // Level 18
+  7200,   // Level 19
+  8600,   // Level 20
+  10200,  // Level 21
+  12000,  // Level 22
+  14000,  // Level 23
+  16200,  // Level 24
+  18600,  // Level 25
+  21200,  // Level 26
+  24000,  // Level 27
+  27000,  // Level 28
+  30200,  // Level 29
+  33600   // Level 30
 ];
 
-const calculateLevel = (xp) => {
-  for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
-    if (xp >= LEVEL_THRESHOLDS[i]) {
-      return i + 1;
-    }
+const getXpThreshold = (level) => {
+  if (level <= 0) return 0;
+  if (level <= LEVEL_THRESHOLDS.length) {
+    return LEVEL_THRESHOLDS[level - 1];
   }
-  return 1;
+  const lastThreshold = LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1];
+  const extraLevels = level - LEVEL_THRESHOLDS.length;
+  return lastThreshold + (extraLevels * 4000) + (extraLevels * extraLevels * 500);
+};
+
+const calculateLevel = (xp) => {
+  let level = 1;
+  while (getXpThreshold(level + 1) <= xp) {
+    level++;
+  }
+  return level;
 };
 
 const getXpForNextLevel = (currentLevel) => {
-  if (currentLevel >= LEVEL_THRESHOLDS.length) {
-    return LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1] + (currentLevel - LEVEL_THRESHOLDS.length + 1) * 10000;
-  }
-  return LEVEL_THRESHOLDS[currentLevel];
+  return getXpThreshold(currentLevel + 1);
 };
 
 const getLevelProgress = (xp, level) => {
-  const currentLevelXp = level > 1 ? LEVEL_THRESHOLDS[level - 1] : 0;
-  const nextLevelXp = getXpForNextLevel(level);
+  const currentLevelXp = getXpThreshold(level);
+  const nextLevelXp = getXpThreshold(level + 1);
   const progress = ((xp - currentLevelXp) / (nextLevelXp - currentLevelXp)) * 100;
   return Math.min(Math.max(progress, 0), 100);
 };
@@ -116,7 +132,7 @@ const getUserLevel = async (userId) => {
         'INSERT INTO user_levels (user_id, xp, level) VALUES ($1, 0, 1)',
         [userId]
       );
-      return { xp: 0, level: 1, progress: 0, nextLevelXp: LEVEL_THRESHOLDS[1] };
+      return { xp: 0, level: 1, progress: 0, nextLevelXp: getXpThreshold(2) };
     }
     
     const { xp, level } = result.rows[0];
@@ -128,7 +144,7 @@ const getUserLevel = async (userId) => {
     };
   } catch (error) {
     console.error('Error getting user level:', error);
-    return { xp: 0, level: 1, progress: 0, nextLevelXp: LEVEL_THRESHOLDS[1] };
+    return { xp: 0, level: 1, progress: 0, nextLevelXp: getXpThreshold(2) };
   }
 };
 

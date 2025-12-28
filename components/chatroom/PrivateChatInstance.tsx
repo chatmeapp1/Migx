@@ -40,7 +40,8 @@ export const PrivateChatInstance = React.memo(function PrivateChatInstance({
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
     const keyboardShowListener = Keyboard.addListener(showEvent, (e) => {
-      setKeyboardHeight(e.endCoordinates.height);
+      // Add a small offset (e.g., 20) to move the input up slightly higher
+      setKeyboardHeight(e.endCoordinates.height + (Platform.OS === 'android' ? 20 : 0));
       setEmojiVisible(false);
     });
 

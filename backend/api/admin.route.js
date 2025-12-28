@@ -131,6 +131,38 @@ router.post('/create-account', superAdminMiddleware, async (req, res) => {
   }
 });
 
+// Add coins/credits to user (admin)
+const creditService = require('../services/creditService');
+router.post('/add-coin', superAdminMiddleware, async (req, res) => {
+  try {
+    const { userId, amount } = req.body;
+    
+    if (!userId || !amount || isNaN(amount) || amount <= 0) {
+      return res.status(400).json({ error: 'Valid User ID and positive amount are required' });
+    }
+
+    const result = await creditService.addCredits(
+      userId, 
+      parseInt(amount), 
+      'topup', 
+      'Admin manual top-up'
+    );
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.error || 'Failed to add credits' });
+    }
+
+    res.json({ 
+      success: true, 
+      message: `${amount} credits added successfully`,
+      newBalance: result.newBalance
+    });
+  } catch (error) {
+    console.error('Error adding coins:', error);
+    res.status(500).json({ error: 'Internal server error while adding coins' });
+  }
+});
+
 // Update report status
 router.patch('/reports/:id/status', superAdminMiddleware, async (req, res) => {
   try {

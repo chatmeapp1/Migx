@@ -524,58 +524,66 @@ router.get('/transactions/all', superAdminMiddleware, async (req, res) => {
 
     // Get gift transactions if gifts table exists
     try {
-      const giftsSentResult = await db.query(`
-        SELECT 
-          g.id,
-          g.created_at,
-          gi.name as gift_name,
-          gi.price as amount,
-          ru.username as receiver_username
-        FROM gifts g
-        JOIN gift_items gi ON g.gift_id = gi.id
-        JOIN users ru ON g.receiver_id = ru.id
-        WHERE g.sender_id = $1
-        ORDER BY g.created_at DESC
-        LIMIT 50
-      `, [userId]);
+      // Check if gifts and gift_items tables exist first
+      const tablesCheck = await db.query(`
+        SELECT count(*) FROM information_schema.tables 
+        WHERE table_name IN ('gifts', 'gift_items')
+      `);
+      
+      if (parseInt(tablesCheck.rows[0].count) === 2) {
+        const giftsSentResult = await db.query(`
+          SELECT 
+            g.id,
+            g.created_at,
+            gi.name as gift_name,
+            gi.price as amount,
+            ru.username as receiver_username
+          FROM gifts g
+          JOIN gift_items gi ON g.gift_id = gi.id
+          JOIN users ru ON g.receiver_id = ru.id
+          WHERE g.sender_id = $1
+          ORDER BY g.created_at DESC
+          LIMIT 50
+        `, [userId]);
 
-      for (const row of giftsSentResult.rows) {
-        transactions.push({
-          id: `gift-sent-${row.id}`,
-          type: 'send',
-          category: 'gift',
-          amount: row.amount,
-          username: row.receiver_username,
-          description: `Sent ${row.gift_name}`,
-          created_at: row.created_at,
-        });
-      }
+        for (const row of giftsSentResult.rows) {
+          transactions.push({
+            id: `gift-sent-${row.id}`,
+            type: 'send',
+            category: 'gift',
+            amount: row.amount,
+            username: row.receiver_username,
+            description: `Sent ${row.gift_name}`,
+            created_at: row.created_at,
+          });
+        }
 
-      const giftsReceivedResult = await db.query(`
-        SELECT 
-          g.id,
-          g.created_at,
-          gi.name as gift_name,
-          gi.price as amount,
-          su.username as sender_username
-        FROM gifts g
-        JOIN gift_items gi ON g.gift_id = gi.id
-        JOIN users su ON g.sender_id = su.id
-        WHERE g.receiver_id = $1
-        ORDER BY g.created_at DESC
-        LIMIT 50
-      `, [userId]);
+        const giftsReceivedResult = await db.query(`
+          SELECT 
+            g.id,
+            g.created_at,
+            gi.name as gift_name,
+            gi.price as amount,
+            su.username as sender_username
+          FROM gifts g
+          JOIN gift_items gi ON g.gift_id = gi.id
+          JOIN users su ON g.sender_id = su.id
+          WHERE g.receiver_id = $1
+          ORDER BY g.created_at DESC
+          LIMIT 50
+        `, [userId]);
 
-      for (const row of giftsReceivedResult.rows) {
-        transactions.push({
-          id: `gift-recv-${row.id}`,
-          type: 'receive',
-          category: 'gift',
-          amount: row.amount,
-          username: row.sender_username,
-          description: `Received ${row.gift_name}`,
-          created_at: row.created_at,
-        });
+        for (const row of giftsReceivedResult.rows) {
+          transactions.push({
+            id: `gift-recv-${row.id}`,
+            type: 'receive',
+            category: 'gift',
+            amount: row.amount,
+            username: row.sender_username,
+            description: `Received ${row.gift_name}`,
+            created_at: row.created_at,
+          });
+        }
       }
     } catch (giftErr) {
       // Gifts table may not exist, skip

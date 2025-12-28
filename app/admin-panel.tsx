@@ -43,6 +43,7 @@ export default function AdminPanelScreen() {
   const [transactionHistoryVisible, setTransactionHistoryVisible] = useState(false);
   const [reportAbuseModalVisible, setReportAbuseModalVisible] = useState(false);
   const [adminToken, setAdminToken] = useState('');
+  const [currentAdminId, setCurrentAdminId] = useState<number | undefined>(undefined);
   
   const [coinUsername, setCoinUsername] = useState('');
   const [coinAmount, setCoinAmount] = useState('');
@@ -66,13 +67,18 @@ export default function AdminPanelScreen() {
   const [roomModalLoading, setRoomModalLoading] = useState(false);
 
   useEffect(() => {
-    const loadToken = async () => {
+    const loadData = async () => {
       const token = await AsyncStorage.getItem('auth_token');
       if (token) {
         setAdminToken(token);
       }
+      const userDataStr = await AsyncStorage.getItem('user_data');
+      if (userDataStr) {
+        const userData = JSON.parse(userDataStr);
+        setCurrentAdminId(userData.id);
+      }
     };
-    loadToken();
+    loadData();
     if (selectedTab === 'users') {
       fetchUsers(pagination.page);
     } else if (selectedTab === 'rooms') {
@@ -675,7 +681,7 @@ export default function AdminPanelScreen() {
       {selectedTab === 'announcements' && (
         <AnnouncementsTab 
           theme={theme}
-          adminId={users.find(u => u.role === 'super_admin' || u.role === 'admin')?.id}
+          adminId={currentAdminId}
         />
       )}
     </View>

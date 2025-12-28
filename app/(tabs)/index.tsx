@@ -6,7 +6,7 @@ import { SwipeableScreen } from '@/components/navigation/SwipeableScreen';
 import { UserProfileSection } from '@/components/home/UserProfileSection';
 import { useState, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_ENDPOINTS } from '@/utils/api';
+import API_BASE_URL from '@/utils/api';
 
 export default function HomeScreen() {
   const { theme } = useThemeCustom();
@@ -20,7 +20,7 @@ export default function HomeScreen() {
   const checkAnnouncements = async () => {
     try {
       const lastAlertId = await AsyncStorage.getItem('last_announcement_id');
-      const response = await fetch(`${API_ENDPOINTS.BASE_URL}/api/announcements/active`);
+      const response = await fetch(`${API_BASE_URL}/api/announcements/active`);
       const data = await response.json();
 
       if (data.announcement && data.announcement.id.toString() !== lastAlertId) {

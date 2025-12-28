@@ -30,7 +30,7 @@ const BadgeTop1 = () => (
   />
 );
 
-export function ChatMessage({
+export const ChatMessage = React.memo(({
   username,
   usernameColor,
   message,
@@ -46,7 +46,7 @@ export function ChatMessage({
   hasTopMerchantBadge,
   hasTopLikeReward,
   topLikeRewardExpiry
-}: ChatMessageProps) {
+}: ChatMessageProps) => {
   
   const { theme } = useThemeCustom();
 

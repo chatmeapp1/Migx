@@ -160,9 +160,10 @@ export const ChatRoomInput = forwardRef<ChatRoomInputRef, ChatRoomInputProps>(({
 
   const handleSend = () => {
     if (!message.trim()) return;
-    onSend(message.trim());
+    const msgToSend = message.trim();
     setMessage('');
-    Keyboard.dismiss();
+    // Fast clear for immediate feedback
+    onSend(msgToSend);
     if (emojiPickerVisible && onEmojiPress) {
       onEmojiPress();
     }

@@ -24,17 +24,13 @@ interface ChatRoomContentProps {
   bottomPadding?: number;
 }
 
-export function ChatRoomContent({ messages, bottomPadding = 70 }: ChatRoomContentProps) {
+export const ChatRoomContent = React.memo(({ messages, bottomPadding = 70 }: ChatRoomContentProps) => {
   const flatListRef = useRef<FlatList>(null);
-
-  const allMessages = useMemo(() => {
-    return messages;
-  }, [messages]);
 
   return (
     <FlatList
       ref={flatListRef}
-      data={allMessages}
+      data={messages}
       keyExtractor={(item) => item.id}
       renderItem={({ item }) => (
         <ChatMessage
@@ -56,9 +52,12 @@ export function ChatRoomContent({ messages, bottomPadding = 70 }: ChatRoomConten
       )}
       contentContainerStyle={[styles.container, { paddingBottom: bottomPadding }]}
       removeClippedSubviews={true}
+      maxToRenderPerBatch={10}
+      windowSize={10}
+      initialNumToRender={15}
     />
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

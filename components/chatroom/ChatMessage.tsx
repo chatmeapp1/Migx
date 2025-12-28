@@ -14,7 +14,7 @@ interface ChatMessageProps {
   isCmd?: boolean;
   isPresence?: boolean;
   isError?: boolean;
-  userType?: 'creator' | 'admin' | 'normal' | 'mentor' | 'merchant' | 'moderator';
+  userType?: 'creator' | 'admin' | 'normal' | 'mentor' | 'merchant' | 'moderator' | 'customer_service' | 'cs';
   isOwnMessage?: boolean;
   messageType?: string;
   hasTopMerchantBadge?: boolean;
@@ -68,9 +68,10 @@ export const ChatMessage = React.memo(({
     if (isOwnMessage) return roleColors.own;
     if (userType === 'creator') return roleColors.creator;
     if (userType === 'admin') return roleColors.admin;
-    if (userType === 'mentor') return roleColors.mentor;
-    if (userType === 'merchant') return roleColors.merchant;
     if (userType === 'moderator') return roleColors.moderator;
+    if (userType === 'merchant') return roleColors.merchant;
+    if (userType === 'customer_service' || userType === 'cs') return roleColors.customer_service;
+    if (userType === 'mentor') return roleColors.mentor;
     return roleColors.normal;
   };
 

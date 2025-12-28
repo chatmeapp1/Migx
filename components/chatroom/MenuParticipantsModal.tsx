@@ -28,18 +28,19 @@ const ThreeDotsIcon = ({ color = '#000', size = 24 }: { color?: string; size?: n
   </Svg>
 );
 
-const getRoleColor = (role?: string, isDark: boolean = false): string => {
+const getRoleColor = (role?: string): string => {
   switch (role?.toLowerCase()) {
     case 'admin':
-      return '#FF6B6B';
+      return '#FF8C00';
     case 'moderator':
       return '#FFD93D';
-    case 'vip':
-      return '#A78BFA';
     case 'merchant':
+      return '#A78BFA';
+    case 'customer_service':
+    case 'cs':
       return '#34D399';
     default:
-      return isDark ? '#FFFFFF' : '#333333';
+      return '#4BA3FF';
   }
 };
 
@@ -53,7 +54,7 @@ const menuOptions = [
 ];
 
 export function MenuParticipantsModal({ visible, onClose, roomId, onUserMenuPress }: MenuParticipantsModalProps) {
-  const { theme, isDark } = useThemeCustom();
+  const { theme } = useThemeCustom();
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
@@ -321,7 +322,7 @@ export function MenuParticipantsModal({ visible, onClose, roomId, onUserMenuPres
                       <Text 
                         style={[
                           styles.username, 
-                          { color: getRoleColor(participant.role, isDark) }
+                          { color: getRoleColor(participant.role) }
                         ]}
                       >
                         {participant.username}

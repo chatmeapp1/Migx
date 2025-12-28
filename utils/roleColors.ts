@@ -1,13 +1,15 @@
 
 export const roleColors = {
   creator: '#FFD700',   // kuning untuk creator/owner
-  admin: '#FF9800',     // orange untuk admin
-  mentor: '#F44336',    // merah untuk mentor
-  merchant: '#9C27B0',  // ungu untuk merchant
-  normal: '#2196F3',    // biru untuk user normal
+  admin: '#FF8C00',     // orange untuk admin
+  moderator: '#FFD93D', // kuning untuk moderator
+  merchant: '#A78BFA',  // ungu untuk merchant
+  customer_service: '#34D399', // hijau untuk customer service
+  cs: '#34D399',        // hijau untuk cs (alias)
+  normal: '#4BA3FF',    // biru untuk user normal
   system: '#FF8C00',    // orange untuk system
   own: '#2d7a4f',       // hijau tua untuk pesan sendiri
-  moderator: '#FFD700', // kuning untuk moderator
+  mentor: '#F44336',    // merah untuk mentor (legacy)
 };
 
 export type UserRole = keyof typeof roleColors;

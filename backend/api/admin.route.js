@@ -295,6 +295,63 @@ const resetPinHandler = async (req, res) => {
 router.patch('/users/:id/pin', superAdminMiddleware, resetPinHandler);
 router.put('/users/:id/pin', superAdminMiddleware, resetPinHandler);
 
+// Update room
+router.put('/rooms/:id', superAdminMiddleware, async (req, res) => {
+  try {
+    const { name, description, max_users } = req.body;
+    const roomId = req.params.id;
+
+    if (!name) {
+      return res.status(400).json({ error: 'Room name is required' });
+    }
+
+    await db.query(
+      'UPDATE rooms SET name = $1, description = $2, max_users = $3, updated_at = NOW() WHERE id = $4',
+      [name, description, max_users, roomId]
+    );
+
+    res.json({ message: 'Room updated successfully' });
+  } catch (error) {
+    console.error('Error updating room:', error);
+    res.status(500).json({ error: 'Failed to update room' });
+  }
+});
+
+// Delete room
+router.delete('/rooms/:id', superAdminMiddleware, async (req, res) => {
+  try {
+    const roomId = req.params.id;
+    await db.query('DELETE FROM rooms WHERE id = $1', [roomId]);
+    res.json({ message: 'Room deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting room:', error);
+    res.status(500).json({ error: 'Failed to delete room' });
+  }
+});
+
+// Create room
+router.post('/rooms/create', superAdminMiddleware, async (req, res) => {
+  try {
+    const { name, description, max_users, category, owner_id, owner_name } = req.body;
+
+    if (!name || !max_users) {
+      return res.status(400).json({ error: 'Name and capacity are required' });
+    }
+
+    const result = await db.query(
+      `INSERT INTO rooms (name, description, max_users, category, owner_id, owner_name, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+       RETURNING *`,
+      [name, description, max_users, category || 'global', owner_id || null, owner_name || null]
+    );
+
+    res.status(201).json({ message: 'Room created successfully', room: result.rows[0] });
+  } catch (error) {
+    console.error('Error creating room:', error);
+    res.status(500).json({ error: 'Failed to create room' });
+  }
+});
+
 // Get all transactions for a user (admin)
 router.get('/transactions/all', superAdminMiddleware, async (req, res) => {
   try {

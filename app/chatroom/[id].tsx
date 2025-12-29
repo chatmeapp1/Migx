@@ -234,6 +234,44 @@ export default function ChatRoomScreen() {
         }
       });
 
+      // Handle incoming private messages - auto-open PM tab
+      newSocket.on('pm:receive', (data: any) => {
+        console.log('📩 [PM] Received private message:', data);
+        
+        const senderUsername = data.fromUsername || data.from?.username;
+        const senderId = data.fromUserId || data.from?.userId;
+        const message = data.message;
+        
+        if (!senderUsername || !message) {
+          console.warn('📩 [PM] Invalid PM data received');
+          return;
+        }
+        
+        // Create PM room ID
+        const pmRoomId = `pm_${senderUsername}`;
+        
+        // Open PM tab (if not already open)
+        const { openRoom: storeOpenRoom, addMessage } = useRoomTabsStore.getState();
+        storeOpenRoom(pmRoomId, senderUsername);
+        
+        // Add message to the PM tab
+        addMessage(pmRoomId, {
+          id: data.id || `pm-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          username: senderUsername,
+          message: message,
+          isOwnMessage: false,
+          timestamp: data.timestamp || new Date().toISOString(),
+        });
+        
+        // Play PM sound
+        const playPrivateSound = (window as any).__PLAY_PRIVATE_SOUND__;
+        if (typeof playPrivateSound === 'function') {
+          playPrivateSound();
+        }
+        
+        console.log('📩 [PM] Opened tab and added message for:', senderUsername);
+      });
+
       // Store socket globally for MenuParticipantsModal
       (window as any).__GLOBAL_SOCKET__ = newSocket;
 

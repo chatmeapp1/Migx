@@ -44,9 +44,11 @@ const cleanupOldMessages = async (roomId) => {
 const getMessages = async (roomId, limit = 50, offset = 0) => {
   try {
     const result = await query(
-      `SELECT m.*, u.avatar
+      `SELECT m.*, u.avatar, u.role, u.username_color, u.username_color_expiry,
+              COALESCE(ul.level, 1) as user_level
        FROM messages m
        LEFT JOIN users u ON m.user_id = u.id
+       LEFT JOIN user_levels ul ON m.user_id = ul.user_id
        WHERE m.room_id = $1
        ORDER BY m.created_at DESC
        LIMIT $2 OFFSET $3`,
@@ -55,6 +57,41 @@ const getMessages = async (roomId, limit = 50, offset = 0) => {
     return result.rows.reverse();
   } catch (error) {
     console.error('Error getting messages:', error);
+    return [];
+  }
+};
+
+// Get message count for a room (for unread calculation)
+const getMessageCount = async (roomId) => {
+  try {
+    const result = await query(
+      'SELECT COUNT(*) as count FROM messages WHERE room_id = $1',
+      [roomId]
+    );
+    return parseInt(result.rows[0]?.count || 0);
+  } catch (error) {
+    console.error('Error getting message count:', error);
+    return 0;
+  }
+};
+
+// Get messages after a certain timestamp (for unread)
+const getMessagesAfter = async (roomId, afterTimestamp, limit = 242) => {
+  try {
+    const result = await query(
+      `SELECT m.*, u.avatar, u.role, u.username_color, u.username_color_expiry,
+              COALESCE(ul.level, 1) as user_level
+       FROM messages m
+       LEFT JOIN users u ON m.user_id = u.id
+       LEFT JOIN user_levels ul ON m.user_id = ul.user_id
+       WHERE m.room_id = $1 AND m.created_at > $2
+       ORDER BY m.created_at ASC
+       LIMIT $3`,
+      [roomId, afterTimestamp, limit]
+    );
+    return result.rows;
+  } catch (error) {
+    console.error('Error getting messages after timestamp:', error);
     return [];
   }
 };
@@ -208,6 +245,8 @@ const createNoticeMessage = (roomId, message) => {
 module.exports = {
   saveMessage,
   getMessages,
+  getMessageCount,
+  getMessagesAfter,
   getMessageById,
   deleteMessage,
   clearRoomMessages,
@@ -217,5 +256,6 @@ module.exports = {
   markMessagesAsRead,
   getRecentConversations,
   createSystemMessage,
-  createNoticeMessage
+  createNoticeMessage,
+  MAX_MESSAGES_PER_ROOM
 };

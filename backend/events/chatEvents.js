@@ -317,6 +317,11 @@ module.exports = (io, socket) => {
 
       console.log('📤 Sending message with color:', username, usernameColor);
       io.to(`room:${roomId}`).emit('chat:message', messageData);
+      
+      // Save message to database for history (async, don't wait)
+      messageService.saveMessage(roomId, userId, username, message, 'chat')
+        .catch(err => console.error('Error saving message to DB:', err));
+      
       await addXp(userId, XP_REWARDS.SEND_MESSAGE, 'send_message', io);
 
     } catch (error) {

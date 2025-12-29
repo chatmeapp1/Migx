@@ -128,10 +128,32 @@ router.get('/', authMiddleware, async (req, res) => {
     }
 
     const posts = feedItems.map(item => JSON.parse(item));
+    
+    // Refresh role data from database for each post (roles may have changed)
+    const { query } = require('../db/db');
+    const postsWithFreshRoles = await Promise.all(posts.map(async (post) => {
+      try {
+        const userResult = await query(
+          'SELECT role, avatar, username_color FROM users WHERE id = $1',
+          [post.userId || post.user_id]
+        );
+        const user = userResult.rows[0];
+        if (user) {
+          post.role = user.role || 'user';
+          if (user.username_color) {
+            post.username_color = user.username_color;
+            post.usernameColor = user.username_color;
+          }
+        }
+        return post;
+      } catch (e) {
+        return post; // Return original if refresh fails
+      }
+    }));
 
     res.json({
       success: true,
-      posts,
+      posts: postsWithFreshRoles,
       hasMore: false,
       currentPage: 1,
       totalPages: 1

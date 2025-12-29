@@ -188,9 +188,9 @@ export function useRoomSocket({ roomId, onRoomJoined, onUsersUpdated }: UseRoomS
       });
       markRoomJoined(roomId);
       
-      // Request message history from database (limit 242)
-      console.log(`📜 [Room ${roomId}] Requesting message history`);
-      socket.emit('chat:messages:get', { roomId, limit: 242 });
+      // Note: Messages are NOT loaded from database on join
+      // They only persist in memory while app is in background
+      // Fresh room = fresh chat (like Miggi)
       
       setTimeout(() => {
         socket.emit('room:users:get', { roomId });

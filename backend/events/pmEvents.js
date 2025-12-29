@@ -101,8 +101,12 @@ module.exports = (io, socket) => {
       await addUserDM(recipientUsername, fromUsername);
 
       const toSocketId = await getSession(recipientUsername);
+      console.log(`📩 PM from ${fromUsername} to ${recipientUsername} - Socket ID: ${toSocketId || 'OFFLINE'}`);
       if (toSocketId) {
         io.to(toSocketId).emit('pm:receive', messageData);
+        console.log(`📩 PM delivered to socket: ${toSocketId}`);
+      } else {
+        console.log(`📩 PM recipient ${recipientUsername} is offline`);
       }
 
       socket.emit('pm:sent', messageData);

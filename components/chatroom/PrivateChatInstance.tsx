@@ -61,9 +61,34 @@ export const PrivateChatInstance = React.memo(function PrivateChatInstance({
     };
   }, []);
 
-  const handleSendMessage = useCallback((message: string) => {
+  const handleSendMessage = useCallback(async (message: string) => {
     if (!message.trim()) return;
     
+    // Get socket from store
+    const socket = useRoomTabsStore.getState().socket;
+    if (!socket?.connected) {
+      console.warn('Socket not connected for PM');
+      Alert.alert('Error', 'Not connected to server');
+      return;
+    }
+
+    // Get current user info
+    const userDataStr = await AsyncStorage.getItem('user_data');
+    if (!userDataStr) {
+      Alert.alert('Error', 'Please login first');
+      return;
+    }
+    const currentUser = JSON.parse(userDataStr);
+    
+    // Send PM via socket
+    socket.emit('pm:send', {
+      fromUserId: currentUser.id,
+      fromUsername: currentUser.username,
+      toUsername: targetUsername,
+      message: message.trim()
+    });
+    
+    // Add to local store for immediate display
     const newMessage = {
       id: `msg_${Date.now()}`,
       username: 'You',
@@ -73,7 +98,8 @@ export const PrivateChatInstance = React.memo(function PrivateChatInstance({
     };
     
     addMessage(roomId, newMessage);
-  }, [roomId, addMessage]);
+    console.log('📤 PM sent to:', targetUsername);
+  }, [roomId, addMessage, targetUsername]);
 
   const handleEmojiPress = useCallback(() => {
     setEmojiVisible(!emojiVisible);
@@ -134,15 +160,11 @@ export const PrivateChatInstance = React.memo(function PrivateChatInstance({
   }, [clearChat]);
 
   const handleCloseChat = useCallback((rId: string) => {
+    // Just close the PM tab - don't navigate away
+    // The chatroom will switch to the next available tab (room or other PM)
     closeRoom(rId);
-    // Use router to go back to the main tabs if this was the last or only private chat
-    // If it's a dedicated private chat screen (opened via view profile), we should navigate back
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace('/(tabs)');
-    }
-  }, [closeRoom, router]);
+    console.log('🚪 PM tab closed:', rId);
+  }, [closeRoom]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>

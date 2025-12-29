@@ -42,6 +42,7 @@ interface RoomTabsActions {
   setActiveIndex: (index: number) => void;
   setActiveRoomById: (roomId: string) => void;
   addMessage: (roomId: string, message: Message) => void;
+  prependHistoryMessages: (roomId: string, messages: Message[]) => void;
   markUnread: (roomId: string) => void;
   clearUnread: (roomId: string) => void;
   clearAllRooms: () => void;
@@ -221,6 +222,28 @@ export const useRoomTabsStore = create<RoomTabsStore>((set, get) => ({
     set({
       messagesByRoom: { ...state.messagesByRoom, [roomId]: newMessages },
       openRoomsById: newOpenRoomsById,
+    });
+  },
+
+  // Add history messages at the beginning (from database)
+  prependHistoryMessages: (roomId: string, messages: Message[]) => {
+    const state = get();
+    const existingMessages = state.messagesByRoom[roomId] || [];
+    
+    // Filter out messages that already exist (by ID)
+    const existingIds = new Set(existingMessages.map(m => m.id));
+    const newHistoryMessages = messages.filter(m => !existingIds.has(m.id));
+    
+    if (newHistoryMessages.length === 0) return;
+    
+    console.log(`📜 Prepending ${newHistoryMessages.length} history messages to room ${roomId}`);
+    
+    // Prepend history messages (they come from DB in chronological order)
+    set({
+      messagesByRoom: { 
+        ...state.messagesByRoom, 
+        [roomId]: [...newHistoryMessages, ...existingMessages] 
+      },
     });
   },
 

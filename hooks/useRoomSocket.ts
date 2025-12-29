@@ -93,6 +93,31 @@ export function useRoomSocket({ roomId, onRoomJoined, onUsersUpdated }: UseRoomS
     }
   }, [updateRoomName, onRoomJoined, onUsersUpdated]);
 
+  // Handle message history from database
+  const prependHistoryMessages = useRoomTabsStore(state => state.prependHistoryMessages);
+  
+  const handleChatMessages = useCallback((data: { roomId: string; messages: any[]; hasMore: boolean }) => {
+    if (data.roomId !== roomIdRef.current) return;
+    
+    console.log(`📜 [Room ${data.roomId}] Received ${data.messages.length} history messages`);
+    
+    // Convert database messages to Message format
+    const historyMessages: Message[] = data.messages.map((msg: any) => ({
+      id: `db-${msg.id}`,
+      username: msg.username,
+      message: msg.message,
+      isOwnMessage: msg.username === currentUsername,
+      isSystem: msg.message_type === 'system',
+      timestamp: msg.created_at,
+      userType: msg.role?.toLowerCase() || 'normal',
+      usernameColor: msg.username_color_expiry && new Date(msg.username_color_expiry) > new Date() 
+        ? msg.username_color : undefined,
+    }));
+    
+    // Prepend all history messages at once
+    prependHistoryMessages(data.roomId, historyMessages);
+  }, [prependHistoryMessages, currentUsername]);
+
   const handleRoomUsers = useCallback((data: { roomId: string; users: any[]; count: number }) => {
     if (data.roomId !== roomIdRef.current) return;
     
@@ -146,6 +171,7 @@ export function useRoomSocket({ roomId, onRoomJoined, onUsersUpdated }: UseRoomS
 
     socket.on('system:message', boundHandleSystemMessage);
     socket.on('chat:message', boundHandleChatMessage);
+    socket.on('chat:messages', handleChatMessages);
     socket.on('room:joined', boundHandleRoomJoined);
     socket.on('room:users', boundHandleRoomUsers);
     socket.on('room:user:joined', boundHandleUserJoined);
@@ -160,6 +186,10 @@ export function useRoomSocket({ roomId, onRoomJoined, onUsersUpdated }: UseRoomS
         username: currentUsername 
       });
       markRoomJoined(roomId);
+      
+      // Request message history from database (limit 242)
+      console.log(`📜 [Room ${roomId}] Requesting message history`);
+      socket.emit('chat:messages:get', { roomId, limit: 242 });
       
       setTimeout(() => {
         socket.emit('room:users:get', { roomId });
@@ -184,13 +214,14 @@ export function useRoomSocket({ roomId, onRoomJoined, onUsersUpdated }: UseRoomS
       clearInterval(heartbeatInterval);
       socket.off('system:message', boundHandleSystemMessage);
       socket.off('chat:message', boundHandleChatMessage);
+      socket.off('chat:messages', handleChatMessages);
       socket.off('room:joined', boundHandleRoomJoined);
       socket.off('room:users', boundHandleRoomUsers);
       socket.off('room:user:joined', boundHandleUserJoined);
       socket.off('room:user:left', boundHandleUserLeft);
       socket.off('room:force-leave', handleForceLeave);
     };
-  }, [socket, currentUsername, currentUserId, roomId, isRoomJoined, markRoomJoined, markRoomLeft, handleSystemMessage, handleChatMessage, handleRoomJoined, handleRoomUsers, handleUserJoined, handleUserLeft]);
+  }, [socket, currentUsername, currentUserId, roomId, isRoomJoined, markRoomJoined, markRoomLeft, handleSystemMessage, handleChatMessage, handleChatMessages, handleRoomJoined, handleRoomUsers, handleUserJoined, handleUserLeft]);
 
   const sendMessage = useCallback((message: string) => {
     if (!socket || !message.trim() || !currentUserId) return;

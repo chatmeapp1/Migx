@@ -102,8 +102,9 @@ export function useRoomSocket({ roomId, onRoomJoined, onUsersUpdated }: UseRoomS
     console.log(`📜 [Room ${data.roomId}] Received ${data.messages.length} history messages`);
     
     // Convert database messages to Message format
+    // Use client_msg_id for deduplication (matches real-time message IDs)
     const historyMessages: Message[] = data.messages.map((msg: any) => ({
-      id: `db-${msg.id}`,
+      id: msg.client_msg_id || `db-${msg.id}`, // Use clientMsgId for proper deduplication
       username: msg.username,
       message: msg.message,
       isOwnMessage: msg.username === currentUsername,

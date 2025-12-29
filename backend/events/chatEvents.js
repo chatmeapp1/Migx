@@ -319,7 +319,8 @@ module.exports = (io, socket) => {
       io.to(`room:${roomId}`).emit('chat:message', messageData);
       
       // Save message to database for history (async, don't wait)
-      messageService.saveMessage(roomId, userId, username, message, 'chat')
+      // Include clientMsgId for proper deduplication when loading history
+      messageService.saveMessage(roomId, userId, username, message, 'chat', clientMsgId || messageData.id)
         .catch(err => console.error('Error saving message to DB:', err));
       
       await addXp(userId, XP_REWARDS.SEND_MESSAGE, 'send_message', io);

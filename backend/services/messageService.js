@@ -3,13 +3,13 @@ const { generateMessageId } = require('../utils/idGenerator');
 
 const MAX_MESSAGES_PER_ROOM = 242; // Limit like Miggi
 
-const saveMessage = async (roomId, userId, username, message, messageType = 'chat') => {
+const saveMessage = async (roomId, userId, username, message, messageType = 'chat', clientMsgId = null) => {
   try {
     const result = await query(
-      `INSERT INTO messages (room_id, user_id, username, message, message_type)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING id, room_id, user_id, username, message, message_type, created_at`,
-      [roomId, userId, username, message, messageType]
+      `INSERT INTO messages (room_id, user_id, username, message, message_type, client_msg_id)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id, room_id, user_id, username, message, message_type, client_msg_id, created_at`,
+      [roomId, userId, username, message, messageType, clientMsgId]
     );
     
     // Cleanup old messages if exceeds limit (keep only latest 242)
@@ -44,7 +44,8 @@ const cleanupOldMessages = async (roomId) => {
 const getMessages = async (roomId, limit = 50, offset = 0) => {
   try {
     const result = await query(
-      `SELECT m.*, u.avatar, u.role, u.username_color, u.username_color_expiry,
+      `SELECT m.id, m.room_id, m.user_id, m.username, m.message, m.message_type, m.client_msg_id, m.created_at,
+              u.avatar, u.role, u.username_color, u.username_color_expiry,
               COALESCE(ul.level, 1) as user_level
        FROM messages m
        LEFT JOIN users u ON m.user_id = u.id

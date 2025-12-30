@@ -25,6 +25,7 @@ import { RoomInfoModal } from '@/components/chatroom/RoomInfoModal';
 import { VoteKickButton } from '@/components/chatroom/VoteKickButton';
 import { ChatRoomMenu } from '@/components/chatroom/ChatRoomMenu';
 import { ReportAbuseModal } from '@/components/chatroom/ReportAbuseModal';
+import { PrivateChatMenuModal } from '@/components/chatroom/PrivateChatMenuModal';
 import { useRoomTabsStore, useActiveRoom, useActiveRoomId, useOpenRooms } from '@/stores/useRoomTabsStore';
 
 const HEADER_COLOR = '#0a5229';
@@ -63,6 +64,7 @@ export default function ChatRoomScreen() {
   const [kickModalVisible, setKickModalVisible] = useState(false);
   const [participantsModalVisible, setParticipantsModalVisible] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
+  const [privateChatMenuVisible, setPrivateChatMenuVisible] = useState(false);
   const [roomInfoModalVisible, setRoomInfoModalVisible] = useState(false);
   const [roomInfoData, setRoomInfoData] = useState<any>(null);
   const [reportAbuseModalVisible, setReportAbuseModalVisible] = useState(false);
@@ -548,6 +550,74 @@ export default function ChatRoomScreen() {
     router.back();
   }, [router]);
 
+  const handlePrivateChatViewProfile = useCallback(() => {
+    if (!activeRoomId) return;
+    const userId = activeRoomId.replace('pm_', '');
+    router.push(`/profile/${userId}`);
+  }, [activeRoomId, router]);
+
+  const handlePrivateChatBlockUser = useCallback(() => {
+    if (!activeRoomId || !socket) return;
+    const userId = activeRoomId.replace('pm_', '');
+    Alert.alert(
+      'Block User',
+      'Are you sure you want to block this user? They will not be able to send you messages.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Block',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const token = await AsyncStorage.getItem('token');
+              const response = await fetch(`${API_BASE_URL}/api/users/block`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ blockedUserId: userId }),
+              });
+              if (response.ok) {
+                Alert.alert('Success', 'User has been blocked');
+                closeRoom(activeRoomId);
+              } else {
+                Alert.alert('Error', 'Failed to block user');
+              }
+            } catch (error) {
+              console.error('Error blocking user:', error);
+              Alert.alert('Error', 'Failed to block user');
+            }
+          },
+        },
+      ]
+    );
+  }, [activeRoomId, socket, closeRoom]);
+
+  const handlePrivateChatClearChat = useCallback(() => {
+    if (!activeRoomId) return;
+    const clearChat = useRoomTabsStore.getState().clearChat;
+    Alert.alert(
+      'Clear Chat',
+      'Are you sure you want to clear all messages in this chat?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear',
+          style: 'destructive',
+          onPress: () => {
+            clearChat(activeRoomId);
+          },
+        },
+      ]
+    );
+  }, [activeRoomId]);
+
+  const handlePrivateChatCloseChat = useCallback(() => {
+    if (!activeRoomId) return;
+    closeRoom(activeRoomId);
+  }, [activeRoomId, closeRoom]);
+
   const renderVoteButton = useCallback(() => {
     if (!activeVote) return null;
     return (
@@ -569,6 +639,7 @@ export default function ChatRoomScreen() {
       <ChatRoomHeader
         onBack={handleHeaderBack}
         onMenuPress={() => setMenuVisible(true)}
+        onPrivateChatMenuPress={() => setPrivateChatMenuVisible(true)}
       />
 
       <ChatRoomTabs
@@ -638,6 +709,16 @@ export default function ChatRoomScreen() {
         onClose={() => setReportAbuseModalVisible(false)}
         roomId={currentActiveRoomId}
         roomName={roomName}
+      />
+
+      <PrivateChatMenuModal
+        visible={privateChatMenuVisible}
+        onClose={() => setPrivateChatMenuVisible(false)}
+        onViewProfile={handlePrivateChatViewProfile}
+        onBlockUser={handlePrivateChatBlockUser}
+        onClearChat={handlePrivateChatClearChat}
+        onCloseChat={handlePrivateChatCloseChat}
+        username={activeRoom?.name}
       />
     </View>
   );

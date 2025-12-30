@@ -170,3 +170,11 @@ export const MenuGridIcon = ({ color = '#000', size = 24 }: IconProps) => (
     />
   </Svg>
 );
+
+export const MenuDotsIcon = ({ color = '#000', size = 24 }: IconProps) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="5" r="2" fill={color} />
+    <Circle cx="12" cy="12" r="2" fill={color} />
+    <Circle cx="12" cy="19" r="2" fill={color} />
+  </Svg>
+);

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
-import { BackIcon, MenuGridIcon } from '@/components/ui/SvgIcons';
+import { BackIcon, MenuGridIcon, MenuDotsIcon } from '@/components/ui/SvgIcons';
 import { RoomIndicatorDots } from './RoomIndicatorDots';
 import { useActiveIndex, useActiveRoom, useOpenRooms, useActiveRoomId } from '@/stores/useRoomTabsStore';
 
@@ -10,11 +10,13 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 interface ChatRoomHeaderProps {
   onBack?: () => void;
   onMenuPress?: () => void;
+  onPrivateChatMenuPress?: () => void;
 }
 
 export function ChatRoomHeader({ 
   onBack, 
   onMenuPress,
+  onPrivateChatMenuPress,
 }: ChatRoomHeaderProps) {
   const router = useRouter();
   const activeIndex = useActiveIndex();
@@ -25,6 +27,14 @@ export function ChatRoomHeader({
   const isPrivateChat = activeRoomId?.startsWith('pm_') || false;
   const displayName = activeRoom?.name || 'Room';
   const subtitle = isPrivateChat ? 'Private Chat' : 'Chatroom';
+
+  const handleMenuPress = () => {
+    if (isPrivateChat && onPrivateChatMenuPress) {
+      onPrivateChatMenuPress();
+    } else if (onMenuPress) {
+      onMenuPress();
+    }
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: '#0a5229' }]}>
@@ -51,11 +61,15 @@ export function ChatRoomHeader({
         </View>
         
         <TouchableOpacity 
-          onPress={onMenuPress}
+          onPress={handleMenuPress}
           style={styles.iconButton}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <MenuGridIcon color="#FFFFFF" size={24} />
+          {isPrivateChat ? (
+            <MenuDotsIcon color="#FFFFFF" size={24} />
+          ) : (
+            <MenuGridIcon color="#FFFFFF" size={24} />
+          )}
         </TouchableOpacity>
       </View>
     </View>

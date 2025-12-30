@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { getRedisClient } = require('../redis');
 const roomService = require('../services/roomService');
+const { getPool } = require('../db/db');
 
 // REDIS-ONLY chatlist - NO DATABASE QUERIES for real-time performance
 router.get('/list/:username', async (req, res) => {
@@ -127,17 +128,24 @@ router.get('/list/:username', async (req, res) => {
             // Fetch user avatar from database
             let avatarUrl = null;
             try {
-              const { getPool } = require('../db');
               const pool = getPool();
               const result = await pool.query(
                 'SELECT avatar FROM users WHERE username = $1',
                 [targetUsername]
               );
               if (result.rows.length > 0 && result.rows[0].avatar) {
-                avatarUrl = result.rows[0].avatar;
+                let avatar = result.rows[0].avatar;
+                // Construct full URL if it's a relative path
+                if (avatar && !avatar.startsWith('http')) {
+                  const baseUrl = `${req.protocol}://${req.get('host')}`;
+                  avatarUrl = `${baseUrl}${avatar}`;
+                } else {
+                  avatarUrl = avatar;
+                }
               }
             } catch (dbErr) {
               // Skip avatar fetch error
+              console.warn(`⚠️ Failed to fetch avatar for ${targetUsername}:`, dbErr.message);
             }
             
             dmsMap.set(targetUsername, {

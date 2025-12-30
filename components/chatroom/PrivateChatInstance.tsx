@@ -99,17 +99,26 @@ export const PrivateChatInstance = React.memo(function PrivateChatInstance({
 
     const clientMsgId = `pm_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
+    // Log socket status before sending
+    console.log('📤 PM socket status:', {
+      connected: socket.connected,
+      id: socket.id,
+      namespace: (socket as any).nsp
+    });
+    
     // Send PM via socket (server will broadcast to all tabs)
-    socket.emit('pm:send', {
+    const pmData = {
       fromUserId: currentUser.id,
       fromUsername: currentUser.username,
       toUserId: userId,
       toUsername: targetUsername,
       message: message.trim(),
       clientMsgId
-    });
+    };
+    console.log('📤 PM data being sent:', pmData);
+    socket.emit('pm:send', pmData);
     
-    console.log('📤 PM sent to:', targetUsername, '| ID:', clientMsgId);
+    console.log('📤 PM emitted to:', targetUsername, '| ID:', clientMsgId);
   }, [targetUsername, userId]);
 
   const handleEmojiPress = useCallback(() => {

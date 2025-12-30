@@ -3,6 +3,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useThemeCustom } from '@/theme/provider';
+import { useRoomTabsStore } from '@/stores/useRoomTabsStore';
 
 interface ChatItemProps {
   type: 'user' | 'room' | 'group' | 'pm';
@@ -55,10 +56,20 @@ export function ChatItem({ type, name, message, time, isOnline, avatar, tags, ro
   const handlePress = () => {
     // Handle PM navigation
     if (type === 'pm' && userId) {
+      // Get current user ID from store to create stable conversation ID
+      const { currentUserId } = useRoomTabsStore.getState();
+      const numericUserId = parseInt(userId, 10);
+      const numericCurrentId = parseInt(currentUserId, 10);
+      
+      // Create stable conversation ID: private:<minId>:<maxId>
+      const minId = Math.min(numericCurrentId, numericUserId);
+      const maxId = Math.max(numericCurrentId, numericUserId);
+      const conversationId = `private:${minId}:${maxId}`;
+      
       router.push({
         pathname: '/chatroom/[id]',
         params: { 
-          id: `pm_${userId}`, 
+          id: conversationId, 
           name,
           type: 'pm',
         },

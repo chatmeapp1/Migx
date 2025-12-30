@@ -245,10 +245,16 @@ export const useRoomTabsStore = create<RoomTabsStore>((set, get) => ({
     }
 
     const newMessages = [...existingMessages, processedMessage];
-    // PM room ID format: pm_{userId}
-    const pmRoomId = `pm_${userId}`;
+    
+    // Use stable conversation ID format: private:<minId>:<maxId>
+    const numericUserId = parseInt(userId, 10);
+    const numericCurrentId = parseInt(state.currentUserId, 10);
+    const minId = Math.min(numericCurrentId, numericUserId);
+    const maxId = Math.max(numericCurrentId, numericUserId);
+    const conversationId = `private:${minId}:${maxId}`;
+    
     const activeRoomId = state.openRoomIds[state.activeIndex];
-    const isActiveRoom = activeRoomId === pmRoomId;
+    const isActiveRoom = activeRoomId === conversationId;
 
     // Play sound for incoming private messages
     if (!processedMessage.isOwnMessage) {
@@ -261,28 +267,19 @@ export const useRoomTabsStore = create<RoomTabsStore>((set, get) => ({
     let newOpenRoomsById = state.openRoomsById;
     let newOpenRoomIds = state.openRoomIds;
     
-    // Auto-open PM tab if not exists (for incoming messages)
-    if (!state.openRoomsById[pmRoomId]) {
-      const displayName = message.username || (message as any).fromUsername || `User ${userId}`;
-      const newRoom: OpenRoom = { 
-        roomId: pmRoomId, 
-        name: displayName, 
-        unread: processedMessage.isOwnMessage ? 0 : 1 
-      };
-      newOpenRoomIds = [...state.openRoomIds, pmRoomId];
-      newOpenRoomsById = {
-        ...state.openRoomsById,
-        [pmRoomId]: newRoom,
-      };
-      console.log('🔓 Auto-opened PM tab:', pmRoomId, 'for:', displayName);
-    } else if (!isActiveRoom && !processedMessage.isOwnMessage) {
-      // Tab exists but not active, mark as unread
-      const room = state.openRoomsById[pmRoomId];
-      newOpenRoomsById = {
-        ...state.openRoomsById,
-        [pmRoomId]: { ...room, unread: room.unread + 1 },
-      };
+    // ✅ IMPORTANT: Do NOT auto-open new tabs for incoming PMs
+    // Only append message if conversation is already open, otherwise just store in privateMessages
+    if (state.openRoomsById[conversationId]) {
+      // Conversation tab exists - mark as unread if not active
+      if (!isActiveRoom && !processedMessage.isOwnMessage) {
+        const room = state.openRoomsById[conversationId];
+        newOpenRoomsById = {
+          ...state.openRoomsById,
+          [conversationId]: { ...room, unread: room.unread + 1 },
+        };
+      }
     }
+    // If conversation doesn't exist, just store message - don't open tab
 
     set({
       privateMessages: { ...state.privateMessages, [userId]: newMessages },

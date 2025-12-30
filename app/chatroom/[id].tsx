@@ -267,7 +267,7 @@ export default function ChatRoomScreen() {
         }
       });
 
-      // 🔑 GLOBAL PM LISTENER - Multi-tab support
+      // 🔑 GLOBAL PM LISTENER - Append to existing conversation only
       newSocket.on('pm:receive', (data: any) => {
         console.log('📩 [PM-RECEIVE] Message from:', data.fromUsername, '| Type:', data.messageType);
         
@@ -280,7 +280,7 @@ export default function ChatRoomScreen() {
           return;
         }
         
-        // 🔑 Add to PM store (auto-opens PM tab inside addPrivateMessage)
+        // 🔑 Only add to PM storage if conversation is already open - don't auto-open
         const { addPrivateMessage } = useRoomTabsStore.getState();
         
         const pmMessage: Message = {
@@ -291,7 +291,7 @@ export default function ChatRoomScreen() {
           timestamp: data.timestamp || new Date().toISOString(),
         };
 
-        // Add to PM storage - this auto-opens the tab if it doesn't exist
+        // Add to PM storage - does NOT auto-open new tabs
         addPrivateMessage(senderId, pmMessage);
         
         // Play PM sound only if app is in foreground
@@ -317,7 +317,7 @@ export default function ChatRoomScreen() {
           timestamp: data.timestamp || new Date().toISOString(),
         };
 
-        // Add to PM storage - this auto-opens the tab if it doesn't exist
+        // Add to PM storage - does NOT auto-open new tabs
         addPrivateMessage(data.toUserId, pmMessage);
         
         console.log('📩 [PM] Synced sent PM to:', data.toUsername, 'id:', data.toUserId);

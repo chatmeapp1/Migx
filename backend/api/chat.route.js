@@ -20,15 +20,7 @@ router.get('/list/:username', async (req, res) => {
     // ONLY use Redis for active rooms - NO DATABASE QUERY
     const redisRoomsRaw = await redis.sMembers(`user:rooms:${username}`);
     
-    if (!redisRoomsRaw || redisRoomsRaw.length === 0) {
-      return res.json({
-        success: true,
-        rooms: [],
-        dms: []
-      });
-    }
-
-    // Parse Redis room data
+    // Parse Redis room data (even if empty, we still need to fetch DMs)
     const activeRooms = [];
     const seenIds = new Set();
     

@@ -152,14 +152,26 @@ export function MenuParticipantsModal({ visible, onClose, roomId, onUserMenuPres
     } else if (action === 'private-chat') {
       // Open private chat as new tab in chatroom
       try {
+        // Get userId from username
+        const response = await fetch(`${API_BASE_URL}/api/users/username/${selectedUser}`);
+        const data = await response.json();
+        
+        if (!data || !data.id) {
+          console.error('User not found for private chat:', selectedUser);
+          Alert.alert('Error', 'User not found');
+          return;
+        }
+        
         const { useRoomTabsStore } = await import('@/stores/useRoomTabsStore');
         const store = useRoomTabsStore.getState();
         
-        // Create private chat room ID
-        const privateChatId = `pm_${selectedUser}`;
+        // Create private chat room ID with userId
+        const privateChatId = `pm_${data.id}`;
         
-        // Open as new tab
+        // Open as new tab with username as display name
         store.openRoom(privateChatId, selectedUser);
+        
+        console.log('🔓 Opened private chat tab:', privateChatId, 'for user:', selectedUser);
         
         // Close modals
         setShowUserMenu(false);
@@ -167,6 +179,7 @@ export function MenuParticipantsModal({ visible, onClose, roomId, onUserMenuPres
         onClose();
       } catch (error) {
         console.error('Error opening private chat:', error);
+        Alert.alert('Error', 'Failed to open private chat');
       }
     } else if (action === 'block') {
       // Handle block user action

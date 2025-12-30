@@ -245,8 +245,7 @@ export const useRoomTabsStore = create<RoomTabsStore>((set, get) => ({
     }
 
     const newMessages = [...existingMessages, processedMessage];
-    // This logic assumes PMs are always marked with 'pm_' prefix and the userId is extracted from it.
-    // If PMs are handled differently, this part needs adjustment.
+    // PM room ID format: pm_{userId}
     const pmRoomId = `pm_${userId}`;
     const activeRoomId = state.openRoomIds[state.activeIndex];
     const isActiveRoom = activeRoomId === pmRoomId;
@@ -260,20 +259,24 @@ export const useRoomTabsStore = create<RoomTabsStore>((set, get) => ({
     }
 
     let newOpenRoomsById = state.openRoomsById;
-    // If the PM tab is not open or not active, mark it as unread.
-    if (!state.openRoomsById[pmRoomId] && !processedMessage.isOwnMessage) {
-      const newRoom: OpenRoom = { roomId: pmRoomId, name: message.username || `PM with ${message.fromUsername}`, unread: 1 };
-      const newOpenRoomIds = [...state.openRoomIds, pmRoomId];
+    let newOpenRoomIds = state.openRoomIds;
+    
+    // Auto-open PM tab if not exists (for incoming messages)
+    if (!state.openRoomsById[pmRoomId]) {
+      const displayName = message.username || (message as any).fromUsername || `User ${userId}`;
+      const newRoom: OpenRoom = { 
+        roomId: pmRoomId, 
+        name: displayName, 
+        unread: processedMessage.isOwnMessage ? 0 : 1 
+      };
+      newOpenRoomIds = [...state.openRoomIds, pmRoomId];
       newOpenRoomsById = {
         ...state.openRoomsById,
         [pmRoomId]: newRoom,
       };
-      set({
-        openRoomsById: newOpenRoomsById,
-        openRoomIds: newOpenRoomIds,
-        activeIndex: newOpenRoomIds.length - 1,
-      });
-    } else if (state.openRoomsById[pmRoomId] && !isActiveRoom && !processedMessage.isOwnMessage) {
+      console.log('🔓 Auto-opened PM tab:', pmRoomId, 'for:', displayName);
+    } else if (!isActiveRoom && !processedMessage.isOwnMessage) {
+      // Tab exists but not active, mark as unread
       const room = state.openRoomsById[pmRoomId];
       newOpenRoomsById = {
         ...state.openRoomsById,
@@ -284,6 +287,7 @@ export const useRoomTabsStore = create<RoomTabsStore>((set, get) => ({
     set({
       privateMessages: { ...state.privateMessages, [userId]: newMessages },
       openRoomsById: newOpenRoomsById,
+      openRoomIds: newOpenRoomIds,
     });
   },
 

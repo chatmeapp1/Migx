@@ -29,12 +29,20 @@ export const PrivateChatInstance = React.memo(function PrivateChatInstance({
   bottomPadding,
   isActive,
 }: PrivateChatInstanceProps) {
+  // 🔑 Extract userId from roomId if targetUserId not provided
+  const userId = useMemo(() => {
+    if (targetUserId) return targetUserId;
+    // Extract from roomId format: pm_123
+    const match = roomId.match(/^pm_(\d+)$/);
+    return match ? match[1] : null;
+  }, [roomId, targetUserId]);
+  
   // 🔑 Use PM store instead of room messages
   const getPrivateMessages = useRoomTabsStore((state) => state.getPrivateMessages);
   const messages = useMemo(() => {
-    if (!targetUserId) return [];
-    return getPrivateMessages(targetUserId);
-  }, [targetUserId, getPrivateMessages]);
+    if (!userId) return [];
+    return getPrivateMessages(userId);
+  }, [userId, getPrivateMessages]);
   const { theme } = useThemeCustom();
   const insets = useSafeAreaInsets();
   const inputRef = React.useRef<PrivateChatInputRef>(null);
@@ -84,7 +92,7 @@ export const PrivateChatInstance = React.memo(function PrivateChatInstance({
     }
     const currentUser = JSON.parse(userDataStr);
     
-    if (!targetUserId) {
+    if (!userId) {
       Alert.alert('Error', 'Invalid recipient');
       return;
     }
@@ -95,14 +103,14 @@ export const PrivateChatInstance = React.memo(function PrivateChatInstance({
     socket.emit('pm:send', {
       fromUserId: currentUser.id,
       fromUsername: currentUser.username,
-      toUserId: targetUserId,
+      toUserId: userId,
       toUsername: targetUsername,
       message: message.trim(),
       clientMsgId
     });
     
     console.log('📤 PM sent to:', targetUsername, '| ID:', clientMsgId);
-  }, [targetUsername, targetUserId]);
+  }, [targetUsername, userId]);
 
   const handleEmojiPress = useCallback(() => {
     setEmojiVisible(!emojiVisible);
@@ -176,7 +184,7 @@ export const PrivateChatInstance = React.memo(function PrivateChatInstance({
       {/* Header */}
       <PrivateChatHeader 
         username={targetUsername}
-        targetUserId={targetUserId}
+        targetUserId={userId || undefined}
         roomId={roomId}
         onViewProfile={handleViewProfile}
         onBlockUser={handleBlockUser}

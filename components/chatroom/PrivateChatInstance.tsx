@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useEffect, useState } from 'react';
 import { View, StyleSheet, Dimensions, StatusBar, Keyboard, Platform, Alert } from 'react-native';
-import { useRoomMessagesData } from '@/stores/useRoomTabsStore';
+import { useRoomMessagesData, usePrivateMessagesData } from '@/stores/useRoomTabsStore';
 import { ChatRoomContent } from './ChatRoomContent';
 import { PrivateChatHeader } from './PrivateChatHeader';
 import { PrivateChatInput, PrivateChatInputRef } from './PrivateChatInput';
@@ -34,15 +34,11 @@ export const PrivateChatInstance = React.memo(function PrivateChatInstance({
     if (targetUserId) return targetUserId;
     // Extract from roomId format: pm_123
     const match = roomId.match(/^pm_(\d+)$/);
-    return match ? match[1] : null;
+    return match ? match[1] : '';
   }, [roomId, targetUserId]);
   
   // 🔑 Use PM store instead of room messages
-  const getPrivateMessages = useRoomTabsStore((state) => state.getPrivateMessages);
-  const messages = useMemo(() => {
-    if (!userId) return [];
-    return getPrivateMessages(userId);
-  }, [userId, getPrivateMessages]);
+  const messages = usePrivateMessagesData(userId);
   const { theme } = useThemeCustom();
   const insets = useSafeAreaInsets();
   const inputRef = React.useRef<PrivateChatInputRef>(null);

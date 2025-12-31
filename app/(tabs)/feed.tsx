@@ -890,7 +890,7 @@ const styles = StyleSheet.create({
   roleBadgeIcon: {
     width: 24,
     height: 24,
-    marginLeft: 6,
+    marginLeft: 2,
     resizeMode: 'contain',
   },
   userBadgeCircle: {

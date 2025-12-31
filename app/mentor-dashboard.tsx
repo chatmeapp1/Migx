@@ -1,4 +1,4 @@
-import { StyleSheet, View, SafeAreaView, Alert, Text, TouchableOpacity, TextInput, FlatList } from 'react-native';
+import { StyleSheet, View, SafeAreaView, Alert, Text, TouchableOpacity, TextInput, FlatList, Platform, StatusBar } from 'react-native';
 import { router } from 'expo-router';
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -6,6 +6,8 @@ import { useThemeCustom } from '@/theme/provider';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import API_BASE_URL from '@/utils/api';
+
+const STATUSBAR_HEIGHT = Platform.OS === 'android' ? StatusBar.currentHeight || 24 : 0;
 
 const BASE_URL = API_BASE_URL;
 
@@ -136,6 +138,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
+    paddingTop: STATUSBAR_HEIGHT + 12,
   },
   backButton: { padding: 4 },
   title: { fontSize: 20, fontWeight: 'bold' },

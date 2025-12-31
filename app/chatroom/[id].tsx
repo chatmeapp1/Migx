@@ -154,19 +154,32 @@ export default function ChatRoomScreen() {
 
   useEffect(() => {
     const loadUserData = async () => {
+      // First check if store already has valid user info - don't overwrite with guest
+      const storeState = useRoomTabsStore.getState();
+      if (storeState.currentUsername && storeState.currentUsername !== 'guest' && storeState.currentUserId && storeState.currentUserId !== 'guest-id') {
+        console.log('📱 [Chatroom] Using existing userInfo from store:', storeState.currentUsername);
+        return; // Already have valid user info, don't overwrite
+      }
+      
       try {
         const userDataStr = await AsyncStorage.getItem('user_data');
         if (userDataStr) {
           const userData = JSON.parse(userDataStr);
           console.log('📱 [Chatroom] Loaded user_data for userInfo:', userData.username);
-          setUserInfo(userData.username || 'guest', userData.id || 'guest-id');
+          setUserInfo(userData.username || 'guest', userData.id?.toString() || 'guest-id');
         } else {
           console.warn('📱 [Chatroom] No user_data found in AsyncStorage for userInfo');
-          setUserInfo('guest', 'guest-id');
+          // Don't set guest if store already has valid data
+          if (!storeState.currentUsername || storeState.currentUsername === 'guest') {
+            setUserInfo('guest', 'guest-id');
+          }
         }
       } catch (error) {
         console.error('📱 [Chatroom] Error loading user_data for userInfo:', error);
-        setUserInfo('guest', 'guest-id');
+        // Don't set guest if store already has valid data
+        if (!storeState.currentUsername || storeState.currentUsername === 'guest') {
+          setUserInfo('guest', 'guest-id');
+        }
       }
     };
     loadUserData();

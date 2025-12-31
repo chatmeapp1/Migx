@@ -27,7 +27,7 @@ import {
   CameraIcon,
   VideoIcon,
   SendIcon,
-  LikeIcon,
+  ThumbUpIcon,
   CommentIcon,
   ShareIcon,
 } from '@/components/ui/SvgIcons';
@@ -584,8 +584,8 @@ export default function FeedScreen() {
 
       <View style={styles.postActions}>
         <TouchableOpacity style={styles.actionButton} onPress={() => handleLike(item.id)}>
-          <LikeIcon color={item.is_liked ? '#082919' : theme.secondary} size={20} filled={item.is_liked} />
-          <Text style={[styles.actionText, { color: theme.secondary }]}>{item.likes_count}</Text>
+          <ThumbUpIcon color={item.is_liked ? '#2196F3' : theme.secondary} size={20} filled={item.is_liked} />
+          <Text style={[styles.actionText, { color: item.is_liked ? '#2196F3' : theme.secondary }]}>{item.likes_count}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.actionButton} onPress={() => handleComment(item)}>

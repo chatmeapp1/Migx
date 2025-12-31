@@ -129,31 +129,44 @@ router.get('/', authMiddleware, async (req, res) => {
 
     const posts = feedItems.map(item => JSON.parse(item));
     
-    // Refresh role data from database for each post (roles may have changed)
+    // Refresh role AND level data from database for each post
     const { query } = require('../db/db');
-    const postsWithFreshRoles = await Promise.all(posts.map(async (post) => {
+    const postsWithFreshData = await Promise.all(posts.map(async (post) => {
       try {
+        // Get user role and avatar
         const userResult = await query(
           'SELECT role, avatar, username_color FROM users WHERE id = $1',
           [post.userId || post.user_id]
         );
         const user = userResult.rows[0];
+        
+        // Get user level from user_levels table
+        const levelResult = await query(
+          'SELECT level FROM user_levels WHERE user_id = $1',
+          [post.userId || post.user_id]
+        );
+        const userLevel = levelResult.rows[0]?.level || 1;
+        
         if (user) {
           post.role = user.role || 'user';
+          post.level = userLevel;
           if (user.username_color) {
             post.username_color = user.username_color;
             post.usernameColor = user.username_color;
           }
+        } else {
+          post.level = userLevel;
         }
         return post;
       } catch (e) {
+        console.error(`Error refreshing user data for post:`, e.message);
         return post; // Return original if refresh fails
       }
     }));
 
     res.json({
       success: true,
-      posts: postsWithFreshRoles,
+      posts: postsWithFreshData,
       hasMore: false,
       currentPage: 1,
       totalPages: 1

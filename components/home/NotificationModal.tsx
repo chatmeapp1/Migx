@@ -41,13 +41,20 @@ const FollowIcon = ({ size = 20, color = '#4CAF50' }: { size?: number; color?: s
   </Svg>
 );
 
+const CommentIcon = ({ size = 20, color = '#FF9800' }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke={color} strokeWidth="2" fill="none"/>
+  </Svg>
+);
+
 interface Notification {
   id: string;
-  type: 'credit' | 'gift' | 'follow';
+  type: 'credit' | 'gift' | 'follow' | 'comment';
   from: string;
   fromUserId?: string;
   amount?: number;
   giftName?: string;
+  postId?: string;
   message: string;
   timestamp: number;
   is_read: boolean;
@@ -138,8 +145,18 @@ export function NotificationModal({ visible, onClose, username, socket, onNotifi
     }
   };
 
+  const getNotificationColor = (type: string) => {
+    switch (type) {
+      case 'credit': return '#4A90E2';
+      case 'gift': return '#E91E63';
+      case 'follow': return '#4CAF50';
+      case 'comment': return '#FF9800';
+      default: return '#4A90E2';
+    }
+  };
+
   const renderNotification = ({ item }: { item: Notification }) => (
-    <View style={[styles.notificationItem, { backgroundColor: theme.card, borderLeftColor: item.type === 'credit' ? '#4A90E2' : item.type === 'gift' ? '#E91E63' : '#4CAF50', opacity: item.is_read ? 0.7 : 1 }]}>
+    <View style={[styles.notificationItem, { backgroundColor: theme.card, borderLeftColor: getNotificationColor(item.type), opacity: item.is_read ? 0.7 : 1 }]}>
       <View style={styles.notificationContent}>
         <Text style={[styles.notificationMessage, { color: theme.text }]}>{item.message}</Text>
         <Text style={[styles.notificationTime, { color: theme.secondary }]}>{formatTime(item.timestamp)}</Text>

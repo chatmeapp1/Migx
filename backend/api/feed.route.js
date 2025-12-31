@@ -5,6 +5,7 @@ const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const { getRedisClient } = require('../redis');
 const crypto = require('crypto');
+const { addNotification } = require('../services/notificationService');
 
 // Configure Cloudinary
 cloudinary.config({
@@ -358,6 +359,38 @@ router.post('/:feedId/comment', authMiddleware, async (req, res) => {
 
     comments.push(newComment);
     await redis.set(commentsKey, JSON.stringify(comments.slice(-20)), { EX: 86400 });
+
+    // Send notification to post owner (if commenter is not the owner)
+    try {
+      const feedKey = 'feed:global';
+      const items = await redis.lRange(feedKey, 0, -1);
+      const post = items.find(item => {
+        const parsed = JSON.parse(item);
+        return parsed.id === feedId;
+      });
+      
+      if (post) {
+        const postData = JSON.parse(post);
+        const postOwnerUsername = postData.username;
+        const postOwnerId = postData.userId;
+        
+        // Only send notification if commenter is not the post owner
+        if (postOwnerId !== userId && postOwnerUsername !== username) {
+          await addNotification(postOwnerUsername, {
+            id: crypto.randomBytes(8).toString('hex'),
+            type: 'comment',
+            from: username,
+            fromUserId: userId,
+            message: `${username} commented on your post. Check feed to see`,
+            postId: feedId
+          });
+          console.log(`📬 Comment notification sent to ${postOwnerUsername} from ${username}`);
+        }
+      }
+    } catch (notifError) {
+      console.error('⚠️ Error sending comment notification:', notifError.message);
+      // Don't fail the comment request if notification fails
+    }
 
     res.json({
       success: true,

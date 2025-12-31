@@ -9,7 +9,9 @@ import {
   ScrollView,
   SafeAreaView,
   Alert,
-  Modal
+  Modal,
+  Platform,
+  StatusBar
 } from 'react-native';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -17,6 +19,8 @@ import { useThemeCustom } from '@/theme/provider';
 import { LinearGradient } from 'expo-linear-gradient';
 import { API_ENDPOINTS } from '@/utils/api';
 import Svg, { Path } from 'react-native-svg';
+
+const STATUSBAR_HEIGHT = Platform.OS === 'android' ? StatusBar.currentHeight || 24 : 0;
 
 const EyeIcon = ({ size = 20, color = '#666' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -399,6 +403,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
+    paddingTop: STATUSBAR_HEIGHT + 12,
     borderBottomWidth: 1,
   },
   backButton: {

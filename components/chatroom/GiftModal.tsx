@@ -6,7 +6,7 @@ import { useThemeCustom } from '@/theme/provider';
 interface GiftModalProps {
   visible: boolean;
   onClose: () => void;
-  onSendGift: (gift: { name: string; price: number; image: any }) => void;
+  onSendGift?: (gift: { name: string; price: number; image: any }) => void;
 }
 
 const GIFTS = [
@@ -28,11 +28,6 @@ export function GiftModal({ visible, onClose, onSendGift }: GiftModalProps) {
   const itemsPerRow = 5;
   const itemSize = (screenWidth - 60) / itemsPerRow;
 
-  const handleGiftPress = (gift: typeof GIFTS[0]) => {
-    onSendGift(gift);
-    onClose();
-  };
-
   return (
     <Modal
       visible={visible}
@@ -49,7 +44,7 @@ export function GiftModal({ visible, onClose, onSendGift }: GiftModalProps) {
           <TouchableOpacity
             activeOpacity={1}
             onPress={(e) => e.stopPropagation()}
-            style={[styles.modal, { backgroundColor: 'rgba(255, 255, 255, 0.95)' }]}
+            style={[styles.modal, { backgroundColor: theme.background }]}
           >
             <View style={[styles.header, { borderBottomColor: theme.border }]}>
               <Text style={[styles.title, { color: theme.text }]}>Send Gift</Text>
@@ -61,18 +56,17 @@ export function GiftModal({ visible, onClose, onSendGift }: GiftModalProps) {
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
               <View style={styles.giftGrid}>
                 {GIFTS.map((gift) => (
-                  <TouchableOpacity
+                  <View
                     key={gift.id}
                     style={[styles.giftItem, { width: itemSize }]}
-                    onPress={() => handleGiftPress(gift)}
                   >
-                    <View style={[styles.giftImageContainer, { backgroundColor: theme.background }]}>
+                    <View style={[styles.giftImageContainer, { backgroundColor: theme.card }]}>
                       <Image source={gift.image} style={styles.giftImage} resizeMode="contain" />
                     </View>
                     <Text style={[styles.giftPrice, { color: theme.text }]}>
                       {gift.price} IDR
                     </Text>
-                  </TouchableOpacity>
+                  </View>
                 ))}
               </View>
             </ScrollView>

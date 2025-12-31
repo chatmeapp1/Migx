@@ -381,10 +381,15 @@ export default function ChatRoomScreen() {
           socket.connect();
         }
         
-        // Rejoin all open rooms after reconnection
+        // Rejoin all open ROOMS (not PMs) after reconnection
         if (socket?.connected) {
           const openRoomIds = useRoomTabsStore.getState().openRoomIds;
           openRoomIds.forEach((rid) => {
+            // Skip PM tabs - they don't need room:join (PM uses user:userId channel)
+            if (rid.startsWith('private:') || rid.startsWith('pm_')) {
+              console.log('📩 Skipping PM tab (no rejoin needed):', rid);
+              return;
+            }
             console.log('🔄 Rejoining room after background:', rid);
             socket.emit('room:join', {
               roomId: rid,
@@ -498,10 +503,14 @@ export default function ChatRoomScreen() {
     const currentOpenRoomIds = useRoomTabsStore.getState().openRoomIds;
     const remainingCount = currentOpenRoomIds.length - 1;
     
-    console.log('🚪 [Leave Room] Starting leave process for:', roomToLeave);
+    // Check if this is a PM tab (no socket leave needed for PMs)
+    const isPmTab = roomToLeave.startsWith('private:') || roomToLeave.startsWith('pm_');
+    
+    console.log('🚪 [Leave Room] Starting leave process for:', roomToLeave, isPmTab ? '(PM)' : '(Room)');
     console.log('🚪 [Leave Room] Current tabs:', currentOpenRoomIds.length, 'Remaining after leave:', remainingCount);
     
-    if (socket) {
+    // Only emit leave_room for actual rooms, not PMs
+    if (socket && !isPmTab) {
       console.log('🚪 [Leave Room] Emitting leave_room socket event');
       socket.emit('leave_room', { 
         roomId: roomToLeave, 

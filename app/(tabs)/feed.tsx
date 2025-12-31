@@ -888,8 +888,8 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   roleBadgeIcon: {
-    width: 16,
-    height: 16,
+    width: 24,
+    height: 24,
     marginLeft: 6,
     resizeMode: 'contain',
   },

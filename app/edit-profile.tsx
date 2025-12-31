@@ -26,10 +26,16 @@ export default function EditProfileScreen() {
     if (userDataStr) {
       const userData = JSON.parse(userDataStr);
       setUser(userData);
+      // Load background image from stored data
+      const bgImage = userData.background_image || userData.background;
+      if (bgImage) {
+        setBackgroundImage(bgImage);
+      }
       console.log('✅ User data loaded:', {
         id: userData.id,
         username: userData.username,
-        avatar: userData.avatar
+        avatar: userData.avatar,
+        background_image: bgImage
       });
       return;
     }
@@ -38,6 +44,10 @@ export default function EditProfileScreen() {
     const userData = await getStoredUser();
     if (userData) {
       setUser(userData);
+      const bgImage = userData.background_image || userData.background;
+      if (bgImage) {
+        setBackgroundImage(bgImage);
+      }
     }
   };
 
@@ -314,7 +324,7 @@ export default function EditProfileScreen() {
       <View style={[styles.container, { backgroundColor: theme.background }]}>
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
           <EditProfileHeader
-            backgroundImage={backgroundImage || user?.background}
+            backgroundImage={backgroundImage || user?.background_image || user?.background}
             avatarImage={user?.avatar}
             username={user?.username || "migX"}
             level={user?.level || 1}

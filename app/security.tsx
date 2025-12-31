@@ -16,6 +16,21 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useThemeCustom } from '@/theme/provider';
 import { LinearGradient } from 'expo-linear-gradient';
 import { API_ENDPOINTS } from '@/utils/api';
+import Svg, { Path } from 'react-native-svg';
+
+const EyeIcon = ({ size = 20, color = '#666' }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+const EyeOffIcon = ({ size = 20, color = '#666' }: { size?: number; color?: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M1 1l22 22" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
 
 export default function SecurityScreen() {
   const { theme } = useThemeCustom();
@@ -26,6 +41,14 @@ export default function SecurityScreen() {
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  
+  // Visibility toggles
+  const [showCurrentPin, setShowCurrentPin] = useState(false);
+  const [showNewPin, setShowNewPin] = useState(false);
+  const [showConfirmPin, setShowConfirmPin] = useState(false);
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const [oldEmail, setOldEmail] = useState('');
   const [newEmail, setNewEmail] = useState('');
@@ -239,36 +262,51 @@ export default function SecurityScreen() {
           {/* Set PIN Section */}
           <View style={[styles.section, { backgroundColor: theme.card }]}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>Set PIN</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
-              placeholder="Current PIN (default: 000000)"
-              placeholderTextColor={theme.secondary}
-              value={currentPin}
-              onChangeText={setCurrentPin}
-              keyboardType="numeric"
-              secureTextEntry
-              maxLength={6}
-            />
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
-              placeholder="New PIN (6 digits)"
-              placeholderTextColor={theme.secondary}
-              value={newPin}
-              onChangeText={setNewPin}
-              keyboardType="numeric"
-              secureTextEntry
-              maxLength={6}
-            />
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
-              placeholder="Confirm New PIN"
-              placeholderTextColor={theme.secondary}
-              value={confirmPin}
-              onChangeText={setConfirmPin}
-              keyboardType="numeric"
-              secureTextEntry
-              maxLength={6}
-            />
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={[styles.inputWithIcon, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
+                placeholder="Current PIN (default: 000000)"
+                placeholderTextColor={theme.secondary}
+                value={currentPin}
+                onChangeText={setCurrentPin}
+                keyboardType="numeric"
+                secureTextEntry={!showCurrentPin}
+                maxLength={6}
+              />
+              <TouchableOpacity style={styles.eyeButton} onPress={() => setShowCurrentPin(!showCurrentPin)}>
+                {showCurrentPin ? <EyeOffIcon color={theme.secondary} /> : <EyeIcon color={theme.secondary} />}
+              </TouchableOpacity>
+            </View>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={[styles.inputWithIcon, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
+                placeholder="New PIN (6 digits)"
+                placeholderTextColor={theme.secondary}
+                value={newPin}
+                onChangeText={setNewPin}
+                keyboardType="numeric"
+                secureTextEntry={!showNewPin}
+                maxLength={6}
+              />
+              <TouchableOpacity style={styles.eyeButton} onPress={() => setShowNewPin(!showNewPin)}>
+                {showNewPin ? <EyeOffIcon color={theme.secondary} /> : <EyeIcon color={theme.secondary} />}
+              </TouchableOpacity>
+            </View>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={[styles.inputWithIcon, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
+                placeholder="Confirm New PIN"
+                placeholderTextColor={theme.secondary}
+                value={confirmPin}
+                onChangeText={setConfirmPin}
+                keyboardType="numeric"
+                secureTextEntry={!showConfirmPin}
+                maxLength={6}
+              />
+              <TouchableOpacity style={styles.eyeButton} onPress={() => setShowConfirmPin(!showConfirmPin)}>
+                {showConfirmPin ? <EyeOffIcon color={theme.secondary} /> : <EyeIcon color={theme.secondary} />}
+              </TouchableOpacity>
+            </View>
             <TouchableOpacity style={styles.button} onPress={handleSetPin}>
               <Text style={styles.buttonText}>Change PIN</Text>
             </TouchableOpacity>
@@ -277,30 +315,45 @@ export default function SecurityScreen() {
           {/* Change Password Section */}
           <View style={[styles.section, { backgroundColor: theme.card }]}>
             <Text style={[styles.sectionTitle, { color: theme.text }]}>Change Password</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
-              placeholder="Old Password"
-              placeholderTextColor={theme.secondary}
-              value={oldPassword}
-              onChangeText={setOldPassword}
-              secureTextEntry
-            />
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
-              placeholder="New Password"
-              placeholderTextColor={theme.secondary}
-              value={newPassword}
-              onChangeText={setNewPassword}
-              secureTextEntry
-            />
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
-              placeholder="Confirm New Password"
-              placeholderTextColor={theme.secondary}
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-            />
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={[styles.inputWithIcon, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
+                placeholder="Old Password"
+                placeholderTextColor={theme.secondary}
+                value={oldPassword}
+                onChangeText={setOldPassword}
+                secureTextEntry={!showOldPassword}
+              />
+              <TouchableOpacity style={styles.eyeButton} onPress={() => setShowOldPassword(!showOldPassword)}>
+                {showOldPassword ? <EyeOffIcon color={theme.secondary} /> : <EyeIcon color={theme.secondary} />}
+              </TouchableOpacity>
+            </View>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={[styles.inputWithIcon, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
+                placeholder="New Password"
+                placeholderTextColor={theme.secondary}
+                value={newPassword}
+                onChangeText={setNewPassword}
+                secureTextEntry={!showNewPassword}
+              />
+              <TouchableOpacity style={styles.eyeButton} onPress={() => setShowNewPassword(!showNewPassword)}>
+                {showNewPassword ? <EyeOffIcon color={theme.secondary} /> : <EyeIcon color={theme.secondary} />}
+              </TouchableOpacity>
+            </View>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={[styles.inputWithIcon, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
+                placeholder="Confirm New Password"
+                placeholderTextColor={theme.secondary}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry={!showConfirmPassword}
+              />
+              <TouchableOpacity style={styles.eyeButton} onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+                {showConfirmPassword ? <EyeOffIcon color={theme.secondary} /> : <EyeIcon color={theme.secondary} />}
+              </TouchableOpacity>
+            </View>
             <TouchableOpacity style={styles.button} onPress={handleChangePassword}>
               <Text style={styles.buttonText}>Change Password</Text>
             </TouchableOpacity>
@@ -409,6 +462,24 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 12,
     fontSize: 16,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  inputWithIcon: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    paddingRight: 48,
+  },
+  eyeButton: {
+    position: 'absolute',
+    right: 12,
+    padding: 4,
   },
   button: {
     backgroundColor: '#0d3320',

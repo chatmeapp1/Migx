@@ -227,10 +227,6 @@ export const ChatRoomInput = forwardRef<ChatRoomInputRef, ChatRoomInputProps>(({
           />
         </View>
 
-        <TouchableOpacity style={styles.iconButton}>
-          <CoinIcon />
-        </TouchableOpacity>
-
         <TouchableOpacity style={styles.iconButton} onPress={handleEmojiButtonPress}>
           <EmojiIcon color={emojiPickerVisible ? theme.primary : theme.secondary} />
         </TouchableOpacity>

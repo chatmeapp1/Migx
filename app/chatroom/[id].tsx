@@ -27,6 +27,7 @@ import { ChatRoomMenu } from '@/components/chatroom/ChatRoomMenu';
 import { ReportAbuseModal } from '@/components/chatroom/ReportAbuseModal';
 import { PrivateChatMenuModal } from '@/components/chatroom/PrivateChatMenuModal';
 import { GiftModal } from '@/components/chatroom/GiftModal';
+import { CmdList } from '@/components/chatroom/CmdList';
 import { useRoomTabsStore, useActiveRoom, useActiveRoomId, useOpenRooms } from '@/stores/useRoomTabsStore';
 
 const HEADER_COLOR = '#0a5229';
@@ -64,6 +65,7 @@ export default function ChatRoomScreen() {
   const [roomUsers, setRoomUsers] = useState<string[]>([]);
   const [kickModalVisible, setKickModalVisible] = useState(false);
   const [participantsModalVisible, setParticipantsModalVisible] = useState(false);
+  const [cmdListVisible, setCmdListVisible] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [privateChatMenuVisible, setPrivateChatMenuVisible] = useState(false);
   const [pmGiftModalVisible, setPmGiftModalVisible] = useState(false);
@@ -660,6 +662,11 @@ export default function ChatRoomScreen() {
       setReportAbuseModalVisible(true);
       return;
     }
+
+    if (trimmedAction === 'cmd') {
+      setCmdListVisible(true);
+      return;
+    }
   }, [handleOpenRoomInfo, currentUsername, currentActiveRoomId, handleLeaveRoom]);
 
   const handleOpenParticipants = () => setParticipantsModalVisible(!participantsModalVisible);
@@ -907,6 +914,17 @@ export default function ChatRoomScreen() {
         visible={pmGiftModalVisible}
         onClose={() => setPmGiftModalVisible(false)}
         onSendGift={handlePmGiftSend}
+      />
+
+      <CmdList
+        visible={cmdListVisible}
+        onClose={() => setCmdListVisible(false)}
+        onSelectCmd={(cmdKey, requiresTarget) => {
+          setCmdListVisible(false);
+          if (inputRef.current && 'insertText' in inputRef.current) {
+            (inputRef.current as any).insertText(`/${cmdKey} `);
+          }
+        }}
       />
     </View>
   );

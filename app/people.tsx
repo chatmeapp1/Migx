@@ -544,12 +544,11 @@ const styles = StyleSheet.create({
   userNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    flexWrap: 'wrap',
   },
   userName: {
     fontSize: 14,
     fontWeight: '500',
-    flex: 1,
   },
   userNameBlack: {
     fontSize: 14,
@@ -564,7 +563,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     width: 18,
     height: 18,
-    marginLeft: 6,
+    marginLeft: 2,
   },
   levelIconSmall: {
     width: 18,
@@ -585,7 +584,7 @@ const styles = StyleSheet.create({
   roleBadgeIcon: {
     width: 18,
     height: 18,
-    marginLeft: 6,
+    marginLeft: 2,
   },
   emptyContainer: {
     padding: 20,

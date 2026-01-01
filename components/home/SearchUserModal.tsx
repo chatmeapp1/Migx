@@ -69,7 +69,10 @@ export function SearchUserModal({ visible, onClose }: SearchUserModalProps) {
     onClose();
     setSearchQuery('');
     setSearchResults([]);
-    router.push(`/view-profile?userId=${userId}`);
+    router.push({
+      pathname: '/view-profile',
+      params: { userId }
+    });
   };
 
   return (

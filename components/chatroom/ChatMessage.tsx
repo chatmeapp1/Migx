@@ -1,8 +1,10 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Modal, Dimensions, Pressable } from 'react-native';
 import { useThemeCustom } from '@/theme/provider';
 import { parseEmojiMessage } from '@/utils/emojiParser';
 import { roleColors } from '@/utils/roleColors';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface ChatMessageProps {
   username: string;
@@ -29,6 +31,59 @@ const BadgeTop1 = () => (
     resizeMode="contain"
   />
 );
+
+const parseImageTags = (message: string): { hasImage: boolean; imageUrl: string | null; textContent: string } => {
+  const imgRegex = /\[img\](.*?)\[\/img\]/i;
+  const match = message.match(imgRegex);
+  if (match) {
+    return {
+      hasImage: true,
+      imageUrl: match[1],
+      textContent: message.replace(imgRegex, '').trim()
+    };
+  }
+  return { hasImage: false, imageUrl: null, textContent: message };
+};
+
+const ChatImageMessage = ({ imageUrl, username, usernameColor }: { imageUrl: string; username: string; usernameColor: string }) => {
+  const [modalVisible, setModalVisible] = useState(false);
+  const { theme } = useThemeCustom();
+
+  return (
+    <>
+      <View style={styles.imageMessageContainer}>
+        <Text style={[styles.username, { color: usernameColor }]}>
+          {username}:
+        </Text>
+        <TouchableOpacity onPress={() => setModalVisible(true)} activeOpacity={0.8}>
+          <Image
+            source={{ uri: imageUrl }}
+            style={styles.chatImage}
+            resizeMode="cover"
+          />
+        </TouchableOpacity>
+      </View>
+
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <Pressable 
+          style={styles.imageModalOverlay}
+          onPress={() => setModalVisible(false)}
+        >
+          <Image
+            source={{ uri: imageUrl }}
+            style={styles.fullScreenImage}
+            resizeMode="contain"
+          />
+        </Pressable>
+      </Modal>
+    </>
+  );
+};
 
 export const ChatMessage = React.memo(({
   username,
@@ -128,6 +183,17 @@ export const ChatMessage = React.memo(({
     );
   }
 
+  const { hasImage, imageUrl } = parseImageTags(message);
+  if (hasImage && imageUrl) {
+    return (
+      <ChatImageMessage
+        imageUrl={imageUrl}
+        username={username}
+        usernameColor={getUsernameColor()}
+      />
+    );
+  }
+
   const parsedMessage = parseEmojiMessage(message);
   const hasOnlyText = parsedMessage.every(item => item.type === 'text');
 
@@ -223,5 +289,27 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 12,
     marginRight: 50,
+  },
+  imageMessageContainer: {
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    marginRight: 50,
+  },
+  chatImage: {
+    width: 200,
+    height: 200,
+    borderRadius: 12,
+    marginTop: 4,
+    backgroundColor: '#333',
+  },
+  imageModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreenImage: {
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT * 0.8,
   },
 });

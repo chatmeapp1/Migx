@@ -136,6 +136,46 @@ export const PrivateChatInstance = React.memo(function PrivateChatInstance({
     console.log('📤 PM emitted to:', targetUsername, '| ID:', clientMsgId);
   }, [targetUsername, userId]);
 
+  const handleImageSend = useCallback(async (imageUrl: string) => {
+    // Get socket from store
+    const socket = useRoomTabsStore.getState().socket;
+    if (!socket?.connected) {
+      console.warn('Socket not connected for PM image');
+      Alert.alert('Error', 'Not connected to server');
+      return;
+    }
+
+    // Get current user info
+    const userDataStr = await AsyncStorage.getItem('user_data');
+    if (!userDataStr) {
+      Alert.alert('Error', 'Please login first');
+      return;
+    }
+    const currentUser = JSON.parse(userDataStr);
+    
+    if (!userId) {
+      Alert.alert('Error', 'Invalid recipient');
+      return;
+    }
+
+    const clientMsgId = `pm_img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Send image as a message with [img] tag
+    const imageMessage = `[img]${imageUrl}[/img]`;
+    
+    const pmData = {
+      fromUserId: currentUser.id,
+      fromUsername: currentUser.username,
+      toUserId: userId,
+      toUsername: targetUsername,
+      message: imageMessage,
+      clientMsgId
+    };
+    
+    socket.emit('pm:send', pmData);
+    console.log('📤 PM image sent to:', targetUsername);
+  }, [targetUsername, userId]);
+
   const handleEmojiPress = useCallback(() => {
     setEmojiVisible(!emojiVisible);
   }, [emojiVisible]);
@@ -217,6 +257,7 @@ export const PrivateChatInstance = React.memo(function PrivateChatInstance({
         <PrivateChatInput
           ref={inputRef}
           onSend={handleSendMessage}
+          onImageSend={handleImageSend}
           onEmojiPress={handleEmojiPress}
           emojiPickerVisible={emojiVisible}
           emojiPickerHeight={emojiVisible ? EMOJI_PICKER_HEIGHT : 0}

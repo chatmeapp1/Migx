@@ -208,7 +208,7 @@ export default function LoginScreen() {
                   <Text style={styles.label}>Username</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="replit"
+                    placeholder="Username"
                     placeholderTextColor="#999"
                     value={username}
                     onChangeText={(text) => setUsername(text.toLowerCase())}

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
+const auth = require('../middleware/auth');
 const { superAdminMiddleware } = require('../middleware/auth');
 
 // Configure Cloudinary with backend secrets
@@ -57,6 +58,50 @@ router.post('/gifts', superAdminMiddleware, upload.single('file'), async (req, r
 
   } catch (error) {
     console.error('Upload error:', error);
+    res.status(500).json({ 
+      success: false,
+      error: error.message || 'Failed to upload image' 
+    });
+  }
+});
+
+// Upload endpoint for chat images (private chat)
+router.post('/chat-image', auth, upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'No image provided' 
+      });
+    }
+
+    // Upload to Cloudinary
+    const result = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'mig33/chat-images',
+          resource_type: 'image',
+          transformation: [
+            { width: 800, height: 800, crop: 'limit' },
+            { quality: 'auto' }
+          ]
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+
+      uploadStream.end(req.file.buffer);
+    });
+
+    res.json({
+      success: true,
+      imageUrl: result.secure_url
+    });
+
+  } catch (error) {
+    console.error('Chat image upload error:', error);
     res.status(500).json({ 
       success: false,
       error: error.message || 'Failed to upload image' 

@@ -125,31 +125,35 @@ router.get('/list/:username', async (req, res) => {
           if (lastMsgData) {
             const lastMsg = JSON.parse(lastMsgData);
             
-            // Fetch user avatar from database
+            // Fetch user id and avatar from database
             let avatarUrl = null;
+            let numericUserId = null;
             try {
               const pool = getPool();
               const result = await pool.query(
-                'SELECT avatar FROM users WHERE username = $1',
+                'SELECT id, avatar FROM users WHERE username = $1',
                 [targetUsername]
               );
-              if (result.rows.length > 0 && result.rows[0].avatar) {
-                let avatar = result.rows[0].avatar;
-                // Construct full URL if it's a relative path
-                if (avatar && !avatar.startsWith('http')) {
-                  const baseUrl = `${req.protocol}://${req.get('host')}`;
-                  avatarUrl = `${baseUrl}${avatar}`;
-                } else {
-                  avatarUrl = avatar;
+              if (result.rows.length > 0) {
+                numericUserId = result.rows[0].id?.toString();
+                if (result.rows[0].avatar) {
+                  let avatar = result.rows[0].avatar;
+                  // Construct full URL if it's a relative path
+                  if (avatar && !avatar.startsWith('http')) {
+                    const baseUrl = `${req.protocol}://${req.get('host')}`;
+                    avatarUrl = `${baseUrl}${avatar}`;
+                  } else {
+                    avatarUrl = avatar;
+                  }
                 }
               }
             } catch (dbErr) {
-              // Skip avatar fetch error
-              console.warn(`⚠️ Failed to fetch avatar for ${targetUsername}:`, dbErr.message);
+              // Skip fetch error
+              console.warn(`⚠️ Failed to fetch user data for ${targetUsername}:`, dbErr.message);
             }
             
             dmsMap.set(targetUsername, {
-              userId: targetUsername,
+              userId: numericUserId || targetUsername,
               username: targetUsername,
               avatar: avatarUrl,
               lastMessage: {

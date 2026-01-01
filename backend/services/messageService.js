@@ -148,10 +148,12 @@ const savePrivateMessage = async (fromUserId, toUserId, fromUsername, toUsername
 const getPrivateMessages = async (userId1, userId2, limit = 50, offset = 0) => {
   try {
     const result = await query(
-      `SELECT * FROM private_messages
-       WHERE (from_user_id = $1 AND to_user_id = $2)
-          OR (from_user_id = $2 AND to_user_id = $1)
-       ORDER BY created_at DESC
+      `SELECT pm.*, u.role as from_role, u.avatar as from_avatar
+       FROM private_messages pm
+       LEFT JOIN users u ON pm.from_user_id = u.id
+       WHERE (pm.from_user_id = $1 AND pm.to_user_id = $2)
+          OR (pm.from_user_id = $2 AND pm.to_user_id = $1)
+       ORDER BY pm.created_at DESC
        LIMIT $3 OFFSET $4`,
       [userId1, userId2, limit, offset]
     );

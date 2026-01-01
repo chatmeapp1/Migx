@@ -9,6 +9,8 @@ const MIG33_CMD = {
     message: (u, t) => `${u} removed ${t} from moderator`,
     type: 'modRemoval'
   },
+  go: { requiresTarget: false, message: (u) => `${u} is ready to go!` },
+  goal: { requiresTarget: false, message: (u) => `${u} scores a goal!` },
   thank: { requiresTarget: false, message: (u) => `${u} thanks everyone.` },
   agree: { requiresTarget: false, message: (u) => `${u} agrees.` },
   apologizes: { requiresTarget: false, message: (u) => `${u} apologizes sincerely.` },

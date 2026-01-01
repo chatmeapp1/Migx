@@ -138,19 +138,39 @@ export function ChatList() {
         
         // Add rooms from Redis
         data.rooms?.forEach((room: any) => {
-          // Only show room if it's explicitly active
-          if (room.isActive) {
-            formattedData.push({
-              type: 'room',
-              name: room.name,
-              roomId: room.id,
-              message: room.lastMessage 
-                ? `${room.lastUsername}: ${room.lastMessage}` 
-                : 'Active now',
-              time: room.timestamp 
-                ? formatTime(room.timestamp) 
-                : undefined,
-            });
+          // Show all rooms from API (don't require isActive)
+          formattedData.push({
+            type: 'room',
+            name: room.name,
+            roomId: room.id,
+            message: room.lastMessage 
+              ? `${room.lastUsername}: ${room.lastMessage}` 
+              : 'Active now',
+            time: room.timestamp 
+              ? formatTime(room.timestamp) 
+              : undefined,
+          });
+        });
+        
+        // Also add rooms from the store (rooms user has joined but may not be in API)
+        const { openRoomsById, openRoomIds } = useRoomTabsStore.getState();
+        openRoomIds.forEach((roomId: string) => {
+          // Only add rooms (not private chats)
+          if (!roomId.startsWith('private:') && !roomId.startsWith('pm_')) {
+            const room = openRoomsById[roomId];
+            if (room) {
+              // Check if room already exists in formattedData
+              const roomExists = formattedData.some(chat => chat.roomId === roomId);
+              if (!roomExists) {
+                formattedData.push({
+                  type: 'room',
+                  name: room.name,
+                  roomId: roomId,
+                  message: 'In this room',
+                  time: formatTime(Date.now()),
+                });
+              }
+            }
           }
         });
         
@@ -174,8 +194,6 @@ export function ChatList() {
         
         // Add PMs from store (for new PMs not yet saved to Redis)
         // Find OTHER user's name (not current user) from messages or openRoomsById
-        const { openRoomsById } = useRoomTabsStore.getState();
-        
         Object.entries(privateMessages).forEach(([oderId, messages]) => {
           if (messages && messages.length > 0) {
             const lastMsg = messages[messages.length - 1];

@@ -19,8 +19,9 @@ interface ChatItemProps {
   hasUnread?: boolean;
 }
 
-const UserAvatar = ({ avatar, isOnline, theme }: { avatar?: string; isOnline?: boolean; theme: any }) => {
+const UserAvatar = ({ avatar, isOnline, theme, name }: { avatar?: string; isOnline?: boolean; theme: any; name?: string }) => {
   const hasValidAvatar = avatar && typeof avatar === 'string' && avatar.startsWith('http');
+  const initial = name ? name.charAt(0).toUpperCase() : '?';
   
   return (
     <View style={styles.avatarContainer}>
@@ -31,10 +32,9 @@ const UserAvatar = ({ avatar, isOnline, theme }: { avatar?: string; isOnline?: b
           defaultSource={require('../../assets/icons/ic_chat.png')}
         />
       ) : (
-        <Image
-          source={require('../../assets/icons/ic_chat.png')}
-          style={{ width: 50, height: 50, borderRadius: 25 }}
-        />
+        <View style={[styles.userAvatarPlaceholder, { backgroundColor: theme.primary }]}>
+          <Text style={styles.userAvatarInitial}>{initial}</Text>
+        </View>
       )}
       {isOnline && <View style={[styles.onlineIndicator, { borderColor: theme.background }]} />}
     </View>
@@ -106,7 +106,7 @@ export function ChatItem({ type, name, message, time, isOnline, avatar, tags, ro
     <TouchableOpacity style={[styles.container, { backgroundColor: theme.background, borderBottomColor: theme.border }]} onPress={handlePress}>
       <View style={styles.leftSection}>
         {type === 'user' || type === 'pm' ? (
-          <UserAvatar avatar={avatar} isOnline={isOnline} theme={theme} />
+          <UserAvatar avatar={avatar} isOnline={isOnline} theme={theme} name={name} />
         ) : (
           <RoomIcon theme={theme} />
         )}
@@ -213,5 +213,17 @@ const styles = StyleSheet.create({
   },
   time: {
     fontSize: 12,
+  },
+  userAvatarPlaceholder: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  userAvatarInitial: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: '700',
   },
 });

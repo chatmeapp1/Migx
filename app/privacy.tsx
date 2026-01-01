@@ -7,7 +7,8 @@ import {
   SafeAreaView,
   Platform,
   StatusBar,
-  ScrollView
+  ScrollView,
+  Modal
 } from 'react-native';
 import { router } from 'expo-router';
 import { useThemeCustom } from '@/theme/provider';
@@ -52,12 +53,20 @@ const CheckIcon = ({ size = 24, color = '#00bcd4' }: { size?: number; color?: st
   </Svg>
 );
 
+const RadioButton = ({ selected, color }: { selected: boolean; color: string }) => (
+  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="10" stroke={selected ? color : '#666'} strokeWidth="2" />
+    {selected && <Circle cx="12" cy="12" r="6" fill={color} />}
+  </Svg>
+);
+
 export default function PrivacyScreen() {
   const { theme } = useThemeCustom();
   const [allowPrivateChat, setAllowPrivateChat] = useState('Everyone');
   const [profilePrivacy, setProfilePrivacy] = useState('Everyone');
   const [allowShareLocation, setAllowShareLocation] = useState(false);
   const [blockListCount, setBlockListCount] = useState(0);
+  const [privateChatModalVisible, setPrivateChatModalVisible] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -103,6 +112,12 @@ export default function PrivacyScreen() {
     saveSettings({ allowShareLocation: newValue });
   };
 
+  const selectPrivateChatOption = (option: string) => {
+    setAllowPrivateChat(option);
+    saveSettings({ allowPrivateChat: option });
+    setPrivateChatModalVisible(false);
+  };
+
   const iconColor = theme.primary;
 
   return (
@@ -121,7 +136,7 @@ export default function PrivacyScreen() {
 
           <TouchableOpacity 
             style={[styles.menuItem, { borderBottomColor: theme.border }]}
-            onPress={() => {}}
+            onPress={() => setPrivateChatModalVisible(true)}
             activeOpacity={0.7}
           >
             <View style={styles.iconContainer}>
@@ -178,6 +193,46 @@ export default function PrivacyScreen() {
           </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>
+
+      <Modal
+        visible={privateChatModalVisible}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setPrivateChatModalVisible(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setPrivateChatModalVisible(false)}
+        >
+          <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>Allow private chat from</Text>
+            
+            <TouchableOpacity 
+              style={styles.optionItem}
+              onPress={() => selectPrivateChatOption('Everyone')}
+            >
+              <RadioButton selected={allowPrivateChat === 'Everyone'} color={iconColor} />
+              <Text style={[styles.optionText, { color: theme.text }]}>Everyone</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.optionItem}
+              onPress={() => selectPrivateChatOption('Only Friends')}
+            >
+              <RadioButton selected={allowPrivateChat === 'Only Friends'} color={iconColor} />
+              <Text style={[styles.optionText, { color: theme.text }]}>Only Friends</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.cancelButton}
+              onPress={() => setPrivateChatModalVisible(false)}
+            >
+              <Text style={[styles.cancelText, { color: theme.text }]}>BATALKAN</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -253,5 +308,42 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  modalContent: {
+    width: '100%',
+    borderRadius: 8,
+    paddingVertical: 20,
+    paddingHorizontal: 24,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 20,
+  },
+  optionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    gap: 16,
+  },
+  optionText: {
+    fontSize: 16,
+  },
+  cancelButton: {
+    alignSelf: 'flex-end',
+    marginTop: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  cancelText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

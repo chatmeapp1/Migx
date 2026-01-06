@@ -444,6 +444,8 @@ module.exports = (io, socket) => {
       const room = await roomService.getRoomById(roomId);
       const userLevelData = await getUserLevel(presenceUserId);
       const userLevel = userLevelData?.level || 1;
+      const user = await userService.getUserById(presenceUserId);
+      const userType = user?.type || 'normal';
       const leftMsg = `${username} [${userLevel}] has left`;
       const leftMessage = {
         id: `presence-left-${Date.now()}-${Math.random()}`,
@@ -452,7 +454,8 @@ module.exports = (io, socket) => {
         message: leftMsg,
         timestamp: new Date().toISOString(),
         type: 'presence',
-        messageType: 'presence'
+        messageType: 'presence',
+        userType: userType
       };
 
       io.to(`room:${roomId}`).emit('chat:message', leftMessage);

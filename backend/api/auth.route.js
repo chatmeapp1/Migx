@@ -690,18 +690,31 @@ router.post('/change-email', async (req, res) => {
   }
 });
 
-// Forgot password - Send OTP
+// Forgot password - Send OTP (supports email or username)
 router.post('/forgot-password', async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, emailOrUsername } = req.body;
+    const input = emailOrUsername || email;
 
-    if (!email) {
-      return res.status(400).json({ success: false, error: 'Email is required' });
+    if (!input) {
+      return res.status(400).json({ success: false, error: 'Email or username is required' });
     }
 
-    const user = await userService.getUserByEmail(email);
+    let user;
+    const isEmail = input.includes('@');
+    
+    if (isEmail) {
+      user = await userService.getUserByEmail(input);
+    } else {
+      user = await userService.getUserByUsername(input);
+    }
+    
     if (!user) {
-      return res.status(404).json({ success: false, error: 'Email not found' });
+      return res.status(404).json({ success: false, error: 'Account not found' });
+    }
+
+    if (!user.email) {
+      return res.status(400).json({ success: false, error: 'No email associated with this account' });
     }
 
     // Generate OTP
@@ -714,12 +727,22 @@ router.post('/forgot-password', async (req, res) => {
     }
 
     // Send OTP email
-    const emailResult = await sendPasswordChangeOtp(email, user.username, otp);
+    const emailResult = await sendPasswordChangeOtp(user.email, user.username, otp);
     if (!emailResult.success) {
       return res.status(500).json({ success: false, error: 'Failed to send OTP email' });
     }
 
-    res.json({ success: true, userId: user.id, message: 'OTP sent to your email' });
+    // Mask email for privacy (show first 2 chars and domain)
+    const emailParts = user.email.split('@');
+    const maskedEmail = emailParts[0].substring(0, 2) + '***@' + emailParts[1];
+
+    res.json({ 
+      success: true, 
+      userId: user.id, 
+      email: user.email,
+      maskedEmail,
+      message: 'OTP sent to your email' 
+    });
   } catch (error) {
     console.error('Forgot password error:', error);
     res.status(500).json({ success: false, error: 'Failed to process request' });

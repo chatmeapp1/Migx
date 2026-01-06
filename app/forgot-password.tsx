@@ -14,11 +14,12 @@ import {
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { API_ENDPOINTS } from '@/utils/api';
+import API_BASE_URL from '@/utils/api';
 
 export default function ForgotPasswordScreen() {
   const [step, setStep] = useState<'email' | 'otp' | 'password'>('email');
-  const [email, setEmail] = useState('');
+  const [emailOrUsername, setEmailOrUsername] = useState('');
+  const [userEmail, setUserEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -28,25 +29,26 @@ export default function ForgotPasswordScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleSendOTP = async () => {
-    if (!email.trim()) {
-      Alert.alert('Error', 'Please enter your email');
+    if (!emailOrUsername.trim()) {
+      Alert.alert('Error', 'Please enter your email or username');
       return;
     }
 
     setLoading(true);
     try {
-      const response = await fetch(`${API_ENDPOINTS.BASE}/api/auth/forgot-password`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.toLowerCase() })
+        body: JSON.stringify({ emailOrUsername: emailOrUsername.toLowerCase().trim() })
       });
 
       const data = await response.json();
 
       if (response.ok && data.success) {
         setUserId(data.userId);
+        setUserEmail(data.email || '');
         setStep('otp');
-        Alert.alert('Success', 'OTP has been sent to your email');
+        Alert.alert('Success', `OTP has been sent to ${data.maskedEmail || 'your email'}`);
       } else {
         Alert.alert('Error', data.error || 'Failed to send OTP');
       }
@@ -66,7 +68,7 @@ export default function ForgotPasswordScreen() {
 
     setLoading(true);
     try {
-      const response = await fetch(`${API_ENDPOINTS.BASE}/api/auth/verify-forgot-otp`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/verify-forgot-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, otp })
@@ -100,7 +102,7 @@ export default function ForgotPasswordScreen() {
 
     setLoading(true);
     try {
-      const response = await fetch(`${API_ENDPOINTS.BASE}/api/auth/reset-password`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, newPassword, otp })
@@ -143,15 +145,14 @@ export default function ForgotPasswordScreen() {
             {step === 'email' && (
               <View style={styles.form}>
                 <Text style={styles.description}>
-                  Enter your email address to receive OTP
+                  Enter your email or username to receive OTP
                 </Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Email"
+                  placeholder="Email or Username"
                   placeholderTextColor="#666"
-                  value={email}
-                  onChangeText={(text) => setEmail(text.toLowerCase())}
-                  keyboardType="email-address"
+                  value={emailOrUsername}
+                  onChangeText={(text) => setEmailOrUsername(text.toLowerCase())}
                   autoCapitalize="none"
                 />
                 <TouchableOpacity
@@ -169,7 +170,7 @@ export default function ForgotPasswordScreen() {
             {step === 'otp' && (
               <View style={styles.form}>
                 <Text style={styles.description}>
-                  Enter the 6-digit OTP sent to {email}
+                  Enter the 6-digit OTP sent to {userEmail || 'your email'}
                 </Text>
                 <TextInput
                   style={styles.input}

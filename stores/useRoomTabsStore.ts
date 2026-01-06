@@ -138,6 +138,15 @@ export const useRoomTabsStore = create<RoomTabsStore>((set, get) => ({
     const newMessagesByRoom = { ...state.messagesByRoom };
     delete newMessagesByRoom[roomId];
 
+    const newPrivateMessages = { ...state.privateMessages };
+    if (roomId.startsWith('private:')) {
+      const parts = roomId.split(':');
+      if (parts.length === 3) {
+        const otherId = parts[1] === state.currentUserId ? parts[2] : parts[1];
+        delete newPrivateMessages[otherId];
+      }
+    }
+
     let newActiveIndex = state.activeIndex;
 
     if (closingIndex < state.activeIndex) {
@@ -170,6 +179,7 @@ export const useRoomTabsStore = create<RoomTabsStore>((set, get) => ({
       openRoomIds: newOpenRoomIds,
       activeIndex: newActiveIndex,
       messagesByRoom: newMessagesByRoom,
+      privateMessages: newPrivateMessages,
       joinedRoomIds: newJoinedRoomIds,
       systemMessageInjected: newSystemMessageInjected,
     });

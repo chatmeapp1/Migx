@@ -227,11 +227,35 @@ export const ChatMessage = React.memo(({
   }
 
   if (isPresence) {
+    const levelMatch = message.match(/^(.+?\s*\[\d+\])(.*)$/);
+    
+    if (levelMatch) {
+      const beforeBadge = levelMatch[1];
+      const afterBadge = levelMatch[2];
+      
+      return (
+        <View style={styles.messageContainer}>
+          <Text style={[styles.messageWrapper, dynamicStyles.messageWrapper]}>
+            <Text style={[styles.username, dynamicStyles.username, { color: getUsernameColor() }]}>
+              {username}:{' '}
+            </Text>
+            <Text style={[styles.message, dynamicStyles.message, { color: getMessageColor() }]}>
+              {beforeBadge}
+            </Text>
+            <RoleBadge userType={userType} />
+            <Text style={[styles.message, dynamicStyles.message, { color: getMessageColor() }]}>
+              {afterBadge}
+            </Text>
+          </Text>
+        </View>
+      );
+    }
+    
     return (
       <View style={styles.messageContainer}>
         <Text style={[styles.messageWrapper, dynamicStyles.messageWrapper]}>
           <Text style={[styles.username, dynamicStyles.username, { color: getUsernameColor() }]}>
-            {username}{hasTopMerchantBadge && <BadgeTop1 />} <RoleBadge userType={userType} />:{' '}
+            {username}:{' '}
           </Text>
           <Text style={[styles.message, dynamicStyles.message, { color: getMessageColor() }]}>
             {message}

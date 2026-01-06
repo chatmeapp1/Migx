@@ -101,6 +101,19 @@ export const useRoomTabsStore = create<RoomTabsStore>((set, get) => ({
   openRoom: (roomId: string, name: string) => {
     const state = get();
 
+    // If it's a private chat, ensure it's initialized in privateMessages if it was closed
+    if (roomId.startsWith('private:')) {
+      const parts = roomId.split(':');
+      if (parts.length === 3) {
+        const otherId = parts[1] === state.currentUserId ? parts[2] : parts[1];
+        if (state.privateMessages[otherId] === undefined) {
+          set({
+            privateMessages: { ...state.privateMessages, [otherId]: [] }
+          });
+        }
+      }
+    }
+
     const existingIndex = state.openRoomIds.indexOf(roomId);
     if (existingIndex >= 0) {
       set({ activeIndex: existingIndex });
@@ -139,11 +152,14 @@ export const useRoomTabsStore = create<RoomTabsStore>((set, get) => ({
     delete newMessagesByRoom[roomId];
 
     const newPrivateMessages = { ...state.privateMessages };
+    const newUnreadPmCounts = { ...state.unreadPmCounts };
+    
     if (roomId.startsWith('private:')) {
       const parts = roomId.split(':');
       if (parts.length === 3) {
         const otherId = parts[1] === state.currentUserId ? parts[2] : parts[1];
         delete newPrivateMessages[otherId];
+        delete newUnreadPmCounts[otherId];
       }
     }
 
@@ -180,6 +196,7 @@ export const useRoomTabsStore = create<RoomTabsStore>((set, get) => ({
       activeIndex: newActiveIndex,
       messagesByRoom: newMessagesByRoom,
       privateMessages: newPrivateMessages,
+      unreadPmCounts: newUnreadPmCounts,
       joinedRoomIds: newJoinedRoomIds,
       systemMessageInjected: newSystemMessageInjected,
     });
@@ -263,6 +280,16 @@ export const useRoomTabsStore = create<RoomTabsStore>((set, get) => ({
 
   addPrivateMessage: (userId: string, message: Message) => {
     const state = get();
+    
+    // Check if the chat was explicitly closed (privateMessages[userId] is undefined or null)
+    // If it was closed, we don't recreate it automatically on new messages
+    // To allow it to be recreated, we would need to distinguish between "cleared" and "closed"
+    // For now, let's stick to the requirement: Closed private chats are not recreated automatically
+    if (state.privateMessages[userId] === undefined) {
+      console.log('🔇 [addPrivateMessage] Chat is closed for user:', userId, '- skipping message');
+      return;
+    }
+
     const existingMessages = state.privateMessages[userId] || [];
     if (existingMessages.some(m => m.id === message.id)) {
       return;

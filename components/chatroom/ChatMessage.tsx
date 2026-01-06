@@ -33,7 +33,7 @@ const BadgeTop1 = () => (
 );
 
 const RoleBadge = ({ userType }: { userType?: string }) => {
-  const badgeStyle = { width: 16, height: 16, marginLeft: 2, marginRight: 2, marginBottom: -3 };
+  const badgeStyle = { width: 18, height: 18, marginLeft: 2, marginRight: 2, marginBottom: -5 };
   
   if (userType === 'admin') {
     return <Image source={require('@/assets/badge role/ic_admin.png')} style={badgeStyle} resizeMode="contain" />;

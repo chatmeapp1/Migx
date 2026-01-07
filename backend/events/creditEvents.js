@@ -2,6 +2,7 @@ const creditService = require('../services/creditService');
 const messageService = require('../services/messageService');
 const userService = require('../services/userService');
 const notificationService = require('../services/notificationService');
+const merchantService = require('../services/merchantService');
 const { getUserSocket } = require('../utils/presence');
 const { addXp, XP_REWARDS } = require('../utils/xpLeveling');
 const { getRedisClient } = require('../redis');
@@ -102,6 +103,18 @@ module.exports = (io, socket) => {
       // Fetch user data for notification
       const fromUserData = await userService.getUserById(fromUserId);
       const toUserData = await userService.getUserById(toUserId);
+      
+      // Track mentor-to-merchant transfers for subscription renewal
+      if (fromUserData.role === 'mentor' && toUserData.role === 'merchant') {
+        const trackResult = await merchantService.recordMentorTransfer(fromUserId, toUserId, numAmount);
+        if (trackResult.success) {
+          if (trackResult.renewed) {
+            console.log(`[MERCHANT] ✅ Subscription renewed for ${toUserData.username} until ${trackResult.newExpiredAt}`);
+          } else {
+            console.log(`[MERCHANT] 📊 Transfer tracked for ${toUserData.username}: ${trackResult.monthlyTotal}/${merchantService.MONTHLY_MINIMUM_TRANSFER} (${trackResult.remaining} remaining)`);
+          }
+        }
+      }
 
       socket.emit('credit:transfer:success', {
         fromUser: fromUserData.username,

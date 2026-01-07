@@ -532,6 +532,20 @@ const startServer = async () => {
       startPresenceCleanup(io);
 
       voucherService.startVoucherGenerator(io);
+      
+      // Start merchant expiry check job (every hour)
+      const merchantService = require('./services/merchantService');
+      setInterval(async () => {
+        try {
+          const result = await merchantService.checkAndExpireMerchants();
+          if (result.success && result.expiredCount > 0) {
+            console.log(`🏪 Merchant expiry check: ${result.expiredCount} merchants expired`);
+          }
+        } catch (error) {
+          console.error('Merchant expiry check error:', error.message);
+        }
+      }, 60 * 60 * 1000); // Check every hour
+      console.log('🏪 Merchant expiry check job started (interval: 1 hour)');
       console.log(`
 ╔═══════════════════════════════════════════════════════╗
 ║           MIG33 Clone Backend Server                  ║

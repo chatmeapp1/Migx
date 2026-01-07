@@ -241,4 +241,20 @@ router.get('/recharge-history/:userId', async (req, res) => {
   }
 });
 
+router.get('/transfer-status/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const result = await merchantService.getMerchantTransferStatus(userId);
+    
+    if (!result.success) {
+      return res.status(404).json({ error: result.error });
+    }
+    
+    res.json(result);
+  } catch (error) {
+    console.error('Get transfer status error:', error);
+    res.status(500).json({ error: 'Failed to get transfer status' });
+  }
+});
+
 module.exports = router;

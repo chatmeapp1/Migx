@@ -38,12 +38,21 @@ interface RechargeHistory {
   total: number;
 }
 
+interface TransferStatus {
+  monthlyTotal: number;
+  required: number;
+  remaining: number;
+  percentage: number;
+  expiredAt: string | null;
+}
+
 export default function MerchantDashboard() {
   const { theme } = useThemeCustom();
   const [loading, setLoading] = useState(true);
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [commissions, setCommissions] = useState<Commission[]>([]);
   const [rechargeHistory, setRechargeHistory] = useState<RechargeHistory[]>([]);
+  const [transferStatus, setTransferStatus] = useState<TransferStatus | null>(null);
   const [totalCommission, setTotalCommission] = useState(0);
   const [activeTab, setActiveTab] = useState<'overview' | 'commissions' | 'recharge'>('overview');
   const [userId, setUserId] = useState<string | null>(null);
@@ -68,10 +77,11 @@ export default function MerchantDashboard() {
       const token = await AsyncStorage.getItem('auth_token');
       const headers = { Authorization: `Bearer ${token}` };
 
-      const [dashboardRes, commissionsRes, rechargeRes] = await Promise.all([
+      const [dashboardRes, commissionsRes, rechargeRes, transferRes] = await Promise.all([
         axios.get(`${API_BASE_URL}/api/merchant/dashboard/${uid}`, { headers }),
         axios.get(`${API_BASE_URL}/api/merchant/commissions/${uid}`, { headers }),
-        axios.get(`${API_BASE_URL}/api/merchant/recharge-history/${uid}`, { headers })
+        axios.get(`${API_BASE_URL}/api/merchant/recharge-history/${uid}`, { headers }),
+        axios.get(`${API_BASE_URL}/api/merchant/transfer-status/${uid}`, { headers }).catch(() => ({ data: { success: false } }))
       ]);
 
       if (dashboardRes.data.success) {
@@ -85,6 +95,10 @@ export default function MerchantDashboard() {
 
       if (rechargeRes.data.success) {
         setRechargeHistory(rechargeRes.data.history);
+      }
+      
+      if (transferRes.data.success) {
+        setTransferStatus(transferRes.data);
       }
     } catch (error) {
       console.error('Error loading merchant dashboard:', error);
@@ -170,6 +184,39 @@ export default function MerchantDashboard() {
             </View>
           )}
         </View>
+
+        {transferStatus && (
+          <View style={[styles.card, { backgroundColor: theme.card }]}>
+            <View style={styles.cardHeader}>
+              <Ionicons name="trending-up-outline" size={24} color="#E91E63" />
+              <Text style={[styles.cardTitle, { color: theme.text }]}>Target Perpanjangan</Text>
+            </View>
+            <Text style={[styles.bigNumber, { color: '#E91E63' }]}>
+              {formatNumber(transferStatus.monthlyTotal)} / {formatNumber(transferStatus.required)}
+            </Text>
+            <View style={styles.progressContainer}>
+              <View style={styles.progressBar}>
+                <View 
+                  style={[
+                    styles.progressFill, 
+                    { 
+                      width: `${transferStatus.percentage}%`,
+                      backgroundColor: transferStatus.percentage >= 100 ? '#4CAF50' : '#E91E63'
+                    }
+                  ]} 
+                />
+              </View>
+              <Text style={[styles.progressText, { color: theme.secondary }]}>
+                {transferStatus.percentage}%
+              </Text>
+            </View>
+            <Text style={[styles.cardSubtitle, { color: theme.secondary }]}>
+              {transferStatus.percentage >= 100 
+                ? 'Target tercapai! Langganan akan diperpanjang otomatis.'
+                : `Kurang ${formatNumber(transferStatus.remaining)} IDR dari mentor untuk perpanjang otomatis`}
+            </Text>
+          </View>
+        )}
 
         <View style={[styles.card, { backgroundColor: theme.card }]}>
           <View style={styles.cardHeader}>
@@ -584,5 +631,29 @@ const styles = StyleSheet.create({
   rechargeAmount: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  progressContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    marginBottom: 8,
+    gap: 12,
+  },
+  progressBar: {
+    flex: 1,
+    height: 8,
+    backgroundColor: '#333',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  progressText: {
+    fontSize: 14,
+    fontWeight: '600',
+    minWidth: 40,
+    textAlign: 'right',
   },
 });

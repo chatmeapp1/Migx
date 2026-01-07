@@ -1,5 +1,5 @@
-import React, { useRef, useEffect, useMemo } from 'react';
-import { FlatList, StyleSheet } from 'react-native';
+import React, { useRef } from 'react';
+import { FlatList, StyleSheet, View, ImageBackground } from 'react-native';
 import { ChatMessage } from './ChatMessage';
 
 interface Message {
@@ -22,12 +22,13 @@ interface Message {
 interface ChatRoomContentProps {
   messages: Message[];
   bottomPadding?: number;
+  backgroundImage?: string;
 }
 
-export const ChatRoomContent = React.memo(({ messages, bottomPadding = 70 }: ChatRoomContentProps) => {
+export const ChatRoomContent = React.memo(({ messages, bottomPadding = 70, backgroundImage }: ChatRoomContentProps) => {
   const flatListRef = useRef<FlatList>(null);
 
-  return (
+  const renderFlatList = () => (
     <FlatList
       ref={flatListRef}
       data={messages}
@@ -57,10 +58,33 @@ export const ChatRoomContent = React.memo(({ messages, bottomPadding = 70 }: Cha
       initialNumToRender={15}
     />
   );
+
+  if (backgroundImage) {
+    return (
+      <ImageBackground
+        source={{ uri: backgroundImage }}
+        style={styles.backgroundImage}
+        resizeMode="cover"
+      >
+        <View style={styles.overlay}>
+          {renderFlatList()}
+        </View>
+      </ImageBackground>
+    );
+  }
+
+  return renderFlatList();
 });
 
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
+  },
+  backgroundImage: {
+    flex: 1,
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
   },
 });

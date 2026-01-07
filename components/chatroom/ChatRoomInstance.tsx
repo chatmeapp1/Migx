@@ -12,6 +12,7 @@ interface ChatRoomInstanceProps {
   bottomPadding: number;
   isActive: boolean;
   renderVoteButton?: () => React.ReactNode;
+  backgroundImage?: string;
 }
 
 export const ChatRoomInstance = React.memo(function ChatRoomInstance({
@@ -20,6 +21,7 @@ export const ChatRoomInstance = React.memo(function ChatRoomInstance({
   bottomPadding,
   isActive,
   renderVoteButton,
+  backgroundImage,
 }: ChatRoomInstanceProps) {
   const messagesData = useRoomMessagesData(roomId);
   const messages = useMemo(() => messagesData || [], [messagesData]);
@@ -42,6 +44,7 @@ export const ChatRoomInstance = React.memo(function ChatRoomInstance({
       <ChatRoomContent 
         messages={messages} 
         bottomPadding={bottomPadding}
+        backgroundImage={backgroundImage}
       />
     </View>
   );

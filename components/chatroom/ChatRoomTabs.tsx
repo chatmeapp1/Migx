@@ -97,6 +97,7 @@ export function ChatRoomTabs({
                   bottomPadding={bottomPadding}
                   isActive={index === activeIndex}
                   renderVoteButton={renderVoteButton}
+                  backgroundImage={room.backgroundImage}
                 />
               )}
             </View>

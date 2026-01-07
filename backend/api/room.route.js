@@ -791,7 +791,7 @@ router.get('/:roomId/participants', async (req, res) => {
 });
 
 const auth = require('../middleware/auth');
-const { query } = require('../db');
+const { query } = require('../db/db');
 
 router.delete('/:roomId/background', auth, async (req, res) => {
   try {

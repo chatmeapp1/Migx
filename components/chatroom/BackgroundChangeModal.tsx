@@ -76,7 +76,7 @@ export function BackgroundChangeModal({
 
     try {
       setUploading(true);
-      const token = await AsyncStorage.getItem('token');
+      const token = await AsyncStorage.getItem('auth_token');
 
       const formData = new FormData();
       formData.append('image', {
@@ -124,7 +124,7 @@ export function BackgroundChangeModal({
           onPress: async () => {
             try {
               setUploading(true);
-              const token = await AsyncStorage.getItem('token');
+              const token = await AsyncStorage.getItem('auth_token');
 
               const response = await fetch(`${API_BASE_URL}/api/rooms/${roomId}/background`, {
                 method: 'DELETE',

@@ -204,7 +204,7 @@ module.exports = (io, socket) => {
       const recipientPresence = await getPresence(recipientUsername);
       if (recipientPresence === 'busy') {
         socket.emit('pm:blocked', {
-          message: 'User is currently busy and cannot receive private messages.',
+          message: `ERROR: ${recipientUsername} is busy`,
           toUsername: recipientUsername
         });
         return;

@@ -4,6 +4,21 @@ const router = express.Router();
 const { query } = require('../db/db');
 const { getRedisClient } = require('../redis');
 
+// Helper to get actual presence status from Redis
+const getActualPresence = async (username) => {
+  try {
+    const redis = getRedisClient();
+    const presence = await redis.get(`presence:${username}`);
+    if (presence) {
+      return presence; // Returns 'online', 'away', 'busy', 'invisible'
+    }
+    return 'offline';
+  } catch (error) {
+    console.error('Error getting presence:', error);
+    return 'offline';
+  }
+};
+
 // Helper to check Redis presence (source of truth for online status)
 const checkRedisPresence = async (userId) => {
   try {
@@ -42,13 +57,13 @@ router.get('/role/:role', async (req, res) => {
       [role, parseInt(limit)]
     );
 
-    // Check Redis presence for each user
+    // Check Redis presence for each user (get actual status like away, busy)
     const usersWithPresence = await Promise.all(
       result.rows.map(async (user) => {
-        const isOnline = await checkRedisPresence(user.id);
+        const presenceStatus = await getActualPresence(user.username);
         return {
           ...user,
-          presence_status: isOnline ? 'online' : 'offline'
+          presence_status: presenceStatus === 'invisible' ? 'offline' : presenceStatus
         };
       })
     );
@@ -117,14 +132,14 @@ router.get('/all', async (req, res) => {
       )
     ]);
 
-    // Add Redis presence to each user
+    // Add Redis presence to each user (get actual status like away, busy)
     const addPresence = async (users) => {
       return Promise.all(
         users.rows.map(async (user) => {
-          const isOnline = await checkRedisPresence(user.id);
+          const presenceStatus = await getActualPresence(user.username);
           return {
             ...user,
-            presence_status: isOnline ? 'online' : 'offline'
+            presence_status: presenceStatus === 'invisible' ? 'offline' : presenceStatus
           };
         })
       );

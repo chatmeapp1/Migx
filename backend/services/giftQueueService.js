@@ -105,6 +105,18 @@ const deductCreditsAtomic = async (userId, amount) => {
   const redis = getRedisClient();
   const balanceKey = `user:${userId}:credits`;
   
+  // First ensure balance is synced from DB to Redis
+  let currentBalance = await redis.get(balanceKey);
+  if (currentBalance === null) {
+    // Sync from database first
+    const dbBalance = await syncBalanceFromDb(userId);
+    if (dbBalance === null) {
+      console.error('❌ Failed to sync balance from DB for user:', userId);
+      return null;
+    }
+    currentBalance = dbBalance.toString();
+  }
+  
   const luaScript = `
     local current = tonumber(redis.call('GET', KEYS[1]) or '0')
     local amount = tonumber(ARGV[1])

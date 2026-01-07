@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 import { useThemeCustom } from '@/theme/provider';
 import { usePresence, PresenceStatus } from '@/hooks/usePresence';
 import { PresenceSelector } from './PresenceSelector';
@@ -64,6 +65,7 @@ export function UserProfileSection({
   avatar: propAvatar = '👤'
 }: UserProfileSectionProps) {
   const { theme } = useThemeCustom();
+  const router = useRouter();
   const [statusMessage, setStatusMessage] = useState(initialStatus);
   const [showPresenceSelector, setShowPresenceSelector] = useState(false);
   const [userData, setUserData] = useState<any>(null);
@@ -154,11 +156,22 @@ export function UserProfileSection({
       const userDataStr = await AsyncStorage.getItem('user_data');
       if (userDataStr) {
         const data = JSON.parse(userDataStr);
+        if (!data.username || !data.id || data.username === 'guest') {
+          console.log('❌ Invalid user data in UserProfileSection - redirecting to login');
+          await AsyncStorage.removeItem('user_data');
+          router.replace('/login');
+          return;
+        }
         setUserData(data);
         setStatusMessage(data.statusMessage || '');
+      } else {
+        console.log('❌ No user data in UserProfileSection - redirecting to login');
+        router.replace('/login');
+        return;
       }
     } catch (error) {
       console.error('Error loading user data:', error);
+      router.replace('/login');
     } finally {
       setIsLoading(false);
     }

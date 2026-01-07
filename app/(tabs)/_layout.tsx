@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useRef } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Dimensions, Platform } from 'react-native';
-import { Tabs } from 'expo-router';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { View, StyleSheet, Text, TouchableOpacity, Dimensions, Platform, Alert, Modal, ActivityIndicator } from 'react-native';
+import { Tabs, useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { 
@@ -191,27 +192,178 @@ function CustomTabBar({ state, descriptors, navigation }: CustomTabBarProps) {
   );
 }
 
-export default function TabLayout() {
+function NoInternetModal({ visible, onRetry }: { visible: boolean; onRetry: () => void }) {
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        animation: 'fade',
-        animationDuration: 100,
-        lazy: false,
-      }}
-      tabBar={(props) => <CustomTabBar {...props} />}
-    >
-      <Tabs.Screen name="index" options={{ title: 'Home' }} />
-      <Tabs.Screen name="chat" options={{ title: 'Chat' }} />
-      <Tabs.Screen name="feed" options={{ title: 'Feed' }} />
-      <Tabs.Screen name="room" options={{ title: 'Room' }} />
-      <Tabs.Screen name="explore" options={{ href: null }} />
-    </Tabs>
+    <Modal visible={visible} transparent animationType="fade">
+      <View style={styles.noInternetOverlay}>
+        <View style={styles.noInternetModal}>
+          <Text style={styles.noInternetIcon}>📡</Text>
+          <Text style={styles.noInternetTitle}>Tidak Ada Koneksi Internet</Text>
+          <Text style={styles.noInternetMessage}>
+            Periksa koneksi internet Anda dan coba lagi
+          </Text>
+          <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
+            <Text style={styles.retryButtonText}>Coba Lagi</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+export default function TabLayout() {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+  const [showNoInternet, setShowNoInternet] = useState(false);
+  const authChecked = useRef(false);
+
+  const checkNetworkAndAuth = useCallback(async () => {
+    try {
+      // Check network connectivity by trying to fetch the API
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      try {
+        await fetch('https://www.google.com/favicon.ico', { 
+          method: 'HEAD',
+          signal: controller.signal 
+        });
+        clearTimeout(timeoutId);
+      } catch (networkError) {
+        clearTimeout(timeoutId);
+        setShowNoInternet(true);
+        setIsLoading(false);
+        return;
+      }
+
+      // Check if user is authenticated
+      const userDataStr = await AsyncStorage.getItem('user_data');
+      
+      if (!userDataStr) {
+        console.log('❌ No user data found - redirecting to login');
+        router.replace('/login');
+        return;
+      }
+
+      try {
+        const userData = JSON.parse(userDataStr);
+        if (!userData.username || !userData.id || userData.username === 'guest') {
+          console.log('❌ Invalid user data - redirecting to login');
+          await AsyncStorage.removeItem('user_data');
+          router.replace('/login');
+          return;
+        }
+        console.log('✅ User authenticated:', userData.username);
+      } catch (parseError) {
+        console.log('❌ Failed to parse user data - redirecting to login');
+        await AsyncStorage.removeItem('user_data');
+        router.replace('/login');
+        return;
+      }
+
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Auth check error:', error);
+      setShowNoInternet(true);
+      setIsLoading(false);
+    }
+  }, [router]);
+
+  useEffect(() => {
+    if (!authChecked.current) {
+      authChecked.current = true;
+      checkNetworkAndAuth();
+    }
+  }, [checkNetworkAndAuth]);
+
+  const handleRetry = () => {
+    setShowNoInternet(false);
+    setIsLoading(true);
+    authChecked.current = false;
+    checkNetworkAndAuth();
+  };
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0a5229" />
+      </View>
+    );
+  }
+
+  return (
+    <>
+      <NoInternetModal visible={showNoInternet} onRetry={handleRetry} />
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          animation: 'fade',
+          animationDuration: 100,
+          lazy: false,
+        }}
+        tabBar={(props) => <CustomTabBar {...props} />}
+      >
+        <Tabs.Screen name="index" options={{ title: 'Home' }} />
+        <Tabs.Screen name="chat" options={{ title: 'Chat' }} />
+        <Tabs.Screen name="feed" options={{ title: 'Feed' }} />
+        <Tabs.Screen name="room" options={{ title: 'Room' }} />
+        <Tabs.Screen name="explore" options={{ href: null }} />
+      </Tabs>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
+  noInternetOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  noInternetModal: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    maxWidth: 300,
+    width: '100%',
+  },
+  noInternetIcon: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  noInternetTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  noInternetMessage: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  retryButton: {
+    backgroundColor: '#0a5229',
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   tabBar: {
     borderTopWidth: 0.5,
     position: 'relative',

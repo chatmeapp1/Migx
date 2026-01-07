@@ -210,6 +210,10 @@ export default function ViewProfileScreen() {
                 username={profileData.user.username}
                 level={profileData.user.level}
                 gender={profileData.user.gender}
+                age={profileData.user.age}
+                country={profileData.user.country}
+                role={profileData.user.role}
+                createdAt={profileData.user.created_at}
                 userId={profileData.user.id.toString()}
                 isFollowing={isFollowing}
                 followersCount={followersCount}

@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeCustom } from '@/theme/provider';
-import { API_BASE_URL } from '@/utils/api';
+import API_BASE_URL from '@/utils/api';
 
 const BackIcon = ({ size = 24, color = '#fff' }: { size?: number; color?: string }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -18,20 +18,7 @@ const BackIcon = ({ size = 24, color = '#fff' }: { size?: number; color?: string
   </Svg>
 );
 
-const VerifiedIcon = ({ size = 20 }: { size?: number }) => (
-  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Circle cx="12" cy="12" r="10" fill="#4CAF50" />
-    <Path
-      d="M9 12l2 2 4-4"
-      stroke="#fff"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </Svg>
-);
-
-const MaleIcon = ({ size = 20 }: { size?: number }) => (
+const MaleIcon = ({ size = 16 }: { size?: number }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Circle cx="10" cy="14" r="6" stroke="#2196F3" strokeWidth="2" fill="none" />
     <Path
@@ -44,7 +31,7 @@ const MaleIcon = ({ size = 20 }: { size?: number }) => (
   </Svg>
 );
 
-const FemaleIcon = ({ size = 20 }: { size?: number }) => (
+const FemaleIcon = ({ size = 16 }: { size?: number }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Circle cx="12" cy="9" r="6" stroke="#E91E63" strokeWidth="2" fill="none" />
     <Path
@@ -57,12 +44,43 @@ const FemaleIcon = ({ size = 20 }: { size?: number }) => (
   </Svg>
 );
 
+const getRoleBadgeInfo = (role: string) => {
+  switch (role) {
+    case 'super_admin':
+      return { label: 'Super Admin', color: '#FF5722', bgColor: 'rgba(255, 87, 34, 0.15)' };
+    case 'admin':
+      return { label: 'Admin', color: '#F44336', bgColor: 'rgba(244, 67, 54, 0.15)' };
+    case 'mentor':
+      return { label: 'Mentor', color: '#9C27B0', bgColor: 'rgba(156, 39, 176, 0.15)' };
+    case 'merchant':
+      return { label: 'Merchant', color: '#FF9800', bgColor: 'rgba(255, 152, 0, 0.15)' };
+    case 'customer_service':
+      return { label: 'CS', color: '#2196F3', bgColor: 'rgba(33, 150, 243, 0.15)' };
+    default:
+      return null;
+  }
+};
+
+const formatMemberSince = (dateString: string | undefined) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  const day = date.getDate();
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const month = months[date.getMonth()];
+  const year = date.getFullYear();
+  return `${day} ${month} ${year}`;
+};
+
 interface ViewProfileHeaderProps {
   backgroundImage?: string;
   avatarImage?: string;
   username?: string;
   level?: number;
   gender?: string;
+  age?: number;
+  country?: string;
+  role?: string;
+  createdAt?: string;
   userId?: string;
   isFollowing?: boolean;
   followersCount?: number;
@@ -77,6 +95,10 @@ export function ViewProfileHeader({
   username = 'User',
   level = 1,
   gender,
+  age,
+  country,
+  role = 'user',
+  createdAt,
   userId = '0',
   isFollowing = false,
   followersCount = 0,
@@ -94,9 +116,7 @@ export function ViewProfileHeader({
     ? (backgroundImage.startsWith('http') ? backgroundImage : `${API_BASE_URL}${backgroundImage.startsWith('/') ? '' : '/'}${backgroundImage}`)
     : null;
 
-  console.log('ViewProfileHeader - Avatar URI:', avatarUri);
-  console.log('ViewProfileHeader - Raw avatarImage:', avatarImage);
-  console.log('ViewProfileHeader - Background URI:', backgroundUri);
+  const roleBadge = getRoleBadgeInfo(role);
 
   return (
     <View style={styles.container}>
@@ -135,7 +155,7 @@ export function ViewProfileHeader({
               </View>
             )}
           </View>
-          {/* Edit Avatar Icon */}
+          {/* Home Icon Badge */}
           <View style={styles.editAvatarButton}>
             <Ionicons name="home" size={12} color="#fff" />
           </View>
@@ -143,8 +163,42 @@ export function ViewProfileHeader({
 
         {/* User Info */}
         <View style={styles.userInfoContainer}>
-          <Text style={styles.username}>{username}</Text>
-          <Text style={styles.subtitle}>@{username.toLowerCase()}</Text>
+          {/* Username Row with Level and Role Badge */}
+          <View style={styles.usernameRow}>
+            <Text style={styles.username}>{username}</Text>
+            
+            {/* Level Badge */}
+            <View style={styles.levelBadge}>
+              <Text style={styles.levelText}>{level}</Text>
+            </View>
+            
+            {/* Role Badge */}
+            {roleBadge && (
+              <View style={[styles.roleBadge, { backgroundColor: roleBadge.bgColor }]}>
+                <Text style={[styles.roleBadgeText, { color: roleBadge.color }]}>{roleBadge.label}</Text>
+              </View>
+            )}
+          </View>
+          
+          {/* User Details Row: Age, Gender, Country */}
+          <View style={styles.detailsRow}>
+            {age && (
+              <Text style={styles.detailText}>{age} y.o</Text>
+            )}
+            {gender && (
+              <View style={styles.genderContainer}>
+                {gender.toLowerCase() === 'male' ? <MaleIcon size={14} /> : <FemaleIcon size={14} />}
+              </View>
+            )}
+            {country && (
+              <Text style={styles.detailText}>{country}</Text>
+            )}
+          </View>
+          
+          {/* Member Since */}
+          {createdAt && (
+            <Text style={styles.memberSince}>Member since {formatMemberSince(createdAt)}</Text>
+          )}
         </View>
       </View>
 
@@ -181,14 +235,15 @@ const styles = StyleSheet.create({
   },
   profileSection: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'flex-start',
     paddingHorizontal: 16,
     marginTop: -40,
-    marginBottom: 12,
+    paddingTop: 0,
+    paddingBottom: 16,
   },
   avatarWrapper: {
     position: 'relative',
-    marginRight: 16,
+    marginRight: 14,
   },
   avatarContainer: {
     position: 'relative',
@@ -229,17 +284,57 @@ const styles = StyleSheet.create({
   },
   userInfoContainer: {
     flex: 1,
-    justifyContent: 'flex-end',
-    paddingBottom: 4,
+    paddingTop: 48,
+  },
+  usernameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
   },
   username: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#000',
   },
-  subtitle: {
+  levelBadge: {
+    backgroundColor: '#0a5229',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    minWidth: 24,
+    alignItems: 'center',
+  },
+  levelText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  roleBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  roleBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  detailsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+    gap: 10,
+  },
+  detailText: {
     fontSize: 13,
     color: '#666',
-    marginTop: 2,
+  },
+  genderContainer: {
+    marginHorizontal: 2,
+  },
+  memberSince: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 4,
   },
 });

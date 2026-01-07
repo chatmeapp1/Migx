@@ -14,7 +14,7 @@ router.get('/:userId', async (req, res) => {
     // Get user basic info
     const userResult = await query(
       `SELECT u.id, u.username, u.avatar, u.role, u.status, u.status_message, 
-              u.gender, u.created_at, u.username_color, ul.level, ul.xp,
+              u.gender, u.age, u.country, u.created_at, u.username_color, ul.level, ul.xp,
               u.has_top_like_reward, u.top_like_reward_expiry
        FROM users u
        LEFT JOIN user_levels ul ON u.id = ul.user_id
@@ -76,9 +76,11 @@ router.get('/:userId', async (req, res) => {
         status: user.status,
         statusMessage: user.status_message,
         gender: user.gender,
+        age: user.age,
+        country: user.country,
         level: user.level || 1,
         xp: user.xp || 0,
-        createdAt: user.created_at,
+        created_at: user.created_at,
         hasTopMerchantBadge: hasBadge,
         hasTopLikeReward: hasLikeReward,
         topLikeRewardExpiry: user.top_like_reward_expiry

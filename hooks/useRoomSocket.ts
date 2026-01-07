@@ -311,13 +311,8 @@ export function useRoomSocket({ roomId, onRoomJoined, onUsersUpdated }: UseRoomS
     if (!socket || !message.trim() || !currentUserId) return;
     
     const trimmedMessage = message.trim();
-    
-    // Generate consistent ID for both optimistic update and server echo
     const clientMsgId = `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    console.log("MESSAGE SEND", roomId, trimmedMessage, "id:", clientMsgId);
     
-    // Optimistic update: Add message locally immediately for responsive UI
-    // Server will use same clientMsgId, store will dedupe if both arrive
     const optimisticMessage: Message = {
       id: clientMsgId,
       username: currentUsername || '',
@@ -327,12 +322,35 @@ export function useRoomSocket({ roomId, onRoomJoined, onUsersUpdated }: UseRoomS
     };
     addMessage(roomId, optimisticMessage);
     
+    if (!socket.connected) {
+      console.log('⚠️ Socket disconnected, reconnecting and queueing message...');
+      socket.connect();
+      
+      setTimeout(() => {
+        if (socket.connected) {
+          console.log('✅ Reconnected, sending queued message');
+          socket.emit('chat:message', {
+            roomId,
+            userId: currentUserId,
+            username: currentUsername,
+            message: trimmedMessage,
+            clientMsgId,
+          });
+        } else {
+          console.error('❌ Failed to reconnect socket for message send');
+        }
+      }, 1500);
+      return;
+    }
+    
+    console.log("MESSAGE SEND", roomId, trimmedMessage, "id:", clientMsgId);
+    
     socket.emit('chat:message', {
       roomId,
       userId: currentUserId,
       username: currentUsername,
       message: trimmedMessage,
-      clientMsgId, // Send to server for echo
+      clientMsgId,
     });
   }, [socket, currentUserId, currentUsername, roomId, addMessage]);
 

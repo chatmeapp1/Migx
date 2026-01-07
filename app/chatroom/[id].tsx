@@ -259,14 +259,46 @@ export default function ChatRoomScreen() {
       newSocket.on('connect', () => {
         globalSocketInitializing = false;
         setIsConnected(true);
+        console.log('✅ Socket connected! ID:', newSocket.id);
       });
 
-      newSocket.on('disconnect', () => {
+      newSocket.on('disconnect', (reason) => {
         setIsConnected(false);
+        console.log('🔌 Socket disconnected:', reason);
+        
+        if (reason === 'io server disconnect' || reason === 'transport close') {
+          console.log('🔄 Server disconnected, will attempt reconnect...');
+        }
       });
 
-      newSocket.on('reconnect', () => {
+      newSocket.on('reconnect', (attemptNumber) => {
         setIsConnected(true);
+        console.log('🔄 Socket reconnected after', attemptNumber, 'attempts');
+        
+        const openRoomIds = useRoomTabsStore.getState().openRoomIds;
+        openRoomIds.forEach((rid) => {
+          if (!rid.startsWith('private:') && !rid.startsWith('pm_')) {
+            console.log('🔄 Rejoining room after reconnect:', rid);
+            newSocket.emit('join_room', {
+              roomId: rid,
+              userId: currentUserId,
+              username: currentUsername,
+              silent: true
+            });
+          }
+        });
+      });
+
+      newSocket.on('reconnect_attempt', (attemptNumber) => {
+        console.log('🔄 Reconnect attempt #', attemptNumber);
+      });
+
+      newSocket.on('reconnect_error', (error) => {
+        console.log('❌ Reconnect error:', error.message);
+      });
+
+      newSocket.on('pong', () => {
+        console.log('💓 Heartbeat pong received');
       });
 
       newSocket.on('vote-started', (data: { target: string; remainingVotes: number; remainingSeconds: number }) => {
@@ -454,6 +486,56 @@ export default function ChatRoomScreen() {
     const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
     return () => backHandler.remove();
   }, [router]);
+
+  // Heartbeat to keep socket connection alive
+  useEffect(() => {
+    if (!socket || !isConnected) return;
+    
+    let lastPongTime = Date.now();
+    let missedPongs = 0;
+    const HEARTBEAT_INTERVAL = 25000;
+    const MAX_MISSED_PONGS = 2;
+    
+    const pongHandler = () => {
+      lastPongTime = Date.now();
+      missedPongs = 0;
+    };
+    
+    socket.on('pong', pongHandler);
+    
+    const heartbeatInterval = setInterval(() => {
+      if (!socket?.connected) {
+        console.log('💔 Heartbeat: Socket disconnected, attempting reconnect...');
+        socket?.connect();
+        return;
+      }
+      
+      const timeSinceLastPong = Date.now() - lastPongTime;
+      if (timeSinceLastPong > HEARTBEAT_INTERVAL * 1.5 && lastPongTime > 0) {
+        missedPongs++;
+        console.log(`💔 Heartbeat: Missed pong #${missedPongs} (${Math.round(timeSinceLastPong / 1000)}s)`);
+        
+        if (missedPongs >= MAX_MISSED_PONGS) {
+          console.log('💔 Heartbeat: Too many missed pongs, forcing reconnect...');
+          missedPongs = 0;
+          socket.disconnect();
+          setTimeout(() => {
+            socket.connect();
+          }, 1000);
+          return;
+        }
+      }
+      
+      socket.emit('ping');
+    }, HEARTBEAT_INTERVAL);
+    
+    socket.emit('ping');
+    
+    return () => {
+      clearInterval(heartbeatInterval);
+      socket.off('pong', pongHandler);
+    };
+  }, [socket, isConnected]);
 
   // Track app state for background handling
   const appStateRef = useRef(AppState.currentState);

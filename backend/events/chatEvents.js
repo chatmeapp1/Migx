@@ -246,6 +246,151 @@ module.exports = (io, socket) => {
           return;
         }
 
+        // Handle /shower command - send gift to all users in room
+        if (cmdKey === 'shower') {
+          const giftName = parts[1];
+          if (!giftName) {
+            socket.emit('system:message', {
+              roomId,
+              message: `Usage: /shower <giftname>`,
+              timestamp: new Date().toISOString(),
+              type: 'warning'
+            });
+            return;
+          }
+
+          try {
+            const userService = require('../services/userService');
+            const giftQueue = require('../services/giftQueueService');
+            const roomService = require('../services/roomService');
+            
+            // Check gift cache in Redis first, fallback to DB
+            let gift = null;
+            const cachedGift = await redis.get(`gift:${giftName.toLowerCase().trim()}`);
+            
+            if (cachedGift) {
+              gift = JSON.parse(cachedGift);
+            } else {
+              const pool = require('../db/db');
+              const giftResult = await pool.query(
+                'SELECT * FROM gifts WHERE LOWER(name) = LOWER($1)',
+                [giftName.trim()]
+              );
+              
+              if (giftResult.rows.length > 0) {
+                gift = giftResult.rows[0];
+                await redis.set(`gift:${giftName.toLowerCase().trim()}`, JSON.stringify(gift), { EX: 3600 });
+              }
+            }
+            
+            if (!gift) {
+              socket.emit('system:message', {
+                roomId,
+                message: `Gift "${giftName}" not found.`,
+                timestamp: new Date().toISOString(),
+                type: 'warning'
+              });
+              return;
+            }
+            
+            // Get all users in room from Redis
+            const roomParticipants = await redis.smembers(`room:${roomId}:users`);
+            
+            // Filter out sender
+            const recipients = roomParticipants.filter(u => u.toLowerCase() !== username.toLowerCase());
+            
+            if (recipients.length === 0) {
+              socket.emit('system:message', {
+                roomId,
+                message: `No other users in the room to shower gifts.`,
+                timestamp: new Date().toISOString(),
+                type: 'warning'
+              });
+              return;
+            }
+            
+            // Calculate total cost
+            const totalCost = recipients.length * gift.price;
+            
+            // Atomic balance check and deduct in Redis
+            const newBalance = await giftQueue.deductCreditsAtomic(userId, totalCost);
+            
+            if (newBalance === null) {
+              socket.emit('system:message', {
+                roomId,
+                message: `Not enough credits. Shower costs ${totalCost} IDR (${recipients.length} users × ${gift.price} IDR).`,
+                timestamp: new Date().toISOString(),
+                type: 'warning'
+              });
+              return;
+            }
+            
+            // Get sender's level
+            const senderData = await userService.getUserById(userId);
+            const senderLevel = senderData?.level || 1;
+            
+            // Format recipients list (show 50% of usernames)
+            const maxDisplay = Math.ceil(recipients.length / 2);
+            const displayedRecipients = recipients.slice(0, maxDisplay);
+            const remainingCount = recipients.length - maxDisplay;
+            
+            let recipientsList = displayedRecipients.join(', ');
+            if (remainingCount > 0) {
+              recipientsList += ` and ${remainingCount} others`;
+            }
+            
+            // Broadcast shower message
+            io.to(`room:${roomId}`).emit('chat:message', {
+              id: generateMessageId(),
+              roomId,
+              message: `🎁 GIFT SHOWER ${username} [${senderLevel}] gives a ${gift.name} [GIFT_IMAGE:${gift.image_url || '🎁'}] to ${recipientsList}! Hurray! 🎉`,
+              messageType: 'cmdShower',
+              type: 'cmdShower',
+              giftData: {
+                name: gift.name,
+                image_url: gift.image_url,
+                price: gift.price,
+                sender: username,
+                recipients: recipients,
+                totalCost: totalCost
+              },
+              timestamp: new Date().toISOString()
+            });
+            
+            // Emit balance update to sender immediately
+            socket.emit('credits:updated', { balance: newBalance });
+            
+            // Queue async persistence for each recipient
+            for (const recipientUsername of recipients) {
+              const recipientData = await userService.getUserByUsername(recipientUsername);
+              if (recipientData) {
+                giftQueue.queueGiftForPersistence({
+                  senderId: userId,
+                  receiverId: recipientData.id,
+                  senderUsername: username,
+                  receiverUsername: recipientUsername,
+                  giftName: gift.name,
+                  giftIcon: gift.image_url,
+                  giftCost: gift.price
+                });
+              }
+            }
+            
+            // Async sync balance to DB (non-blocking)
+            giftQueue.queueBalanceSyncToDb(userId, newBalance);
+            
+          } catch (error) {
+            console.error('Error processing /shower command:', error);
+            socket.emit('system:message', {
+              roomId,
+              message: `Failed to shower gifts.`,
+              timestamp: new Date().toISOString(),
+              type: 'warning'
+            });
+          }
+          return;
+        }
+
         // Handle /whois command
         if (cmdKey === 'whois') {
           const targetUsername = parts[1];

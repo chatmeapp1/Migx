@@ -86,6 +86,9 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
   },
+  containerInverted: {
+    flexGrow: 1,
+  },
   backgroundImage: {
     flex: 1,
   },

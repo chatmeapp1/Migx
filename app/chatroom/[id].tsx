@@ -8,6 +8,8 @@ import {
   BackHandler,
   ActivityIndicator,
   Text,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -942,7 +944,11 @@ export default function ChatRoomScreen() {
   }, [activeVote, hasVoted, handleVoteKick]);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <KeyboardAvoidingView 
+      style={[styles.container, { backgroundColor: theme.background }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={0}
+    >
       <StatusBar backgroundColor={HEADER_COLOR} barStyle="light-content" />
       
       {/* Header - Untuk semua tabs termasuk private chat */}
@@ -1083,7 +1089,7 @@ export default function ChatRoomScreen() {
           }
         }}
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

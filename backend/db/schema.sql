@@ -327,6 +327,53 @@ CREATE INDEX IF NOT EXISTS idx_credit_logs_request_id ON credit_logs(request_id)
 -- 🔐 Set default PIN (123456) for existing users without PIN
 UPDATE users SET pin = '123456' WHERE pin IS NULL;
 
+-- LowCard Games table
+CREATE TABLE IF NOT EXISTS lowcard_games (
+  id BIGSERIAL PRIMARY KEY,
+  room_id BIGINT REFERENCES rooms(id) ON DELETE CASCADE,
+  status VARCHAR(20) DEFAULT 'waiting' CHECK (status IN ('waiting', 'playing', 'finished')),
+  entry_amount BIGINT NOT NULL,
+  pot_amount BIGINT DEFAULT 0,
+  current_round INT DEFAULT 0,
+  started_by BIGINT REFERENCES users(id),
+  started_by_username VARCHAR(50),
+  winner_id BIGINT REFERENCES users(id),
+  winner_username VARCHAR(50),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  finished_at TIMESTAMP
+);
+
+-- LowCard Players table
+CREATE TABLE IF NOT EXISTS lowcard_players (
+  id BIGSERIAL PRIMARY KEY,
+  game_id BIGINT REFERENCES lowcard_games(id) ON DELETE CASCADE,
+  user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+  username VARCHAR(50) NOT NULL,
+  current_card VARCHAR(10),
+  is_eliminated BOOLEAN DEFAULT FALSE,
+  joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(game_id, user_id)
+);
+
+-- LowCard History table
+CREATE TABLE IF NOT EXISTS lowcard_history (
+  id BIGSERIAL PRIMARY KEY,
+  game_id BIGINT REFERENCES lowcard_games(id) ON DELETE CASCADE,
+  winner_id BIGINT REFERENCES users(id),
+  winner_username VARCHAR(50),
+  total_pot BIGINT,
+  commission BIGINT DEFAULT 0,
+  players_count INT,
+  completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- LowCard indexes
+CREATE INDEX IF NOT EXISTS idx_lowcard_games_room_id ON lowcard_games(room_id);
+CREATE INDEX IF NOT EXISTS idx_lowcard_games_status ON lowcard_games(status);
+CREATE INDEX IF NOT EXISTS idx_lowcard_players_game_id ON lowcard_players(game_id);
+CREATE INDEX IF NOT EXISTS idx_lowcard_players_user_id ON lowcard_players(user_id);
+CREATE INDEX IF NOT EXISTS idx_lowcard_history_winner ON lowcard_history(winner_id);
+
 -- Insert default rooms (only if they don't exist)
 INSERT INTO rooms (name, description, max_users, room_code) VALUES
   ('Indonesia', 'Welcome to Indonesia room', 100, 'MIGX-00001'),

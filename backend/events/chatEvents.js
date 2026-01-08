@@ -5,6 +5,7 @@ const { addXp, XP_REWARDS } = require('../utils/xpLeveling');
 const { MIG33_CMD } = require('../utils/cmdMapping');
 const claimService = require('../services/claimService');
 const voucherService = require('../services/voucherService');
+const { handleLowcardCommand } = require('./lowcardEvents');
 
 module.exports = (io, socket) => {
   const sendMessage = async (data) => {
@@ -58,6 +59,12 @@ module.exports = (io, socket) => {
           type: 'warning'
         });
         return;
+      }
+
+      // Check for LowCard bot commands (!start, !j, !d, /bot lowcard)
+      if (message.startsWith('!') || message.startsWith('/bot ')) {
+        const handled = await handleLowcardCommand(io, socket, { roomId, userId, username, message });
+        if (handled) return;
       }
 
       // Check if message is a CMD command

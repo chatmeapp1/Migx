@@ -39,11 +39,14 @@ router.get('/role/:role', async (req, res) => {
     const { role } = req.params;
     const { limit = 50 } = req.query;
 
-    // Validate role
+    // Validate role - map care_service to customer_service for API compatibility
     const validRoles = ['admin', 'care_service', 'mentor', 'merchant'];
     if (!validRoles.includes(role)) {
       return res.status(400).json({ error: 'Invalid role' });
     }
+    
+    // Map API role name to database role name
+    const dbRole = role === 'care_service' ? 'customer_service' : role;
 
     const result = await query(
       `SELECT u.id, u.username, u.avatar, u.role, u.gender,
@@ -54,7 +57,7 @@ router.get('/role/:role', async (req, res) => {
        WHERE u.role = $1 AND u.is_active = true
        ORDER BY u.username
        LIMIT $2`,
-      [role, parseInt(limit)]
+      [dbRole, parseInt(limit)]
     );
 
     // Check Redis presence for each user (get actual status like away, busy)
@@ -103,7 +106,7 @@ router.get('/all', async (req, res) => {
                 ul.level, ul.xp
          FROM users u
          LEFT JOIN user_levels ul ON u.id = ul.user_id
-         WHERE u.role = 'care_service' AND u.is_active = true
+         WHERE u.role = 'customer_service' AND u.is_active = true
          ORDER BY u.username
          LIMIT $1`,
         [parseInt(limit)]

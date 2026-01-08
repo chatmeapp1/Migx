@@ -30,26 +30,14 @@ export const ChatRoomContent = React.memo(({ messages, bottomPadding = 70, backg
   const isNearBottom = useRef(true);
   const prevMessageCount = useRef(messages.length);
 
-  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-    const distanceFromBottom = contentSize.height - layoutMeasurement.height - contentOffset.y;
-    isNearBottom.current = distanceFromBottom < 150;
-  }, []);
-
-  useEffect(() => {
-    if (messages.length > prevMessageCount.current && isNearBottom.current) {
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
-    }
-    prevMessageCount.current = messages.length;
-  }, [messages.length]);
+  const reversedMessages = [...messages].reverse();
 
   const renderFlatList = () => (
     <FlatList
       ref={flatListRef}
-      data={messages}
+      data={reversedMessages}
       keyExtractor={(item) => item.id}
+      inverted={true}
       renderItem={({ item }) => (
         <ChatMessage
           username={item.username}
@@ -69,18 +57,11 @@ export const ChatRoomContent = React.memo(({ messages, bottomPadding = 70, backg
           hasBackground={!!backgroundImage}
         />
       )}
-      contentContainerStyle={[styles.container, { paddingBottom: bottomPadding }]}
+      contentContainerStyle={[styles.containerInverted, { paddingTop: bottomPadding }]}
       removeClippedSubviews={true}
       maxToRenderPerBatch={10}
       windowSize={10}
       initialNumToRender={15}
-      onScroll={handleScroll}
-      scrollEventThrottle={100}
-      onContentSizeChange={() => {
-        if (isNearBottom.current) {
-          flatListRef.current?.scrollToEnd({ animated: false });
-        }
-      }}
     />
   );
 

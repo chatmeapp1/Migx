@@ -85,9 +85,7 @@ export const ChatRoomContent = React.memo(({ messages, bottomPadding = 70, backg
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-  },
-  containerInverted: {
-    flexGrow: 1,
+    justifyContent: 'flex-end',
   },
   backgroundImage: {
     flex: 1,
